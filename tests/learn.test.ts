@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { SKILLS, SKILL_BY_ID } from '../src/client/learn/skills';
-import { TOPICS, renderMusic } from '../src/client/learn/library';
+import { TOPICS, TOPIC_BY_ID, renderMusic } from '../src/client/learn/library';
+import { CONCEPTS, CONCEPT_HELP } from '../src/client/learn/gen/concepts';
 import { CHALLENGES } from '../src/client/learn/challenges';
-import { planSession } from '../src/client/learn/session';
+import { planSession, rankSkills } from '../src/client/learn/session';
 import { emptyProgress, recordAnswer, scheduleSkill, weightedPick } from '../src/client/learn/srs';
 import { keyFromName } from '../src/client/theory/keys';
+import { N, pc } from '../src/client/theory/core';
 import { progressionEvents, resolveChord } from '../src/client/learn/music';
 import { PROGRESSIONS } from '../src/client/theory/progressions';
 import type { GenContext } from '../src/client/learn/types';
@@ -32,6 +34,10 @@ describe('library', () => {
       for (const b of t.blocks) {
         if (b.t === 'drill') expect(SKILL_BY_ID[b.skill]).toBeDefined();
         if (b.t === 'listen') for (const it of b.items) expect(renderMusic(it.music).length).toBeGreaterThan(0);
+        if (b.t === 'example') {
+          expect(b.steps.length).toBeGreaterThanOrEqual(2);
+          if (b.music) expect(renderMusic(b.music).length).toBeGreaterThan(0);
+        }
         if (b.t === 'prog') {
           const k = keyFromName(b.key);
           for (const tok of b.tokens) expect(resolveChord(tok, k)).not.toBeNull();
@@ -39,6 +45,24 @@ describe('library', () => {
       }
     }
     expect(TOPICS.length).toBeGreaterThanOrEqual(25);
+  });
+
+  test('every topic reads as a lesson: explanation, a worked example, and drills', () => {
+    for (const t of TOPICS) {
+      expect(t.blocks.some((b) => b.t === 'example')).toBe(true);
+      expect(t.blocks.some((b) => b.t === 'p' || b.t === 'table')).toBe(true);
+      expect(t.drills.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('every drill has a lesson that teaches it and a method', () => {
+    const taught = new Set(TOPICS.flatMap((t) => t.drills));
+    for (const sk of SKILLS) {
+      expect(TOPIC_BY_ID[sk.lesson]).toBeDefined();
+      expect(sk.method.length).toBeGreaterThanOrEqual(2);
+      expect(taught.has(sk.id)).toBe(true);
+    }
+    for (const c of CONCEPTS) expect(TOPIC_BY_ID[CONCEPT_HELP[c.id]?.[0]]).toBeDefined();
   });
 
   test('challenges and progressions resolve', () => {
@@ -72,6 +96,35 @@ describe('generators', () => {
           expect(values.length).toBeGreaterThanOrEqual(2);
           expect(values.length).toBeLessThanOrEqual(8);
           for (const o of q.input.options) expect(o.label).not.toMatch(/undefined|NaN/);
+          // compare playback must work for every option, not just the right one
+          if (q.optionAudio) {
+            for (const v of values) {
+              const evs = q.optionAudio(v);
+              expect(evs.length).toBeGreaterThan(0);
+              for (const e of evs) expect(Number.isFinite(e.note) && e.note > 0 && e.note < 128 && e.start >= 0).toBe(true);
+            }
+          }
+        }
+        if (q.labelPc) for (let p = 0; p < 12; p++) expect(q.labelPc(p)).toMatch(/^[A-G](♯|♭|𝄪|𝄫)?$/);
+        // the ? panel: a hint that stops short of the answer, playable aids, a real lesson
+        expect(q.hint && q.hint.length > 10).toBe(true);
+        if (q.lesson) expect(TOPIC_BY_ID[q.lesson]).toBeDefined();
+        for (const e of q.hintAudio?.events ?? []) expect(Number.isFinite(e.note) && e.note > 0 && e.note < 128 && e.start >= 0).toBe(true);
+        if (q.input.kind === 'choice') {
+          const right = q.input.options.find((o) => q.check({ kind: 'choice', value: o.value }).correct)!.label;
+          if (right.length >= 3) expect(q.hint!.includes(right)).toBe(false);
+        }
+        // two options naming the same sound under different spellings would make two answers right
+        // (spelling drills excepted: there the misspelling is the decoy)
+        if (q.input.kind === 'choice' && !/spell/.test(skill.id)) {
+          const seen = new Map<string, string>();
+          for (const o of q.input.options) {
+            const m = /^([A-G](?:♯|♭)?)(.*)$/.exec(o.label);
+            if (!m) continue;
+            const key = `${pc(N(m[1].replace('♯', '#').replace('♭', 'b')))}|${m[2]}`;
+            expect(seen.get(key) ?? o.label).toBe(o.label);
+            seen.set(key, o.label);
+          }
         }
       }
     });
@@ -96,6 +149,31 @@ describe('planner', () => {
     expect(gym.skills[0]).toBe('jazz.tritone');
     const bachOnly = planSession(emptyProgress(), 15, ['bach'], now);
     expect(bachOnly.blocks.find((b) => b.kind === 'topic')!.topicId!.startsWith('bach') || bachOnly.blocks.find((b) => b.kind === 'topic')!.topicId === 'core.symmetric').toBe(true);
+  });
+
+  test('cramming a skill early does not stretch its review interval', () => {
+    const p = emptyProgress();
+    const day = 86_400_000;
+    const t0 = Date.now();
+    scheduleSkill(p, 'jazz.tritone', 8, 8, t0);
+    expect(p.skills['jazz.tritone'].interval).toBe(1);
+    for (let i = 1; i <= 5; i++) scheduleSkill(p, 'jazz.tritone', 8, 8, t0 + i * 60_000);
+    expect(p.skills['jazz.tritone'].interval).toBe(1);
+    scheduleSkill(p, 'jazz.tritone', 8, 8, t0 + 2 * day);
+    expect(p.skills['jazz.tritone'].interval).toBeCloseTo(2.2);
+    scheduleSkill(p, 'jazz.tritone', 1, 1, t0 + 6 * day);
+    expect(p.skills['jazz.tritone'].interval).toBeCloseTo(2.2 * 1.4);
+    scheduleSkill(p, 'jazz.tritone', 6, 2, t0 + 6 * day + 1000);
+    expect(p.skills['jazz.tritone'].interval).toBe(0.25);
+  });
+
+  test('new skills rotate from day to day but stay put within a day', () => {
+    const ids = SKILLS.filter((s) => s.area === 'ear').map((s) => s.id);
+    const day = 86_400_000;
+    const t = Date.UTC(2026, 9, 16, 9);
+    expect(rankSkills(emptyProgress(), ids, t)).toEqual(rankSkills(emptyProgress(), ids, t + 3_600_000));
+    const firsts = new Set(Array.from({ length: 7 }, (_, d) => rankSkills(emptyProgress(), ids, t + d * day)[0]));
+    expect(firsts.size).toBeGreaterThan(2);
   });
 
   test('weightedPick favours weak items', () => {

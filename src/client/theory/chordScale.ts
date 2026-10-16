@@ -1,6 +1,6 @@
 // Chord–scale relationships, upper-structure triads and guide tones.
 
-import { INTERVALS, mod } from './core';
+import { INTERVALS, mod, practical, transpose, type Note } from './core';
 import { getChord } from './chords';
 
 export interface ScaleChoice {
@@ -50,6 +50,8 @@ export const CHORD_SCALES: Record<string, ScaleChoice[]> = {
 export interface UpperStructure {
   /** semitones from the dominant root to the triad root */
   semis: number;
+  /** the same distance as a spelled interval (F♯7's II is G♯, not A♭) */
+  ivl: string;
   numeral: string;
   quality: 'maj' | 'min';
   tensions: string;
@@ -58,15 +60,20 @@ export interface UpperStructure {
 
 /** Major triads over a dominant 7th (shell 3–♭7 in the left hand). */
 export const DOMINANT_USTS: UpperStructure[] = [
-  { semis: 2, numeral: 'II', quality: 'maj', tensions: '9 · ♯11 · 13', scale: 'lydian_dom' },
-  { semis: 3, numeral: '♭III', quality: 'maj', tensions: '♯9 · 5 · ♭7', scale: 'dim_hw' },
-  { semis: 6, numeral: '♭V', quality: 'maj', tensions: '♯11 · ♭7 · ♭9', scale: 'dim_hw' },
-  { semis: 8, numeral: '♭VI', quality: 'maj', tensions: '♭13 · R · ♯9', scale: 'altered' },
-  { semis: 9, numeral: 'VI', quality: 'maj', tensions: '13 · ♭9 · 3', scale: 'dim_hw' },
-  { semis: 10, numeral: '♭VII', quality: 'maj', tensions: '♭7 · 9 · 11 (sus)', scale: 'mixolydian' },
-  { semis: 1, numeral: '♭II', quality: 'maj', tensions: '♭9 · 11 · ♭13 (sus♭9)', scale: 'phrygian' },
-  { semis: 3, numeral: '♭iii', quality: 'min', tensions: '♯9 · ♯11 · ♭7', scale: 'altered' },
+  { semis: 2, ivl: 'M2', numeral: 'II', quality: 'maj', tensions: '9 · ♯11 · 13', scale: 'lydian_dom' },
+  { semis: 3, ivl: 'm3', numeral: '♭III', quality: 'maj', tensions: '♯9 · 5 · ♭7', scale: 'dim_hw' },
+  { semis: 6, ivl: 'd5', numeral: '♭V', quality: 'maj', tensions: '♯11 · ♭7 · ♭9', scale: 'dim_hw' },
+  { semis: 8, ivl: 'm6', numeral: '♭VI', quality: 'maj', tensions: '♭13 · R · ♯9', scale: 'altered' },
+  { semis: 9, ivl: 'M6', numeral: 'VI', quality: 'maj', tensions: '13 · ♭9 · 3', scale: 'dim_hw' },
+  { semis: 10, ivl: 'm7', numeral: '♭VII', quality: 'maj', tensions: '♭7 · 9 · 11 (sus)', scale: 'mixolydian' },
+  { semis: 1, ivl: 'm2', numeral: '♭II', quality: 'maj', tensions: '♭9 · 11 · ♭13 (sus♭9)', scale: 'phrygian' },
+  { semis: 3, ivl: 'm3', numeral: '♭iii', quality: 'min', tensions: '♯9 · ♯11 · ♭7', scale: 'altered' },
 ];
+
+/** Root of an upper-structure triad over a dominant, spelled from the dominant's root. */
+export function ustRoot(domRoot: Note, u: UpperStructure): Note {
+  return practical(transpose(domRoot, u.ivl));
+}
 
 /** Tension label for a pitch over a chord root (dominant context). */
 export function tensionLabel(rootPc: number, p: number): string {

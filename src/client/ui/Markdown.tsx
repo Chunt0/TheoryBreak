@@ -1,7 +1,8 @@
 import { Fragment, type ReactNode } from 'react';
 
 /** Minimal, safe markdown: paragraphs, "- " and "1. " lists, **bold**, *italic*, `code`. */
-export function Markdown({ md }: { md: string }) {
+export function Markdown({ md, inlineOnly = false }: { md: string; inlineOnly?: boolean }) {
+  if (inlineOnly) return <>{inline(md)}</>;
   const blocks = md.split(/\n{2,}/);
   return (
     <>

@@ -9,7 +9,7 @@ export interface ScaleDef {
   formula: string;
   family: ScaleFamily;
   character: string;
-  /** Where a guitarist or bassist will actually meet this sound. */
+  /** Where you will actually meet this sound. */
   usage: string;
 }
 

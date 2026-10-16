@@ -15,6 +15,8 @@ interface Props {
   onDown?: (midi: number) => void;
   onUp?: (midi: number) => void;
   showOctaveLabels?: boolean;
+  /** computer-key letters printed on the keys they play */
+  keyLabels?: Record<number, string>;
   className?: string;
   ariaLabel?: string;
 }
@@ -26,7 +28,7 @@ const BLACK_H = 76;
 // black key x-offset (relative to the preceding white key) by pitch class
 const BLACK_OFFSET: Record<number, number> = { 1: 15, 3: 19, 6: 14, 8: 17, 10: 20 };
 
-export function Keyboard({ range, marks = {}, held = [], onDown, onUp, showOctaveLabels = true, className = '', ariaLabel = 'Piano keyboard' }: Props) {
+export function Keyboard({ range, marks = {}, held = [], onDown, onUp, showOctaveLabels = true, keyLabels, className = '', ariaLabel = 'Piano keyboard' }: Props) {
   let lo = range[0];
   let hi = range[1];
   while (isBlackKey(lo)) lo--;
@@ -101,6 +103,9 @@ export function Keyboard({ range, marks = {}, held = [], onDown, onUp, showOctav
         </g>
       ))}
       {whites.map((m, i) => markEl(m, i * WHITE_W + WHITE_W / 2, false))}
+      {keyLabels
+        ? whites.map((m, i) => (keyLabels[m] ? <text key={`k${m}`} x={i * WHITE_W + WHITE_W / 2} y={WHITE_H - 20} className="klabel">{keyLabels[m]}</text> : null))
+        : null}
       {blacks.map((b) => (
         <rect
           key={b.midi}
@@ -114,6 +119,9 @@ export function Keyboard({ range, marks = {}, held = [], onDown, onUp, showOctav
         />
       ))}
       {blacks.map((b) => markEl(b.midi, b.x + BLACK_W / 2, true))}
+      {keyLabels
+        ? blacks.map((b) => (keyLabels[b.midi] ? <text key={`k${b.midi}`} x={b.x + BLACK_W / 2} y={BLACK_H - 8} className="klabel onb">{keyLabels[b.midi]}</text> : null))
+        : null}
     </svg>
   );
 }

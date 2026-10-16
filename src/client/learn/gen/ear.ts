@@ -1,4 +1,4 @@
-import { DEGREE_BY_SEMIS, mod, noteName, pcName, pick, shuffle, spellPc } from '../../theory/core';
+import { DEGREE_BY_SEMIS, mod, noteName, pc, pcName, pick, shuffle, spellPc } from '../../theory/core';
 import { CHORD_BY_ID, chordSymbol } from '../../theory/chords';
 import { keyFromName, keyName, type Key } from '../../theory/keys';
 import { PROGRESSIONS, PROG_GROUP_NAMES, type ProgGroup } from '../../theory/progressions';
@@ -13,6 +13,13 @@ import { SOLFEGE, choiceQ, keysVisual, nearOptions, randInt, randomMajorKey, ran
 // ---------------------------------------------------------------------------
 // Chord quality
 
+const CHORD_EAR_HINT: Record<string, string> = {
+  'ear.chord.7': '3rd first — bright or dark? Then the 7th: a major 7th rubs a half step below the octave, a ♭7 sits a whole step below it. Then the 5th: is it tight (♭5)?',
+  'ear.chord.ext': 'Find the 7th first (major, ♭7 or none), then the colour on top: a smooth 9, an open 11, a bright 13, a shimmering ♯11.',
+  'ear.chord.alt': 'Compare with a plain dominant: a ♭9 rubs against the root, a ♯9 clashes with the 3rd, a ♯11 shimmers, a ♭13 darkens the top.',
+  'ear.chord.inv': 'Ignore the bass note. Bright, dark, tight, floating — or open, with no 3rd at all?',
+};
+
 export function chordEar(skill: string, types: string[], inversions = false) {
   return (ctx: GenContext): Question => {
     const typeId = ctx.pickItem(types);
@@ -23,7 +30,8 @@ export function chordEar(skill: string, types: string[], inversions = false) {
       const k = randInt(ctx.rnd, 1, upper.length - 1);
       mids = [upper[k] - 12, ...upper.slice(k), ...upper.slice(0, k).map((m) => m + 12)];
     }
-    const audio = [...chordEvents(mids, { dur: 1.8 }), ...chordEvents(mids.slice(1), { arp: true, start: 2.0, dur: 1.2 })];
+    const sound = (m: number[]) => [...chordEvents(m, { dur: 1.8 }), ...chordEvents(m.slice(1), { arp: true, start: 2.0, dur: 1.2 })];
+    const audio = sound(mids);
     const opts = types.map((t) => ({ value: t, label: CHORD_BY_ID[t].name, sub: CHORD_BY_ID[t].symbol || 'triad' }));
     const sym = chordSymbol(spellPc(rootPc), typeId);
     return choiceQ({
@@ -34,6 +42,9 @@ export function chordEar(skill: string, types: string[], inversions = false) {
       audio,
       explain: `${CHORD_BY_ID[typeId].name} (${sym}). ${CHORD_BY_ID[typeId].sound}`,
       reveal: { keyboard: keysVisual(mids, (m) => pcName(m)) },
+      optionAudio: (t) => sound(chordMidis(rootPc, t)),
+      hint: CHORD_EAR_HINT[skill],
+      hintAudio: { label: 'Slow arpeggio from the bass', events: [...melodyEvents(mids, 0.55), ...chordEvents(mids, { start: mids.length * 0.55 + 0.2, dur: 1.6 })] },
     });
   };
 }
@@ -75,6 +86,12 @@ export function degreeEar(skill: string, mode: 'diatonic' | 'chromatic' | 'minor
         return semisSet.includes(s) ? String(s) : null;
       },
       reveal: { keyboard: keysVisual([tonic, target === tonic ? target + 12 : target], (m) => (m === tonic ? '1' : label(semis))) },
+      hint: mode === 'chromatic'
+        ? `${keyName(k)}: keep ${noteName(k.tonic)} in your ear. Does the note belong to the major scale? If it rubs, find the scale note it leans into by a half step — that tells you which chromatic degree it is.`
+        : `${keyName(k)}: keep ${noteName(k.tonic)} in your ear, then sing from the last note to the nearest ${noteName(k.tonic)}, counting scale steps.`,
+      hintAudio: { label: 'Tonic, then the note', events: [ev(tonic, 0, 0.9, 90), ev(target, 1.0, 1.4, 100)] },
+      // tonic chord, then the degree
+      optionAudio: (v) => [...chordEvents(chordMidis(pc(k.tonic), k.mode === 'minor' ? 'min' : 'maj'), { dur: 0.9 }), ev(tonic + Number(v), 1.0, 1.3, 100)],
     });
   };
 }
@@ -91,6 +108,11 @@ export function progressionEar(skill: string, groups: ProgGroup[]) {
     const target: Key = ref.mode === 'major' ? randomMajorKey(ctx) : randomMinorKey(ctx);
     const chords = progressionInKey(prog.chords, prog.key, target);
     const style = prog.group === 'funk' ? 'funk' : prog.group === 'bach' ? 'block' : prog.group === 'soul' ? 'ballad' : 'swing';
+    const render = (p: (typeof PROGRESSIONS)[number]) => {
+      const k = keyFromName(p.key).mode === ref.mode ? target : { tonic: target.tonic, mode: keyFromName(p.key).mode };
+      const st = p.group === 'funk' ? 'funk' : p.group === 'bach' ? 'block' : p.group === 'soul' ? 'ballad' : 'swing';
+      return progressionEvents(k, progressionInKey(p.chords, p.key, k), { bpm: p.group === 'funk' ? 96 : 92, beats: p.beats ?? (p.group === 'bach' ? 2 : 4), style: st });
+    };
     const play = progressionEvents(target, chords, { bpm: prog.group === 'funk' ? 96 : 92, beats: prog.beats ?? (prog.group === 'bach' ? 2 : 4), style });
     const same = shuffle(pool.filter((p) => p.id !== prog.id), ctx.rnd);
     const fill = shuffle(PROGRESSIONS.filter((p) => p.id !== prog.id && !same.includes(p)), ctx.rnd);
@@ -103,6 +125,9 @@ export function progressionEar(skill: string, groups: ProgGroup[]) {
       audio: play.events,
       audioLabel: 'Play',
       explain: `${prog.name}: ${prog.numerals.join(' – ')} (${chords.join(' – ')}). ${prog.description}${prog.heardIn.length ? ` Heard in ${prog.heardIn.join(', ')}.` : ''}`,
+      optionAudio: (v) => render(PROGRESSIONS.find((p) => p.id === v)!).events,
+      hint: 'Hum the bass line first — the hint plays it alone. Falling 5ths, a chromatic slide, steps? Then listen for where the dominant 7ths are.',
+      hintAudio: { label: 'Bass line alone', events: play.events.filter((e) => e.part === PART.bass) },
     });
   };
 }
@@ -126,12 +151,21 @@ export function cadenceEar(skill: string) {
     const chords = progressionInKey(c.chords, c.key, target);
     const lead = progressionInKey(ref.mode === 'major' ? ['C', 'Am'] : ['Am', 'C/G'], c.key, target);
     const play = progressionEvents(target, [...lead, ...chords], { bpm: 80, beats: 2, style: 'block' });
+    const phrase = (x: string) => {
+      const o = CADENCES[x];
+      const k: Key = keyFromName(o.key).mode === ref.mode ? target : { tonic: target.tonic, mode: keyFromName(o.key).mode };
+      const lead2 = progressionInKey(k.mode === 'major' ? ['C', 'Am'] : ['Am', 'C/G'], k.mode === 'major' ? 'C' : 'Am', k);
+      return progressionEvents(k, [...lead2, ...progressionInKey(o.chords, o.key, k)], { bpm: 80, beats: 2, style: 'block' }).events;
+    };
     return choiceQ({
       skill, item: id, columns: 2,
       prompt: 'Cadence type?',
       options: ids.map((x) => ({ value: x, label: CADENCES[x].name })), correct: id,
       audio: play.events, audioLabel: 'Play phrase',
       explain: `${c.name}: ${chords.join(' – ')}. ${c.why}`,
+      optionAudio: phrase,
+      hint: 'Only the last two chords decide the cadence — the hint plays just those. Where does the bass go, and is the final chord the tonic?',
+      hintAudio: { label: 'Last two chords', events: progressionEvents(target, chords.slice(-2), { bpm: 80, beats: 2, style: 'block' }).events },
     });
   };
 }
@@ -160,6 +194,12 @@ export function rootMotionEar(skill: string) {
       sub: 'Ignore the chord qualities — follow the bass.',
       options: nearOptions(opts, String(m), 8, ctx.rnd), correct: String(m),
       audio, audioLabel: 'Play',
+      hint: 'Hum only the bass of each chord — the hint plays the two bass notes alone. Up or down, and how far?',
+      hintAudio: { label: 'Bass notes alone', events: [ev(a[0], 0, 1.2, 100, PART.bass), ev(b[0], 1.3, 1.4, 100, PART.bass)] },
+      optionAudio: (v) => {
+        const other = chordMidis(mod(r1 + Number(v), 12), q2, undefined, a.slice(1));
+        return [...chordEvents(a, { dur: 1.3 }), ...chordEvents(other, { start: 1.4, dur: 1.5 })];
+      },
       explain: `${chordSymbol(spellPc(r1), q1)} → ${chordSymbol(spellPc(r2), q2)}: ${MOTION_LABEL[m]}. ${m === 5 ? 'Up a 4th = the strongest functional motion (ii→V→I).' : m === 11 ? 'Down a half step: the tritone-sub resolution (♭II7→I).' : m === 6 ? 'Tritone: V7 → subV7 swap.' : m === 4 || m === 8 ? 'Major-3rd motion: Coltrane / chromatic-mediant territory.' : ''}`.trim(),
     });
   };
@@ -172,9 +212,12 @@ export function scaleEar(skill: string, scaleIds: string[]) {
   return (ctx: GenContext): Question => {
     const sid = ctx.pickItem(scaleIds);
     const tonic = randInt(ctx.rnd, 55, 63);
-    const run = scaleEvents(tonic, sid, 'updown', 0.22);
-    const end = eventsEnd(run);
-    const audio: NoteEvent[] = [...run, ev(tonic - 24, 0, end, 70, PART.bass), ev(tonic - 12, 0, end, 60, PART.bass)];
+    const overDrone = (id: string): NoteEvent[] => {
+      const run = scaleEvents(tonic, id, 'updown', 0.22);
+      const end = eventsEnd(run);
+      return [...run, ev(tonic - 24, 0, end, 70, PART.bass), ev(tonic - 12, 0, end, 60, PART.bass)];
+    };
+    const audio = overDrone(sid);
     const opts = scaleIds.map((s) => ({ value: s, label: SCALE_BY_ID[s].name }));
     const s = SCALE_BY_ID[sid];
     return choiceQ({
@@ -184,6 +227,11 @@ export function scaleEar(skill: string, scaleIds: string[]) {
       options: nearOptions(opts, sid, 8, ctx.rnd), correct: sid,
       audio,
       explain: `${s.name}: ${s.formula}. ${s.character} ${s.usage}`,
+      optionAudio: overDrone,
+      hint: skill === 'ear.modes'
+        ? 'Major or minor 3rd first. Then listen for the one note that differs from plain major or natural minor: a raised 4th, a flat 7th, a natural 6th, a flat 2nd, a flat 5th.'
+        : 'Count the notes: six means a symmetric whole-step scale, eight a diminished or bebop scale. Then listen to the bottom: a ♭2 and ♯2 below a major 3rd? A raised 4th with a flat 7th? A minor 3rd with a major 6th and 7th?',
+      hintAudio: { label: 'Slower, going up', events: [...scaleEvents(tonic, sid, 'up', 0.42), ev(tonic - 24, 0, 8 * 0.42, 70, PART.bass)] },
     });
   };
 }
@@ -219,6 +267,8 @@ export function melodyEcho(skill: string, length: number, chromatic: boolean) {
       audio, audioLabel: 'Cadence + line',
       show: { keyboard: keysVisual([notes[0]], () => 'start', () => 'target') },
       input: { kind: 'sequence', length: notes.length, startHint: notes[0] },
+      hint: `${keyName(k)}, starting on ${pcName(notes[0])}. Most moves are steps: decide up or down, then check the note against the key.${chromatic ? ' The last three notes circle the target: step above, half step below, target.' : ''}`,
+      hintAudio: { label: 'The line, slower', events: melodyEvents(notes, 0.7) },
       check: (a) => {
         if (a.kind !== 'notes') return { correct: false };
         const right = a.notes.filter((m, i) => mod(m, 12) === target[i]).length;

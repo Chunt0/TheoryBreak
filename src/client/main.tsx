@@ -6,6 +6,7 @@ import { store } from './app/store';
 import { initSynthFromStore } from './app/synthState';
 import { wireLive } from './app/live';
 import { App } from './ui/App';
+import { flushPracticeSets } from './ui/learn/ExerciseRunner';
 
 function applySettings(): void {
   const s = store.get().settings;
@@ -33,7 +34,19 @@ const unlock = () => {
 };
 window.addEventListener('pointerdown', unlock);
 window.addEventListener('keydown', unlock);
-window.addEventListener('pagehide', () => store.flush());
+window.addEventListener('pagehide', () => {
+  flushPracticeSets();
+  store.flush();
+});
+
+// Space/Enter drive the drills. A button keeps focus after a mouse click, and
+// the next Space/Enter would silently press it again ("Next block" mid-question),
+// so mouse-clicked buttons give focus back. Keyboard-focused buttons keep it.
+document.addEventListener('click', (e) => {
+  if (e.detail === 0) return;
+  const el = (e.target as Element | null)?.closest?.('button, a.btn, [role="button"]');
+  if (el instanceof HTMLElement) el.blur();
+});
 
 void store.syncFromServer().then(() => {
   applySettings();

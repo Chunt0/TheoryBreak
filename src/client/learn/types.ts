@@ -108,6 +108,8 @@ export interface Verdict {
   message?: string;
   /** marks to overlay on the reveal visual */
   reveal?: Visual;
+  /** the learner asked for the solution instead of answering (graded as a miss) */
+  revealed?: boolean;
 }
 
 export interface Question {
@@ -128,6 +130,16 @@ export interface Question {
   after?: NoteEvent[];
   /** let a played MIDI note answer a choice question (e.g. scale degrees) */
   noteToChoice?: (midi: number) => string | null;
+  /** what an answer option sounds like — after answering, compare yours with the right one */
+  optionAudio?: (value: string) => NoteEvent[];
+  /** spell a played pitch class the way this question's chord/key spells it */
+  labelPc?: (pc: number) => string;
+  /** a nudge for this question that stops short of the answer */
+  hint?: string;
+  /** a listening aid for the hint (e.g. the bass line alone, or slower) */
+  hintAudio?: { label: string; events: NoteEvent[] };
+  /** library topic that teaches this question (overrides the skill's lesson) */
+  lesson?: string;
   /** rhythm to play (with count-in clicks) instead of / in addition to notes */
   rhythmAudio?: { pattern: RhythmPattern; bpm: number };
 }
@@ -157,6 +169,10 @@ export interface Skill {
   gen: (ctx: GenContext) => Question;
   /** ear = audio-only, keys = answered on the keyboard, recall = fast theory recall */
   tags: ('ear' | 'keys' | 'rhythm' | 'recall')[];
+  /** library topic that teaches the concept */
+  lesson: string;
+  /** how to work any question of this drill out, step by step */
+  method: string[];
 }
 
 export type { NoteEvent };

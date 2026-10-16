@@ -6,8 +6,9 @@ DX7-style FM synth with an editor you can actually use.
 - **Theory, not technique.** Intermediate level. Jazz, funk, R&B/gospel and Bach/common-practice vocabulary.
 - **Jump in anywhere.** Nothing is locked. A library of dense reference topics, a gym of 58 drill types, and a
   planner that builds a 15-minute session from what's due, what's weak and what you haven't tried.
-- **Hardware-first.** Keys answer "play this chord/line" drills, pads 1–8 answer multiple choice and tap
-  rhythms, knobs/faders drive the synth. Works without the MiniLab too (computer keys A–K, digits 1–8).
+- **Computer keys or MIDI.** Everything works from the computer keyboard (piano layout on A–', digits 1–8 as
+  pads, Enter/Space to move on). Plug in a MIDI keyboard — MiniLab 3 or any other — and it is picked up
+  automatically: keys answer "play this chord/line" drills, pads answer and tap rhythms, knobs drive the synth.
 
 ## Run it (Docker)
 
@@ -50,17 +51,29 @@ the app still works there with the computer keyboard and on-screen keys.
 | Deep dive | 5 min | One library topic (least recently studied in your focus styles) + its drills |
 | Apply | 3 min | A short musical task in the Lab (reharmonise, guide-tone lines, funk vamps, counterpoint) |
 
-Skills use spaced repetition (due skills first, intervals grow when you're accurate) and items inside a
-skill are weighted toward what you miss. Pick 5/10/15/20 minutes and focus styles on the Today page.
+Skills use spaced repetition (due skills first, intervals grow when you're accurate — every Gym or Library set
+counts, and cramming a skill early doesn't inflate its interval) and items inside a skill are weighted toward
+what you miss. Pick 5/10/15/20 minutes and focus styles on the Today page. Leaving the workout to look something
+up pauses it; the Today page and the sidebar offer to resume.
+
+After a wrong ear-training answer, **▶ Yours / ▶ Right** play what you picked against the answer, and every
+option can be clicked to hear it.
 
 ## What's inside
 
-- **Library** — 30 topics: tensions & avoid notes, chord–scale, melodic-minor harmony, diminished/whole-tone,
+- **Library** — 37 lessons, each with explanation, sound examples, at least one worked example and a
+  "working it out" section for every drill it teaches. Foundations: intervals, 7th chords, diatonic 7ths,
+  modes, scale degrees, root motion, subdivision. Then: tensions & avoid notes, chord–scale, melodic-minor harmony, diminished/whole-tone,
   ii–V–I & guide tones, minor ii–V, tritone subs, secondary dominants, turnarounds, backdoor/modal interchange,
   rhythm changes, jazz & Bird blues, Coltrane changes, modal/quartal, upper structures, voicings, bebop
   language, reharmonisation, funk harmony & groove, neo-soul, gospel, four-part voice leading, counterpoint &
   suspensions, figured bass, chromatic harmony (N6, augmented sixths), sequences, fugue, cadences, clave.
-- **Gym** — every drill on demand (ear, harmony, jazz, funk/soul, Bach, rhythm) with mastery and review dates.
+- **Gym** — every drill on demand (ear, harmony, jazz, funk/soul, Bach, rhythm) with mastery, review dates and
+  a link to the lesson that teaches it.
+- **? on every question** — a hint for that specific question (plus a listening aid where it helps: the bass
+  line alone, the last two chords, a slow arpeggio, the top note folded into the octave…), the step-by-step
+  method for the drill, **Show solution** (counts as a miss, so the drill comes back sooner) and the lesson in a
+  side drawer, so you never lose your place in a workout.
 - **Lab** — *Progression Lab* (numerals or chord symbols, MIDI chord capture with automatic Roman-numeral
   analysis, swing/funk/ballad comping with bass & drums, presets, saved sketches); *Changes Trainer*
   (improvise over a loop, live chord-tone / tension / outside feedback and a downbeat score);
@@ -69,6 +82,26 @@ skill are weighted toward what you miss. Pick 5/10/15/20 minutes and focus style
   maths; all 32 algorithms), with clickable algorithm charts, draggable envelopes, keyboard-scaling curves,
   live operator meters, scope/spectrum, undo/redo, 17 original voices, and `.syx` import/export (32-voice
   banks and single voices).
+
+## Playing on the computer keyboard
+
+The letters are printed on the on-screen keys at the bottom of every page. Press **?** in the app for the full
+sheet.
+
+| Keys | Does |
+|---|---|
+| `A W S E D F T G Y H U J K O L P ; '` | play C to F an octave up (piano layout: white keys on the home row, black keys above) |
+| `Z` / `X` | octave down / up |
+| `1`–`8` | pads: pick answer 1–8, after answering go on; DX7 Lab: operators 1–6, voice ◀ ▶ |
+| `Enter` / `Space` | next question · start a rhythm count-in · submit a chord you built |
+| `Space` | tap (rhythm drills) |
+| `Backspace` | clear the chord being built · take back the last note of a line |
+| `R` | replay the question audio |
+| `?` | on a question: hint, method, solution, lesson · elsewhere: the shortcut sheet · `Esc` closes |
+
+Chord drills: on the computer keys (or by clicking keys) you **build the chord note by note** — press a key again
+to drop it — and submit with Enter, so no key-rollover limits get in the way. On a MIDI keyboard you hold the
+chord and release. Line drills (scales, dictation) check pitch classes, so the octave doesn't matter.
 
 ## Arturia MiniLab 3
 
@@ -90,7 +123,7 @@ tap-latency calibration for the rhythm drills.
 ```bash
 bun install
 bun run dev        # rebuilds the client on change, serves on http://localhost:7777
-bun test           # theory, DSP, sysex, generators, planner
+bun test           # theory, DSP, sysex, generators, planner, content checks (SATB analyser, interchange)
 bun run typecheck  # tsc --noEmit
 bun run build && bun run start
 ```

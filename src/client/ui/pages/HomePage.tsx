@@ -6,13 +6,17 @@ import { planSession } from '../../learn/session';
 import { SKILLS } from '../../learn/skills';
 import { dayKey, isDue, streakDays } from '../../learn/srs';
 import { input } from '../../midi/input';
+import { useMini } from '../../app/createStore';
+import { clearWorkout, inProgress, workout } from '../../app/workout';
+import { Icon } from '../Icon';
 
 const ALL_TAGS: Tag[] = ['core', 'jazz', 'funk', 'soul', 'bach', 'rhythm'];
-const KIND_ICON: Record<string, string> = { ear: '👂', gym: '🏋', topic: '📖', apply: '🧪', groove: '🥁', practice: '🎯' };
+const KIND_ICON: Record<string, string> = { ear: 'ear', gym: 'gym', topic: 'topic', apply: 'lab', groove: 'groove', practice: 'target' };
 
 export function HomePage() {
   const progress = useStore((d) => d.progress);
   const settings = useStore((d) => d.settings);
+  const running = useMini(workout, (w) => (inProgress(w) ? w : null));
   const plan = useMemo(() => planSession(progress, settings.sessionMinutes, settings.focusTags), [progress, settings.sessionMinutes, settings.focusTags]);
   const streak = streakDays(progress);
   const today = Math.round((progress.daily[dayKey()] ?? 0) / 60);
@@ -55,7 +59,7 @@ export function HomePage() {
           <div className="plan-list">
             {plan.blocks.map((b, i) => (
               <div key={i} className="plan-item">
-                <span className="num">{KIND_ICON[b.kind]}</span>
+                <span className="num"><Icon name={KIND_ICON[b.kind]} /></span>
                 <div>
                   <strong>{b.title}</strong>
                   <div className="small muted">{b.why}</div>
@@ -65,7 +69,14 @@ export function HomePage() {
             ))}
           </div>
           <div className="row end" style={{ marginTop: 14 }}>
-            <button type="button" className="btn primary big" onClick={() => go('workout')}>Start {settings.sessionMinutes}-minute workout</button>
+            {running ? (
+              <>
+                <button type="button" className="btn ghost" onClick={() => { clearWorkout(); go('workout'); }}>Start over</button>
+                <button type="button" className="btn primary big" onClick={() => go('workout')}>Resume workout · block {running.idx + 1}/{running.plan.blocks.length}</button>
+              </>
+            ) : (
+              <button type="button" className="btn primary big" onClick={() => go('workout')}>Start {settings.sessionMinutes}-minute workout</button>
+            )}
           </div>
         </section>
 
@@ -98,8 +109,11 @@ export function HomePage() {
           </div>
           {!input.anyMidiConnected ? (
             <div className="card">
-              <h3>Connect the MiniLab 3</h3>
-              <p className="small muted">Plug it in via USB and allow MIDI access when Chrome/Edge asks. Keys play and answer, pads 1–8 pick answers, knobs/faders drive the DX7. Until then, the computer keys A–K play notes and 1–8 act as pads.</p>
+              <h3>No controller? Use the computer keys</h3>
+              <p className="small muted">
+                <span className="kbd">A</span> <span className="kbd">W</span> <span className="kbd">S</span> … <span className="kbd">'</span> play a piano octave and a half (letters are printed on the keys below), <span className="kbd">Z</span>/<span className="kbd">X</span> shift octaves, <span className="kbd">1</span>–<span className="kbd">8</span> are the pads, <span className="kbd">Enter</span> moves on. Press <span className="kbd">?</span> for everything.
+              </p>
+              <p className="small muted">A MIDI keyboard (MiniLab 3 or any other) works the moment it's plugged in — allow MIDI access when Chrome/Edge asks.</p>
               <button type="button" className="btn small" onClick={() => void input.requestMidi()}>Request MIDI access</button>
             </div>
           ) : null}

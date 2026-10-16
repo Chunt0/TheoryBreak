@@ -32,7 +32,9 @@ export type Block =
   | { t: 'prog'; key: string; tokens: string[]; caption?: string; bpm?: number; style?: CompStyle; beats?: number | number[] }
   | { t: 'table'; head: string[]; rows: string[][] }
   | { t: 'rhythm'; cells?: string[]; per?: number; onsets?: number[]; caption?: string; bpm?: number }
-  | { t: 'drill'; skill: string; count?: number; label?: string };
+  | { t: 'drill'; skill: string; count?: number; label?: string }
+  /** a step-by-step worked example, optionally with sound */
+  | { t: 'example'; title: string; steps: string[]; music?: Music };
 
 export interface Topic {
   id: string;

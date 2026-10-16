@@ -32,15 +32,20 @@ export function recordAnswer(p: ProgressData, skill: string, item: string, corre
 }
 
 /**
- * Mutates `p`: after a practice block, push the skill's next review out
- * (good accuracy) or pull it in (struggling). Classic expanding intervals.
+ * Mutates `p`: after a practice set, push the skill's next review out
+ * (good accuracy) or pull it in (struggling). Classic expanding intervals —
+ * but reviewing early (cramming) never grows the interval, and a set of one
+ * or two questions only nudges it.
  */
 export function scheduleSkill(p: ProgressData, skill: string, attempts: number, correct: number, now = Date.now()): void {
   if (attempts === 0) return;
   const s = (p.skills[skill] ??= newSkillStat(now));
   const acc = correct / attempts;
-  if (acc >= 0.85) s.interval = s.interval <= 0 ? 1 : Math.min(60, s.interval * 2.2);
-  else if (acc >= 0.6) s.interval = Math.max(0.5, s.interval * 1.15);
+  const early = s.interval > 0 && now < s.due;
+  if (acc >= 0.85) {
+    if (s.interval <= 0) s.interval = 1;
+    else if (!early) s.interval = Math.min(60, s.interval * (attempts >= 3 ? 2.2 : 1.4));
+  } else if (acc >= 0.6) s.interval = Math.max(0.5, early ? s.interval : s.interval * 1.15);
   else s.interval = 0.25;
   s.due = now + s.interval * DAY;
 }

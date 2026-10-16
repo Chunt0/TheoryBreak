@@ -72,6 +72,12 @@ export function spellPc(p: number, spelling: Spelling = 'auto'): Note {
   return { ...t[mod(p, 12)] };
 }
 
+/** Lead-sheet spelling: C♭ F♭ E♯ B♯ and double accidentals become their plain enharmonic. */
+export function practical(n: Note, spelling: Spelling = 'auto'): Note {
+  const awkward = Math.abs(n.acc) > 1 || (n.acc === -1 && (n.letter === 0 || n.letter === 3)) || (n.acc === 1 && (n.letter === 2 || n.letter === 6));
+  return awkward ? spellPc(pc(n), spelling) : n;
+}
+
 export function pcName(p: number, spelling: Spelling = 'auto'): string {
   return noteName(spellPc(p, spelling));
 }

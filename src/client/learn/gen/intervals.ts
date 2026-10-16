@@ -1,6 +1,6 @@
 import { INTERVALS, mod, noteName, pc, pcName, shuffle, spellPc, transpose, uniqueBy } from '../../theory/core';
 import type { GenContext, Question } from '../types';
-import { intervalEvents } from '../music';
+import { ev, intervalEvents } from '../music';
 import { choiceQ, keysVisual, nearOptions, randInt } from './helpers';
 
 /** How each interval functions harmonically — more useful than nursery-rhyme mnemonics. */
@@ -46,12 +46,24 @@ export function intervalEar(skill: string, set: readonly string[], dirs: Interva
     const high = low + iv.semis;
     const opts = nearOptions(intervalOptions(set), id, 8, ctx.rnd);
     const dirWord = dir === 'asc' ? 'Ascending' : dir === 'desc' ? 'Descending' : 'Harmonic';
+    const compound = iv.semis > 12;
+    // the listening aid: bottom note held, top note on its own — or, for compounds, folded into one octave
+    const top = compound ? high - 12 : high;
+    const hintAudio = {
+      label: compound ? 'Top note an octave lower' : 'Bottom note held, top note alone',
+      events: [ev(low, 0, 2.4, 78), ev(top, 1.1, 1.3, 96)],
+    };
+    const hint = compound
+      ? `Bottom note ${pcName(low)}. Fold the top note down an octave (the hint plays it) and name that simple interval, then add 7 to the number.`
+      : `${dir === 'desc' ? 'Top' : 'Bottom'} note ${pcName(dir === 'desc' ? high : low)}. Hum both notes: a step, a chord skip, an open 4th/5th, or a wide 6th/7th? Then major or minor.`;
     return choiceQ({
       skill, item,
       prompt: 'Name the interval',
       sub: `${dirWord}. Pads 1–${opts.length}${dir === 'asc' ? ', or play the top note' : ''}.`,
       options: opts, correct: id,
       audio: intervalEvents(low, high, dir),
+      optionAudio: (v) => intervalEvents(low, low + INTERVALS[v].semis, dir),
+      hint, hintAudio,
       explain: `${iv.name} (${iv.semis} semitones) — ${INTERVAL_ROLE[id] ?? ''}.`,
       reveal: { keyboard: keysVisual([low, high], (m) => (m === low ? pcName(low) : `${pcName(high)}`)) },
       noteToChoice:
@@ -87,6 +99,7 @@ export function intervalSpell(skill: string, set: readonly string[]) {
       skill, item: id,
       prompt: `${iv.name} above ${noteName(root)}?`,
       sub: 'Spelled correctly (letter distance matters).',
+      hint: `Count ${iv.num} letter names up from ${noteName(root)}, counting ${noteName(root).charAt(0)} as 1. Then set the accidental so the distance is ${iv.semis} semitones.`,
       options: opts, correct: noteName(correct),
       explain: `${noteName(root)} + ${iv.name.toLowerCase()} (${iv.num} letters, ${iv.semis} semitones) = ${noteName(correct)}.`,
     });

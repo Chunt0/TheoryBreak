@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { href } from '../../app/router';
 import { store } from '../../app/store';
+import { useMini } from '../../app/createStore';
+import { clearWorkout, endWorkout, nextBlock, recordWorkoutAnswer, startWorkout, workout, type ActiveWorkout } from '../../app/workout';
 import { TOPIC_BY_ID } from '../../learn/library';
-import { planSession, type SessionBlock, type SessionPlan } from '../../learn/session';
-import { addPracticeTime, scheduleSkill } from '../../learn/srs';
-import type { BlockLog } from '../../learn/types';
-import { ExerciseRunner, type RunStats } from '../learn/ExerciseRunner';
+import type { SessionBlock } from '../../learn/session';
+import { addPracticeTime } from '../../learn/srs';
+import { ExerciseRunner } from '../learn/ExerciseRunner';
 import { TopicView } from '../learn/TopicView';
 import { stopAll } from '../PlayButton';
 import { ChangesTrainer, ProgressionLab } from './LabPage';
@@ -16,74 +17,48 @@ const fmt = (ms: number) => {
 };
 
 export function WorkoutPage() {
-  const [plan] = useState<SessionPlan>(() => {
-    const d = store.get();
-    return planSession(d.progress, d.settings.sessionMinutes, d.settings.focusTags);
-  });
-  const [idx, setIdx] = useState(0);
-  const [blockStart, setBlockStart] = useState(() => performance.now());
-  const [sessionStart] = useState(() => performance.now());
-  const [now, setNow] = useState(() => performance.now());
-  const [blockDone, setBlockDone] = useState<RunStats | null>(null);
-  const [finished, setFinished] = useState(false);
-  const logs = useRef<BlockLog[]>([]);
-  const skillAgg = useRef<Record<string, { attempts: number; correct: number }>>({});
-  const saved = useRef(false);
+  const w = useMini(workout, (x) => x);
+  const [now, setNow] = useState(() => Date.now());
+
+  // arriving here without a session (or after a finished one) starts a new one
+  useEffect(() => {
+    const cur = workout.get();
+    if (!cur || (cur.finished && cur.saved)) startWorkout();
+  }, []);
 
   useEffect(() => {
-    const t = setInterval(() => setNow(performance.now()), 500);
+    const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
   }, []);
 
-  const total = plan.blocks.reduce((s, b) => s + b.seconds, 0) * 1000;
-  const block = plan.blocks[idx];
-  const blockMs = block ? block.seconds * 1000 : 0;
-  const blockLeft = blockStart + blockMs - now;
-
-  const closeBlock = (stats: RunStats | null) => {
-    const b = plan.blocks[idx];
-    if (!b) return;
-    const s = stats ?? { attempts: 0, correct: 0, bySkill: {} };
-    logs.current.push({ kind: b.kind, title: b.title, attempts: s.attempts, correct: s.correct, seconds: Math.round((performance.now() - blockStart) / 1000) });
-    for (const [k, v] of Object.entries(s.bySkill)) {
-      const a = (skillAgg.current[k] ??= { attempts: 0, correct: 0 });
-      a.attempts += v.attempts;
-      a.correct += v.correct;
-    }
-  };
-
-  const advance = (stats: RunStats | null) => {
-    closeBlock(stats);
-    stopAll();
-    setBlockDone(null);
-    if (idx + 1 >= plan.blocks.length) setFinished(true);
-    else {
-      setIdx(idx + 1);
-      setBlockStart(performance.now());
-    }
-  };
-
+  // a finished session is logged once; leaving its summary clears it
   useEffect(() => {
-    if (!finished || saved.current) return;
-    saved.current = true;
-    const seconds = Math.round((performance.now() - sessionStart) / 1000);
+    if (!w?.finished || w.saved) return;
+    // a session paused for a long lookup shouldn't log an hour of practice
+    const planned = w.plan.blocks.reduce((s, b) => s + b.seconds, 0);
+    const seconds = Math.min(Math.round((Date.now() - w.sessionStart) / 1000), planned + 600);
     store.update((d) => {
-      d.progress.sessions = [...d.progress.sessions.slice(-199), { at: Date.now(), seconds, blocks: logs.current }];
+      d.progress.sessions = [...d.progress.sessions.slice(-199), { at: Date.now(), seconds, blocks: w.logs }];
       addPracticeTime(d.progress, seconds);
-      for (const [k, v] of Object.entries(skillAgg.current)) scheduleSkill(d.progress, k, v.attempts, v.correct);
     });
-  }, [finished, sessionStart]);
+    workout.set((x) => (x ? { ...x, saved: true } : x));
+  }, [w]);
+  useEffect(() => () => {
+    if (workout.get()?.finished) clearWorkout();
+  }, []);
 
-  if (finished) {
-    const attempts = logs.current.reduce((s, l) => s + l.attempts, 0);
-    const correct = logs.current.reduce((s, l) => s + l.correct, 0);
+  if (!w) return null;
+
+  if (w.finished) {
+    const attempts = w.logs.reduce((s, l) => s + l.attempts, 0);
+    const correct = w.logs.reduce((s, l) => s + l.correct, 0);
     return (
       <div className="page">
         <div className="card">
           <h1>Workout done</h1>
-          <p className="muted">{fmt(performance.now() - sessionStart)} · {attempts ? `${correct}/${attempts} correct (${Math.round((correct / attempts) * 100)}%)` : 'no graded reps'}</p>
+          <p className="muted">{fmt(w.logs.reduce((s, l) => s + l.seconds, 0) * 1000)} · {attempts ? `${correct}/${attempts} correct (${Math.round((correct / attempts) * 100)}%)` : 'no graded reps'}</p>
           <div className="plan-list">
-            {logs.current.map((l, i) => (
+            {w.logs.map((l, i) => (
               <div key={i} className="plan-item done">
                 <span className="num">✓</span>
                 <div><strong>{l.title}</strong><div className="small muted">{l.attempts ? `${l.correct}/${l.attempts} correct` : 'completed'} · {fmt(l.seconds * 1000)}</div></div>
@@ -98,12 +73,23 @@ export function WorkoutPage() {
     );
   }
 
+  const { plan, idx } = w;
+  const total = plan.blocks.reduce((s, b) => s + b.seconds, 0) * 1000;
+  const block = plan.blocks[idx];
+  const blockMs = block.seconds * 1000;
+  const blockLeft = w.blockStart + blockMs - now;
+
+  const advance = () => {
+    stopAll();
+    nextBlock();
+  };
+
   return (
     <div className="page">
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="row between">
           <div className="row" style={{ gap: 18 }}>
-            <div className="timer-big">{fmt(total - (now - sessionStart))}</div>
+            <div className="timer-big">{fmt(total - (now - w.sessionStart))}</div>
             <div>
               <div className="small muted">Block {idx + 1}/{plan.blocks.length}</div>
               <strong>{block.title}</strong>
@@ -111,26 +97,41 @@ export function WorkoutPage() {
           </div>
           <div className="row">
             <span className={`badge ${blockLeft < 0 ? 'accent' : ''}`}>{blockLeft < 0 ? 'time — finish this one' : `${fmt(blockLeft)} left`}</span>
-            <button type="button" className="btn small" onClick={() => advance(blockDone)}>Next block →</button>
-            <button type="button" className="btn small ghost" onClick={() => { closeBlock(blockDone); setFinished(true); }}>End</button>
+            <button type="button" className="btn small" onClick={advance}>Next block →</button>
+            <button type="button" className="btn small ghost" onClick={() => { stopAll(); endWorkout(); }}>End</button>
           </div>
         </div>
         <div className="blocks-bar" style={{ marginTop: 10 }}>
           {plan.blocks.map((b, i) => (
             <div key={i} className={`blk ${i < idx ? 'done' : ''}`} style={{ flex: b.seconds }}>
-              <i style={{ width: i === idx ? `${Math.min(100, ((now - blockStart) / blockMs) * 100)}%` : i < idx ? '100%' : '0%' }} />
+              <i style={{ width: i === idx ? `${Math.min(100, ((now - w.blockStart) / blockMs) * 100)}%` : i < idx ? '100%' : '0%' }} />
             </div>
           ))}
         </div>
         <div className="small muted" style={{ marginTop: 6 }}>{block.why}</div>
       </div>
 
-      <BlockBody key={idx} block={block} deadline={blockStart + blockMs} done={blockDone} onDone={setBlockDone} onNext={advance} />
+      <BlockBody key={`${w.sessionStart}-${idx}`} w={w} block={block} onNext={advance} />
     </div>
   );
 }
 
-function BlockBody({ block, deadline, done, onDone, onNext }: { block: SessionBlock; deadline: number; done: RunStats | null; onDone: (s: RunStats) => void; onNext: (s: RunStats | null) => void }) {
+// stable identities: the page re-renders twice a second for the clock
+const onWorkoutAnswer = (_: string, correct: boolean) => recordWorkoutAnswer(correct);
+const onBlockFinished = () => workout.set((x) => (x ? { ...x, blockDone: true } : x));
+
+function BlockBody({ w, block, onNext }: { w: ActiveWorkout; block: SessionBlock; onNext: () => void }) {
+  // the runner works in performance.now() time
+  const [deadline] = useState(() => performance.now() + (w.blockStart + block.seconds * 1000 - Date.now()));
+  const done = w.blockDone ? <BlockDone stats={w.current} onNext={onNext} /> : null;
+  const runner = (
+    <ExerciseRunner
+      skills={block.skills}
+      deadline={deadline}
+      onAnswer={onWorkoutAnswer}
+      onFinish={onBlockFinished}
+    />
+  );
   if (block.kind === 'topic' && block.topicId) {
     const topic = TOPIC_BY_ID[block.topicId];
     return (
@@ -138,7 +139,7 @@ function BlockBody({ block, deadline, done, onDone, onNext }: { block: SessionBl
         <div className="card"><h2>{topic.title}</h2><TopicView topic={topic} /></div>
         <div className="card" style={{ position: 'sticky', top: 70 }}>
           <h3>Drill it</h3>
-          {done ? <BlockDone stats={done} onNext={() => onNext(done)} /> : <ExerciseRunner skills={block.skills} deadline={deadline} onFinish={onDone} />}
+          {done ?? runner}
         </div>
       </div>
     );
@@ -163,7 +164,7 @@ function BlockBody({ block, deadline, done, onDone, onNext }: { block: SessionBl
             {['Rough', 'OK', 'Nailed it'].map((label, i) => (
               <button key={label} type="button" className="btn small" onClick={() => {
                 store.update((d) => { d.progress.challenges[c.id] = { last: Date.now(), rating: i + 1 }; });
-                onNext(null);
+                onNext();
               }}>{label}</button>
             ))}
           </div>
@@ -171,19 +172,25 @@ function BlockBody({ block, deadline, done, onDone, onNext }: { block: SessionBl
       </div>
     );
   }
-  return (
-    <div className="card">
-      {done ? <BlockDone stats={done} onNext={() => onNext(done)} /> : <ExerciseRunner skills={block.skills} deadline={deadline} onFinish={onDone} />}
-    </div>
-  );
+  return <div className="card">{done ?? runner}</div>;
 }
 
-function BlockDone({ stats, onNext }: { stats: RunStats; onNext: () => void }) {
+function BlockDone({ stats, onNext }: { stats: { attempts: number; correct: number }; onNext: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onNext();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onNext]);
   return (
     <div className="center col" style={{ alignItems: 'center' }}>
       <h3>Block complete</h3>
       <p className="muted">{stats.attempts ? `${stats.correct}/${stats.attempts} correct` : 'Done'}</p>
-      <button type="button" className="btn primary" onClick={onNext}>Next block →</button>
+      <button type="button" className="btn primary" onClick={onNext}>Next block ⏎</button>
     </div>
   );
 }

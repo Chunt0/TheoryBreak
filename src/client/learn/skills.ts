@@ -12,13 +12,14 @@ import { cadenceEar, chordEar, degreeEar, melodyEcho, progressionEar, rootMotion
 import { chromaticChordQ, figuredBassQ, voiceLeadingQ } from './gen/bach';
 import { claveEar, rhythmEar, rhythmTap } from './gen/rhythm';
 import { conceptQ } from './gen/concepts';
+import { SKILL_HELP } from './help';
 
 type Gen = (ctx: GenContext) => Question;
 
 const ALL_INTERVALS = SIMPLE_INTERVAL_IDS.filter((i) => i !== 'P1');
 const COMPOUND = ['m9', 'M9', 'm10', 'M10', 'P11', 'A11', 'P12', 'm13', 'M13'];
 
-const S = (id: string, name: string, area: Area, tags: Skill['tags'], desc: string, gen: Gen): Skill => ({ id, name, area, tags, desc, gen });
+const S = (id: string, name: string, area: Area, tags: Skill['tags'], desc: string, gen: Gen): Skill => ({ id, name, area, tags, desc, gen, ...SKILL_HELP[id] });
 
 export const SKILLS: Skill[] = [
   // ---------------------------------------------------------------- ear

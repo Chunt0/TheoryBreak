@@ -36,6 +36,8 @@ class AudioEngine {
   private clickBus: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private starting: Promise<void> | null = null;
+  /** live notes played while the worklet is still loading (the very first key press) */
+  private pending: WorkletIn[] = [];
   private patches: Patch[] = [presetByName('TINE PIANO'), presetByName('LESSON KEYS'), presetByName('ROUND BASS')];
   private configs: PartConfig[] = [
     defaultPartConfig(),
@@ -112,6 +114,7 @@ class AudioEngine {
     this.noise = this.makeNoise(ctx);
     this.patches.forEach((patch, part) => this.post({ t: 'patch', part, patch }));
     this.configs.forEach((config, part) => this.post({ t: 'config', part, config }));
+    this.pending.splice(0).forEach((m) => this.post(m));
     if (this.statusListeners.size) this.post({ t: 'status', enabled: true });
     await ctx.resume();
     this.setState(ctx.state === 'running' ? 'running' : 'suspended');
@@ -141,7 +144,8 @@ class AudioEngine {
   }
 
   private post(msg: WorkletIn): void {
-    this.node?.port.postMessage(msg);
+    if (this.node) this.node.port.postMessage(msg);
+    else if (this.starting && !('at' in msg && msg.at) && this.pending.length < 64) this.pending.push(msg);
   }
 
   private impulse(ctx: AudioContext, seconds: number): AudioBuffer {

@@ -49,16 +49,26 @@ function inFocus(s: Skill, focus: Tag[]): boolean {
   return tags.includes('core') || tags.some((t) => focus.includes(t));
 }
 
+/** Deterministic 0..1 jitter per skill and day: breaks ties without reshuffling within a day. */
+function dayJitter(id: string, day: number): number {
+  let h = 2166136261 ^ day;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return ((h >>> 0) % 1000) / 1000;
+}
+
 /** Priority order: due first, then never-tried, then weakest; recently seen sinks. */
 export function rankSkills(p: ProgressData, ids: string[], now = Date.now()): string[] {
+  const day = Math.floor(now / 86_400_000);
   const score = (id: string) => {
     const s = p.skills[id];
-    if (!s || s.n === 0) return 0.25;
+    // unseen skills tie with each other: rotate which ones come first day by day
+    if (!s || s.n === 0) return 0.25 + dayJitter(id, day) * 0.02;
     const overdue = Math.max(0, (now - s.due) / 86_400_000);
     const recent = now - s.lastSeen < 3_600_000 ? 0.5 : 0;
     return mastery(s) - Math.min(0.6, overdue * 0.15) - (isDue(s, now) ? 0.3 : 0) + recent;
   };
-  return [...ids].sort((a, b) => score(a) - score(b));
+  const scores = new Map(ids.map((id) => [id, score(id)]));
+  return [...ids].sort((a, b) => scores.get(a)! - scores.get(b)!);
 }
 
 /** Mix two never-seen skills into each pool at most, so new material arrives steadily. */

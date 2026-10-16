@@ -2,7 +2,7 @@
 // events for the audio engine, plus parsing of chord symbols and pitches.
 
 import { PART, type NoteEvent } from '../audio/engine';
-import { midiAtOrAbove, mod, noteName, noteToMidi, parseNote, pc, spellPc, type Note } from '../theory/core';
+import { midiAtOrAbove, mod, noteToMidi, parseNote, pc, practical, rawInterval, spellPc, transpose, type Note } from '../theory/core';
 import { CHORD_TYPES, chordPcs, chordSymbol } from '../theory/chords';
 import { parseRoman, prefersFlats, type Key, keyFromName } from '../theory/keys';
 import { scaleSemis } from '../theory/scales';
@@ -71,7 +71,8 @@ export function resolveChord(token: string, key: Key): ResolvedChord | null {
   const r = parseRoman(token, key);
   if (r) {
     const rootPc = pc(r.root);
-    return { rootPc, typeId: r.typeId, bassPc: rootPc, symbol: r.symbol, label: token };
+    // lead-sheet spelling: ♭II7 in B♭ is written B7, not C♭7
+    return { rootPc, typeId: r.typeId, bassPc: rootPc, symbol: chordSymbol(practical(r.root, prefersFlats(key) ? 'flat' : 'sharp'), r.typeId), label: token };
   }
   const s = parseChordSymbol(token);
   if (s) {
@@ -253,10 +254,21 @@ export function tonicMidi(k: Key, low = 55): number {
 
 export const pcOfMidi = (m: number): number => mod(m, 12);
 
-/** Transpose a reference-key progression into a target key. */
+/**
+ * Transpose a reference-key progression into a target key by spelled interval,
+ * so every chord keeps its function's spelling (♭III7 in C is E♭7, never D♯7);
+ * only chart-awkward roots (C♭, F♭, doubles…) are simplified.
+ */
 export function progressionInKey(chords: string[], refKey: string, target: Key): string[] {
   const ref = keyFromName(refKey);
-  const semis = mod(pc(target.tonic) - pc(ref.tonic), 12);
-  const flats = prefersFlats(target) || (target.mode === 'minor' && ['D', 'G', 'C', 'F', 'Bb', 'Eb'].includes(noteName(target.tonic).replace('♭', 'b')));
-  return chords.map((c) => transposeSymbol(c, semis, flats));
+  const side = prefersFlats(target) ? 'flat' : 'sharp';
+  const move = (n: Note): Note => {
+    const num = mod(n.letter - ref.tonic.letter, 7) + 1;
+    const semis = mod(pc(n) - pc(ref.tonic), 12);
+    return practical(transpose(target.tonic, rawInterval(num, semis)), side);
+  };
+  return chords.map((c) => {
+    const p = parseChordSymbol(c);
+    return p ? chordSymbol(move(p.root), p.typeId, p.bass ? move(p.bass) : null) : c;
+  });
 }

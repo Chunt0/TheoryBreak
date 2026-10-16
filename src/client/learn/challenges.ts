@@ -29,7 +29,7 @@ export const CHALLENGES: Challenge[] = [
     id: 'guide-blues', tags: ['jazz'], tool: 'changes', key: 'F', tokens: ['F7', 'Bb7', 'F7', 'Cm7', 'F7', 'Bb7', 'Bdim7', 'F7', 'Am7', 'D7', 'Gm7', 'C7'], bpm: 120, style: 'swing', beats: 4,
     title: 'Guide-tone line through a jazz blues',
     task: 'Play only 3rds and 7ths, one per bar on beat 1, moving by the smallest step. Then add one approach note before each target.',
-    checklist: ['Guide-tone score above 70%', 'No leaps bigger than a 3rd'],
+    checklist: ['Guide tones on 70%+ of chord changes', 'No leaps bigger than a 3rd'],
   },
   {
     id: 'minor-iiv', tags: ['jazz'], tool: 'changes', key: 'Cm', tokens: ['iiø7', 'V7b9', 'i6', 'i6'], bpm: 120, style: 'swing', beats: 4,
@@ -47,7 +47,7 @@ export const CHALLENGES: Challenge[] = [
     id: 'coltrane', tags: ['jazz'], tool: 'changes', key: 'B', tokens: ['Bmaj7', 'D7', 'Gmaj7', 'Bb7', 'Ebmaj7', 'Ebmaj7', 'Am7', 'D7'], bpm: 110, style: 'swing', beats: 2,
     title: 'Survive Giant Steps (slowly)',
     task: 'Play only the root, 3rd or 5th of each chord on its downbeat. Then outline each chord with a 1-2-3-5 cell.',
-    checklist: ['Chord-tone score above 60%', 'Heard the three key centres'],
+    checklist: ['Chord tones on 60%+ of chord changes', 'Heard the three key centres'],
   },
   {
     id: 'dorian-funk', tags: ['funk'], tool: 'changes', key: 'Ebm', tokens: ['i7', 'IV9'], bpm: 98, style: 'funk', beats: 4,
@@ -89,7 +89,7 @@ export const CHALLENGES: Challenge[] = [
     id: 'bach-sequence', tags: ['bach', 'jazz'], tool: 'changes', key: 'Am', tokens: ['i7', 'iv7', 'bVII7', 'bIIImaj7', 'bVImaj7', 'iiø7', 'V7', 'i7'], bpm: 100, style: 'swing', beats: 4,
     title: 'Cycle of fifths, two dialects',
     task: 'Treat it as a Baroque sequence first (one pattern repeated per chord), then as "Autumn Leaves" changes with guide tones.',
-    checklist: ['Kept the same motif through the sequence', 'Guide-tone score above 60%'],
+    checklist: ['Kept the same motif through the sequence', 'Guide tones on 60%+ of chord changes'],
   },
   {
     id: 'phrygian', tags: ['bach'], tool: 'lab', key: 'Am', tokens: ['Am', 'Dm/F', 'E', 'Am', 'Bb/D', 'E7', 'A'], bpm: 72, style: 'block', beats: 2,

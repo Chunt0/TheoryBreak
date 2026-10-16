@@ -88,20 +88,19 @@ async function handleState(req: Request): Promise<Response> {
   return json({ error: 'method not allowed' }, 405);
 }
 
-async function serveStatic(pathname: string): Promise<Response> {
+async function serveStatic(req: Request, pathname: string): Promise<Response> {
   const rel = normalize(decodeURIComponent(pathname)).replace(/^([/\\])+/, '');
   const full = resolve(DIST, rel || 'index.html');
   if (full !== DIST && !full.startsWith(DIST + sep)) return new Response('Not found', { status: 404 });
   let file = Bun.file(full);
   if (!(await file.exists()) || rel === '') file = Bun.file(join(DIST, 'index.html'));
   if (!(await file.exists())) return new Response('Client not built. Run `bun run build`.', { status: 503 });
-  const isHtml = file.name?.endsWith('.html');
-  return new Response(file, {
-    headers: {
-      'cache-control': isHtml ? 'no-cache' : 'public, max-age=300',
-      ...SECURITY_HEADERS,
-    },
-  });
+  // Bundles keep fixed names (main.js, dx7-processor.js), so every file is
+  // revalidated: an updated image never runs yesterday's JS with today's HTML.
+  const etag = `W/"${file.size.toString(36)}-${file.lastModified.toString(36)}"`;
+  const headers = { 'cache-control': 'no-cache', etag, ...SECURITY_HEADERS };
+  if (req.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers });
+  return new Response(file, { headers });
 }
 
 const server = Bun.serve({
@@ -116,7 +115,7 @@ const server = Bun.serve({
     if (url.pathname === '/api/health') return json({ ok: true });
     if (url.pathname === '/api/state') return handleState(req);
     if (req.method !== 'GET' && req.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
-    return serveStatic(url.pathname);
+    return serveStatic(req, url.pathname);
   },
   error(err) {
     console.error(err);

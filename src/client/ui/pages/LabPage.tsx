@@ -4,8 +4,8 @@ import { href } from '../../app/router';
 import { store, useStore, type SongIdea } from '../../app/store';
 import { input } from '../../midi/input';
 import { CHORD_TYPES, chordFormula, chordNotes, chordPcs, chordSymbol, chordToneLabel, detectChord, getChord } from '../../theory/chords';
-import { CHORD_SCALES, DOMINANT_USTS, guideTones, tensionLabel } from '../../theory/chordScale';
-import { mod, noteName, pc, pcName, spellPc } from '../../theory/core';
+import { CHORD_SCALES, DOMINANT_USTS, guideTones, tensionLabel, ustRoot } from '../../theory/chordScale';
+import { INTERVALS, mod, noteName, pc, pcName, spellPc } from '../../theory/core';
 import { diatonicChords, keyFromName, keyName, prefersFlats, type Key } from '../../theory/keys';
 import { PROGRESSIONS, PROG_GROUP_NAMES } from '../../theory/progressions';
 import { SCALES, SCALE_BY_ID, degreeInScale, scaleNotes, scalePcs } from '../../theory/scales';
@@ -150,7 +150,7 @@ export function ProgressionLab({ initial, compact = false }: { initial?: LabInit
         <div className="row" style={{ marginTop: 12 }}>
           <input type="text" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addText()} placeholder="Type: ii9 V13 Imaj9 · or Dm9 G13 Cmaj9 · or F/G" style={{ flex: 1, minWidth: 220 }} aria-label="Add chords" />
           <button type="button" className="btn small" onClick={addText}>Add</button>
-          <button type="button" className={`btn small ${capture ? 'active' : ''}`} onClick={() => setCapture(!capture)}>{capture ? '● Capturing MIDI chords' : '○ Capture from MiniLab'}</button>
+          <button type="button" className={`btn small ${capture ? 'active' : ''}`} onClick={() => setCapture(!capture)}>{capture ? '● Capturing — play a chord, release' : '○ Capture played chords'}</button>
           <button type="button" className="btn small ghost" onClick={() => setTokens([])}>Clear</button>
         </div>
         <div className="col" style={{ marginTop: 12 }}>
@@ -163,7 +163,7 @@ export function ProgressionLab({ initial, compact = false }: { initial?: LabInit
                   if (!c) return null;
                   return (
                     <button key={n} type="button" className="btn" onClick={() => setTokens((t) => [...t, n])} onContextMenu={(e) => { e.preventDefault(); void playEvents(chordEvents(chordMidis(c.rootPc, c.typeId))); }}>
-                      {n.replace(/b(?=[IV])/g, '♭').replace(/#(?=[IV])/g, '♯')}
+                      {n.replace(/b(?=[IV])/gi, '♭').replace(/#(?=[IV])/gi, '♯')}
                       <small>{c.symbol}</small>
                     </button>
                   );
@@ -220,13 +220,18 @@ export function ProgressionLab({ initial, compact = false }: { initial?: LabInit
 // ---------------------------------------------------------------------------
 // Changes Trainer: improvise over a loop, get chord-tone feedback
 
-type NoteClass = 'chord' | 'tension' | 'out';
+type NoteClass = 'guide' | 'chord' | 'tension' | 'out';
+
+/** Root, 3rd (or sus 4/2), 5th, 7th (or 6th) — everything numbered 9 and up is a tension. */
+function corePcs(rootPc: number, typeId: string): number[] {
+  return getChord(typeId).intervals.filter((i) => INTERVALS[i].num <= 7).map((i) => mod(rootPc + INTERVALS[i].semis, 12));
+}
 
 function classify(rootPc: number, typeId: string, keyScale: number[], p: number): NoteClass {
-  const core = chordPcs(rootPc, typeId).slice(0, 4);
-  if (core.includes(p)) return 'chord';
+  if (guideTones(rootPc, typeId).includes(p)) return 'guide';
+  if (corePcs(rootPc, typeId).includes(p)) return 'chord';
   const scale = CHORD_SCALES[typeId]?.[0]?.scale;
-  const pcs = scale ? scalePcs(rootPc, scale) : keyScale;
+  const pcs = scale ? [...scalePcs(rootPc, scale), ...chordPcs(rootPc, typeId)] : keyScale;
   return pcs.includes(p) ? 'tension' : 'out';
 }
 
@@ -239,7 +244,7 @@ export function ChangesTrainer({ initial }: { initial?: LabInit }) {
   const [running, setRunning] = useState(false);
   const [current, setCurrent] = useState(0);
   const [played, setPlayed] = useState<{ note: number; cls: NoteClass }[]>([]);
-  const [score, setScore] = useState({ downbeats: 0, hits: 0, chord: 0, tension: 0, out: 0 });
+  const [score, setScore] = useState({ downbeats: 0, hits: 0, guideHits: 0, chord: 0, tension: 0, out: 0 });
   const k = keyFromName(cfg.key);
   const keyScale = scalePcs(pc(k.tonic), k.mode === 'major' ? 'major' : 'minor');
   const chords = cfg.tokens.map((t) => resolveChord(t, k));
@@ -262,7 +267,7 @@ export function ChangesTrainer({ initial }: { initial?: LabInit }) {
     await audio.init();
     runningRef.current = true;
     setRunning(true);
-    setScore({ downbeats: 0, hits: 0, chord: 0, tension: 0, out: 0 });
+    setScore({ downbeats: 0, hits: 0, guideHits: 0, chord: 0, tension: 0, out: 0 });
     setPlayed([]);
     void schedule();
     const tick = () => {
@@ -303,10 +308,12 @@ export function ChangesTrainer({ initial }: { initial?: LabInit }) {
       const cls = classify(c.rootPc, c.typeId, keyScale, mod(e.note, 12));
       const nearDownbeat = Math.abs(t - l.times[idx]) < 0.15;
       setPlayed((p) => [...p.slice(-23), { note: e.note, cls }]);
+      const core = cls === 'guide' || cls === 'chord';
       setScore((s) => ({
         downbeats: s.downbeats + (nearDownbeat ? 1 : 0),
-        hits: s.hits + (nearDownbeat && cls === 'chord' ? 1 : 0),
-        chord: s.chord + (cls === 'chord' ? 1 : 0),
+        hits: s.hits + (nearDownbeat && core ? 1 : 0),
+        guideHits: s.guideHits + (nearDownbeat && cls === 'guide' ? 1 : 0),
+        chord: s.chord + (core ? 1 : 0),
         tension: s.tension + (cls === 'tension' ? 1 : 0),
         out: s.out + (cls === 'out' ? 1 : 0),
       }));
@@ -318,9 +325,10 @@ export function ChangesTrainer({ initial }: { initial?: LabInit }) {
   const marks: Record<number, KeyMark> = {};
   if (c) {
     const gt = guideTones(c.rootPc, c.typeId);
+    const core = corePcs(c.rootPc, c.typeId);
     for (let m = 48; m <= 84; m++) {
       const p = mod(m, 12);
-      if (chordPcs(c.rootPc, c.typeId).slice(0, 4).includes(p)) marks[m] = { label: chordToneLabel(c.rootPc, c.typeId, p) ?? tensionLabel(c.rootPc, p), tone: gt.includes(p) ? 'root' : 'chord' };
+      if (core.includes(p)) marks[m] = { label: chordToneLabel(c.rootPc, c.typeId, p) ?? tensionLabel(c.rootPc, p), tone: gt.includes(p) ? 'root' : 'chord' };
     }
   }
   const totalNotes = score.chord + score.tension + score.out;
@@ -343,18 +351,19 @@ export function ChangesTrainer({ initial }: { initial?: LabInit }) {
           <div className="tiny faint">Orange = guide tones (3rd/7th) · blue = root/5th of the current chord.</div>
         </div>
         <div className="notes-live" aria-live="polite">
-          {played.map((p, i) => <span key={i} className={p.cls === 'chord' ? 'chord' : p.cls === 'tension' ? 'scale' : 'out'}>{pcName(p.note)}</span>)}
+          {played.map((p, i) => <span key={i} className={p.cls === 'guide' ? 'guide' : p.cls === 'chord' ? 'chord' : p.cls === 'tension' ? 'scale' : 'out'}>{pcName(p.note)}</span>)}
         </div>
       </div>
       <div className="col">
         <div className="card">
           <h3>Score</h3>
-          <div className="grid three" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-            <div className="stat"><b>{score.downbeats ? Math.round((score.hits / score.downbeats) * 100) : 0}%</b><span className="small muted">chord tones on downbeats</span></div>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            <div className="stat"><b>{score.downbeats ? Math.round((score.guideHits / score.downbeats) * 100) : 0}%</b><span className="small muted">guide tones on chord changes</span></div>
+            <div className="stat"><b>{score.downbeats ? Math.round((score.hits / score.downbeats) * 100) : 0}%</b><span className="small muted">chord tones on chord changes</span></div>
             <div className="stat"><b>{totalNotes ? Math.round(((score.chord + score.tension) / totalNotes) * 100) : 0}%</b><span className="small muted">inside</span></div>
             <div className="stat"><b>{totalNotes}</b><span className="small muted">notes</span></div>
           </div>
-          <p className="tiny faint" style={{ marginTop: 8 }}>Green = chord tone, blue = available tension, red = outside (fine as a passing/approach tone — but resolve it).</p>
+          <p className="tiny faint" style={{ marginTop: 8 }}>Orange = guide tone (3rd/7th), green = other chord tone, blue = available tension, red = outside (fine as a passing/approach tone — but resolve it). "On chord changes" counts notes within ±150 ms of each new chord.</p>
         </div>
         <div className="card">
           <h3>Changes</h3>
@@ -452,7 +461,7 @@ function Explorer() {
             <h4 style={{ marginTop: 12 }}>Upper structures over {pcName(root)}7</h4>
             <div className="palette">
               {DOMINANT_USTS.map((u) => {
-                const tri = chordSymbol(spellPc(root + u.semis, 'flat'), u.quality === 'maj' ? 'maj' : 'min');
+                const tri = chordSymbol(ustRoot(rootNote, u), u.quality === 'maj' ? 'maj' : 'min');
                 return (
                   <button key={u.numeral} type="button" className="btn" onClick={() => {
                     const triad = chordMidis(mod(root + u.semis, 12), u.quality === 'maj' ? 'maj' : 'min').slice(1).map((m) => (m < 64 ? m + 12 : m));

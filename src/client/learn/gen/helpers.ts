@@ -19,6 +19,10 @@ export interface ChoiceOpts {
   rnd?: () => number;
   columns?: number;
   noteToChoice?: (midi: number) => string | null;
+  optionAudio?: (value: string) => NoteEvent[];
+  hint?: string;
+  hintAudio?: Question['hintAudio'];
+  lesson?: string;
 }
 
 export function choiceQ(o: ChoiceOpts): Question {
@@ -35,6 +39,10 @@ export function choiceQ(o: ChoiceOpts): Question {
     reveal: o.reveal,
     after: o.after,
     noteToChoice: o.noteToChoice,
+    optionAudio: o.optionAudio,
+    hint: o.hint,
+    hintAudio: o.hintAudio,
+    lesson: o.lesson,
     explain: o.explain,
     input: { kind: 'choice', options, columns: o.columns },
     check: (a: Answer) => {

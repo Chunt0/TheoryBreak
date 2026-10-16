@@ -37,10 +37,11 @@ export interface MonitorEntry {
 type Listener = (e: InputEvent) => void;
 
 // Computer keyboard: two rows like a piano (A = C, W = C♯ …), Z/X shift octaves.
-const QWERTY: Record<string, number> = {
-  KeyA: 0, KeyW: 1, KeyS: 2, KeyE: 3, KeyD: 4, KeyF: 5, KeyT: 6, KeyG: 7, KeyY: 8, KeyH: 9, KeyU: 10, KeyJ: 11,
-  KeyK: 12, KeyO: 13, KeyL: 14, KeyP: 15, Semicolon: 16, Quote: 17,
-};
+export const QWERTY_KEYS: { code: string; label: string; semis: number }[] = [
+  ['KeyA', 'A'], ['KeyW', 'W'], ['KeyS', 'S'], ['KeyE', 'E'], ['KeyD', 'D'], ['KeyF', 'F'], ['KeyT', 'T'], ['KeyG', 'G'], ['KeyY', 'Y'],
+  ['KeyH', 'H'], ['KeyU', 'U'], ['KeyJ', 'J'], ['KeyK', 'K'], ['KeyO', 'O'], ['KeyL', 'L'], ['KeyP', 'P'], ['Semicolon', ';'], ['Quote', "'"],
+].map(([code, label], semis) => ({ code, label, semis }));
+const QWERTY: Record<string, number> = Object.fromEntries(QWERTY_KEYS.map((k) => [k.code, k.semis]));
 
 class InputHub {
   status: MidiStatus = typeof navigator !== 'undefined' && 'requestMIDIAccess' in navigator ? 'idle' : 'unsupported';
@@ -98,6 +99,20 @@ class InputHub {
 
   heldNotes(): number[] {
     return [...this.held.keys()].sort((a, b) => a - b);
+  }
+
+  /** MIDI note → computer-key label for the current QWERTY octave. */
+  qwertyLabels(): Record<number, string> {
+    const base = (this.qwertyOctave + 1) * 12;
+    return Object.fromEntries(QWERTY_KEYS.map((k) => [base + k.semis, k.label]));
+  }
+
+  /** Move the QWERTY range so `note` is playable (used when a drill starts on a far-away note). */
+  qwertyReach(note: number): void {
+    const base = (this.qwertyOctave + 1) * 12;
+    if (note >= base && note <= base + 17) return;
+    this.qwertyOctave = Math.max(1, Math.min(7, Math.floor(note / 12) - 1));
+    this.changed();
   }
 
   // ---------------------------------------------------------------- MIDI

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "15-minute music theory workouts for guitar & bass players, driven by an Arturia MiniLab 3, plus a playable DX7-style FM synth.",
+  "description": "15-minute music theory workouts (jazz, funk, R&B, Bach) played on the computer keyboard or a MIDI controller, plus a playable DX7-style FM synth.",
   "scripts": {
     "build": "bun scripts/build.ts",
     "start": "bun src/server/index.ts",

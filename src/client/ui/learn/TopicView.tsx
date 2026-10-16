@@ -5,6 +5,7 @@ import { parsePitch } from '../../learn/music';
 import { chordEvents } from '../../learn/music';
 import { patternFromCells, type RhythmPattern } from '../../theory/rhythm';
 import { store } from '../../app/store';
+import { Icon } from '../Icon';
 import { Markdown } from '../Markdown';
 import { Keyboard } from '../Keyboard';
 import { Staff } from '../Staff';
@@ -13,22 +14,49 @@ import { ProgressionStrip } from '../ProgressionStrip';
 import { RhythmGrid, playRhythm } from '../Rhythm';
 import { ExerciseRunner } from './ExerciseRunner';
 
-const NOTE_ICON = { ear: '👂', keys: '🎹', writing: '✍️', jazz: '🎷' } as const;
+const NOTE_ICON = { ear: 'ear', keys: 'keys', writing: 'writing', jazz: 'note' } as const;
 
-export function TopicView({ topic, onDrill }: { topic: Topic; onDrill?: (skill: string) => void }) {
+/**
+ * A lesson. `embedded` (the drawer opened from a drill) leaves out the inline
+ * drills so two drills never listen to the keyboard at once.
+ */
+export function TopicView({ topic, onDrill, embedded = false }: { topic: Topic; onDrill?: (skill: string) => void; embedded?: boolean }) {
   useEffect(() => {
     store.update((d) => {
       const t = d.progress.topics[topic.id] ?? { last: 0, views: 0 };
       d.progress.topics[topic.id] = { last: Date.now(), views: t.views + 1 };
     });
   }, [topic.id]);
+  const methods = topic.drills.map((d) => SKILL_BY_ID[d]).filter((s) => s?.method?.length);
   return (
     <div className="lesson-body">
-      {topic.blocks.map((b, i) => (
+      {topic.blocks.filter((b) => !(embedded && b.t === 'drill')).map((b, i) => (
         <div className="block" key={i}>
           <BlockView b={b} onDrill={onDrill} />
         </div>
       ))}
+      {methods.length ? (
+        <div className="block">
+          <h3>Working it out — the drills</h3>
+          <div className="col">
+            {methods.map((s, k) => {
+              // drills of one family share most steps: show each step once, then only what's new
+              const before = new Set(methods.slice(0, k).flatMap((x) => x.method));
+              const fresh = s.method.filter((m) => !before.has(m));
+              return (
+                <div key={s.id} className="method">
+                  <div className="row between">
+                    <strong>{s.name}</strong>
+                    {onDrill ? <button type="button" className="btn small ghost" onClick={() => onDrill(s.id)}>Practise ▶</button> : null}
+                  </div>
+                  {fresh.length < s.method.length ? <div className="tiny faint">{fresh.length ? 'As above, plus:' : 'Same method as above.'}</div> : null}
+                  {fresh.length ? <ol className="small">{fresh.map((m, i) => <li key={i}><Markdown md={m} inlineOnly /></li>)}</ol> : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -39,8 +67,8 @@ function BlockView({ b, onDrill }: { b: Block; onDrill?: (skill: string) => void
       return <Markdown md={b.md} />;
     case 'note':
       return (
-        <div className={`callout ${b.kind === 'jazz' ? 'song' : b.kind === 'ear' ? 'ear' : 'guitar'}`}>
-          <span className="ico">{NOTE_ICON[b.kind]}</span>
+        <div className={`callout ${b.kind === 'jazz' ? 'song' : b.kind === 'ear' ? 'ear' : 'keys'}`}>
+          <span className="ico"><Icon name={NOTE_ICON[b.kind]} /></span>
           <div><Markdown md={b.md} /></div>
         </div>
       );
@@ -111,6 +139,16 @@ function BlockView({ b, onDrill }: { b: Block; onDrill?: (skill: string) => void
     }
     case 'drill':
       return <InlineDrill skill={b.skill} count={b.count ?? 3} label={b.label} onDrill={onDrill} />;
+    case 'example':
+      return (
+        <div className="card flat example">
+          <div className="row between">
+            <div><span className="tiny faint upper">Worked example</span><div><strong>{b.title}</strong></div></div>
+            {b.music ? <PlayButton events={() => renderMusic(b.music!)}>Hear it</PlayButton> : null}
+          </div>
+          <ol>{b.steps.map((st, i) => <li key={i}><Markdown md={st} inlineOnly /></li>)}</ol>
+        </div>
+      );
   }
 }
 
