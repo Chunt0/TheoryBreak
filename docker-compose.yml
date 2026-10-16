@@ -1,0 +1,21 @@
+services:
+  theory-break:
+    build: .
+    image: theory-break:latest
+    container_name: theory-break
+    ports:
+      - "${HOST_PORT:-7777}:7777"
+    volumes:
+      - theory-break-data:/data
+      # For HTTPS (needed when you open the app from another machine), mount certs:
+      # - ./certs:/certs:ro
+    environment:
+      # Optional password prompt, e.g. BASIC_AUTH=me:secret
+      - BASIC_AUTH=${BASIC_AUTH:-}
+      # Uncomment together with the certs volume above:
+      # - TLS_CERT_FILE=/certs/cert.pem
+      # - TLS_KEY_FILE=/certs/key.pem
+    restart: unless-stopped
+
+volumes:
+  theory-break-data:

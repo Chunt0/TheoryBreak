@@ -1,0 +1,46 @@
+import { createRoot } from 'react-dom/client';
+import { audio, PART } from './audio/engine';
+import { presetByName } from './audio/dx7/presets';
+import { input } from './midi/input';
+import { store } from './app/store';
+import { initSynthFromStore } from './app/synthState';
+import { wireLive } from './app/live';
+import { App } from './ui/App';
+
+function applySettings(): void {
+  const s = store.get().settings;
+  audio.setMaster(s.masterVolume);
+  audio.setReverb(s.reverb);
+  audio.setMetronome(s.metronome);
+  audio.setPatch(PART.lesson, presetByName(s.lessonPatch));
+  input.pads.channel = s.padChannel;
+}
+
+store.loadLocal();
+applySettings();
+initSynthFromStore();
+input.attachKeyboard(window);
+wireLive();
+void input.requestMidi();
+
+// Browsers only allow audio after a user gesture.
+const unlock = () => {
+  void audio.init();
+  if (audio.running) {
+    window.removeEventListener('pointerdown', unlock);
+    window.removeEventListener('keydown', unlock);
+  }
+};
+window.addEventListener('pointerdown', unlock);
+window.addEventListener('keydown', unlock);
+window.addEventListener('pagehide', () => store.flush());
+
+void store.syncFromServer().then(() => {
+  applySettings();
+  initSynthFromStore();
+});
+
+// Handy for poking at the engine from DevTools.
+(window as unknown as Record<string, unknown>).theoryBreak = { audio, input, store };
+
+createRoot(document.getElementById('root')!).render(<App />);
