@@ -5,8 +5,7 @@ import { input } from './midi/input';
 import { store } from './app/store';
 import { initSynthFromStore } from './app/synthState';
 import { wireLive } from './app/live';
-import { App } from './ui/App';
-import { flushPracticeSets } from './ui/learn/ExerciseRunner';
+import { SimpleApp } from './simple/SimpleApp';
 
 function applySettings(): void {
   const s = store.get().settings;
@@ -34,10 +33,7 @@ const unlock = () => {
 };
 window.addEventListener('pointerdown', unlock);
 window.addEventListener('keydown', unlock);
-window.addEventListener('pagehide', () => {
-  flushPracticeSets();
-  store.flush();
-});
+window.addEventListener('pagehide', () => store.flush());
 
 // Space/Enter drive the drills. A button keeps focus after a mouse click, and
 // the next Space/Enter would silently press it again ("Next block" mid-question),
@@ -56,4 +52,4 @@ void store.syncFromServer().then(() => {
 // Handy for poking at the engine from DevTools.
 (window as unknown as Record<string, unknown>).theoryBreak = { audio, input, store };
 
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(<SimpleApp />);

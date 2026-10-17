@@ -22,6 +22,8 @@ export interface Settings {
   tapOffsetMs: number;
   autoAdvance: boolean;
   padChannel: number;
+  /** what exercises play back with: your current DX7 patch or the plain practice piano */
+  practiceSound: 'patch' | 'piano';
 }
 
 export interface SongIdea {
@@ -48,6 +50,8 @@ export interface AppData {
     mappings: CcMapping[];
   };
   ideas: SongIdea[];
+  /** practice-mode choices and records, keyed by name (see simple/common.tsx) */
+  practice: Record<string, unknown>;
 }
 
 export const defaultSettings = (): Settings => ({
@@ -60,6 +64,7 @@ export const defaultSettings = (): Settings => ({
   tapOffsetMs: 0,
   autoAdvance: true,
   padChannel: 10,
+  practiceSound: 'patch',
 });
 
 export function defaultData(): AppData {
@@ -70,6 +75,7 @@ export function defaultData(): AppData {
     settings: defaultSettings(),
     synth: { current: presetByName('TINE PIANO'), userPatches: [], config: defaultPartConfig(), mappings: minilab3Defaults() },
     ideas: [],
+    practice: {},
   };
 }
 
@@ -90,6 +96,7 @@ function hydrate(raw: unknown): AppData {
       mappings: Array.isArray(r.synth?.mappings) ? r.synth!.mappings : d.synth.mappings,
     },
     ideas: Array.isArray(r.ideas) ? r.ideas : [],
+    practice: r.practice && typeof r.practice === 'object' && !Array.isArray(r.practice) ? r.practice : {},
   };
 }
 

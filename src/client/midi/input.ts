@@ -36,12 +36,42 @@ export interface MonitorEntry {
 
 type Listener = (e: InputEvent) => void;
 
-// Computer keyboard: two rows like a piano (A = C, W = C♯ …), Z/X shift octaves.
-export const QWERTY_KEYS: { code: string; label: string; semis: number }[] = [
-  ['KeyA', 'A'], ['KeyW', 'W'], ['KeyS', 'S'], ['KeyE', 'E'], ['KeyD', 'D'], ['KeyF', 'F'], ['KeyT', 'T'], ['KeyG', 'G'], ['KeyY', 'Y'],
-  ['KeyH', 'H'], ['KeyU', 'U'], ['KeyJ', 'J'], ['KeyK', 'K'], ['KeyO', 'O'], ['KeyL', 'L'], ['KeyP', 'P'], ['Semicolon', ';'], ['Quote', "'"],
-].map(([code, label], semis) => ({ code, label, semis }));
-const QWERTY: Record<string, number> = Object.fromEntries(QWERTY_KEYS.map((k) => [k.code, k.semis]));
+const mod12 = (n: number): number => ((n % 12) + 12) % 12;
+const isWhite = (m: number): boolean => ![1, 3, 6, 8, 10].includes(mod12(m));
+
+// Computer keyboard laid out like a piano: the middle row plays consecutive
+// white keys and the row above plays the black keys between them, wherever a
+// piano has one. The window can start on any white key, so the shape under
+// your fingers always matches the real keyboard.
+const WHITE_CODES: [string, string][] = [
+  ['KeyA', 'A'], ['KeyS', 'S'], ['KeyD', 'D'], ['KeyF', 'F'], ['KeyG', 'G'], ['KeyH', 'H'],
+  ['KeyJ', 'J'], ['KeyK', 'K'], ['KeyL', 'L'], ['Semicolon', ';'], ['Quote', "'"],
+];
+// BLACK_CODES[i] sits just left of WHITE_CODES[i]; the last one sits right of the last white key.
+const BLACK_CODES: [string, string][] = [
+  ['KeyQ', 'Q'], ['KeyW', 'W'], ['KeyE', 'E'], ['KeyR', 'R'], ['KeyT', 'T'], ['KeyY', 'Y'],
+  ['KeyU', 'U'], ['KeyI', 'I'], ['KeyO', 'O'], ['KeyP', 'P'], ['BracketLeft', '['], ['BracketRight', ']'],
+];
+
+/** code → MIDI note and MIDI note → key label for a window whose A key plays `start` (a white key). */
+export function pianoWindow(start: number): { notes: Map<string, number>; labels: Record<number, string> } {
+  const whites: number[] = [];
+  for (let m = start; whites.length < WHITE_CODES.length; m++) if (isWhite(m)) whites.push(m);
+  const notes = new Map<string, number>();
+  const labels: Record<number, string> = {};
+  const put = ([code, label]: [string, string], m: number) => {
+    notes.set(code, m);
+    labels[m] = label;
+  };
+  whites.forEach((m, i) => put(WHITE_CODES[i], m));
+  BLACK_CODES.forEach((k, i) => {
+    const below = i === 0 ? whites[0] - 2 : whites[i - 1];
+    const above = i === whites.length ? whites[i - 1] + 2 : whites[i];
+    // a black key exists between two white keys a whole step apart
+    if (above - below === 2 && !isWhite(below + 1)) put(k, below + 1);
+  });
+  return { notes, labels };
+}
 
 class InputHub {
   status: MidiStatus = typeof navigator !== 'undefined' && 'requestMIDIAccess' in navigator ? 'idle' : 'unsupported';
@@ -49,7 +79,8 @@ class InputHub {
   ports: MidiPortInfo[] = [];
   disabledPorts = new Set<string>();
   pads: PadConfig = { channel: 10, firstNote: 36, count: 16 };
-  qwertyOctave = 4; // C4 = MIDI 60
+  /** The white key the A key plays (C4 by default). */
+  qwertyStart = 60;
   qwertyEnabled = true;
   readonly held = new Map<number, InputSource>();
   readonly monitor: MonitorEntry[] = [];
@@ -58,6 +89,7 @@ class InputHub {
   private listeners = new Set<Listener>();
   private changeListeners = new Set<() => void>();
   private qwertyDown = new Map<string, number>();
+  private win = pianoWindow(60);
 
   // --------------------------------------------------------------- events
 
@@ -101,18 +133,48 @@ class InputHub {
     return [...this.held.keys()].sort((a, b) => a - b);
   }
 
-  /** MIDI note → computer-key label for the current QWERTY octave. */
-  qwertyLabels(): Record<number, string> {
-    const base = (this.qwertyOctave + 1) * 12;
-    return Object.fromEntries(QWERTY_KEYS.map((k) => [base + k.semis, k.label]));
+  /** Octave of the A key (C4 → 4). */
+  get qwertyOctave(): number {
+    return Math.floor(this.qwertyStart / 12) - 1;
   }
 
-  /** Move the QWERTY range so `note` is playable (used when a drill starts on a far-away note). */
-  qwertyReach(note: number): void {
-    const base = (this.qwertyOctave + 1) * 12;
-    if (note >= base && note <= base + 17) return;
-    this.qwertyOctave = Math.max(1, Math.min(7, Math.floor(note / 12) - 1));
+  /** Put the computer keys' window on a white key (a black key snaps to the white key below). */
+  setQwertyStart(midi: number): void {
+    let m = Math.max(24, Math.min(96, Math.round(midi)));
+    if (!isWhite(m)) m--;
+    if (m === this.qwertyStart) return;
+    this.qwertyStart = m;
+    this.win = pianoWindow(m);
     this.changed();
+  }
+
+  /** Window for an exercise on `root`: a white root sits on A, a black root on W. */
+  placeRoot(root: number): void {
+    this.setQwertyStart(isWhite(root) ? root : root - 1);
+  }
+
+  /** Move the window by white keys (comma / period). */
+  shiftWhite(steps: number): void {
+    let m = this.qwertyStart;
+    for (let n = 0; n < Math.abs(steps); n++) do m += Math.sign(steps); while (!isWhite(m));
+    this.setQwertyStart(m);
+  }
+
+  qwertyHas(note: number): boolean {
+    return note in this.win.labels;
+  }
+
+  /** MIDI note → computer-key label. */
+  qwertyLabels(): Record<number, string> {
+    return this.win.labels;
+  }
+
+  /** Move the window by octaves until `note` is playable (used when a line runs off the window). */
+  qwertyReach(note: number): void {
+    for (let i = 0; i < 8 && !this.qwertyHas(note); i++) {
+      const lo = this.qwertyStart;
+      this.setQwertyStart(note < lo ? lo - 12 : lo + 12);
+    }
   }
 
   // ---------------------------------------------------------------- MIDI
@@ -206,54 +268,76 @@ class InputHub {
   // -------------------------------------------------------------- QWERTY
 
   attachKeyboard(target: Window): () => void {
+    // A focused dropdown still lets the letter keys play: notes win over its type-to-select.
     const typing = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
+      return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
     };
     const down = (e: KeyboardEvent) => {
-      if (!this.qwertyEnabled || e.repeat || e.metaKey || e.ctrlKey || e.altKey || typing(e)) return;
-      if (e.code === 'KeyZ') {
-        this.qwertyOctave = Math.max(1, this.qwertyOctave - 1);
-        this.changed();
+      if (!this.qwertyEnabled || e.metaKey || e.ctrlKey || e.altKey || typing(e)) return;
+      // Holding a key repeats it. Some systems send those repeats without e.repeat, so a key that is
+      // already down counts as a repeat too: the note keeps sounding and one key-up ends it.
+      if (e.repeat || this.qwertyDown.has(e.code)) {
+        if (this.win.notes.has(e.code) || this.qwertyDown.has(e.code)) e.preventDefault();
         return;
       }
-      if (e.code === 'KeyX') {
-        this.qwertyOctave = Math.min(7, this.qwertyOctave + 1);
-        this.changed();
+      if (e.code === 'KeyZ' || e.code === 'KeyX') {
+        e.preventDefault();
+        this.setQwertyStart(this.qwertyStart + (e.code === 'KeyZ' ? -12 : 12));
+        return;
+      }
+      if (e.code === 'Comma' || e.code === 'Period') {
+        e.preventDefault();
+        this.shiftWhite(e.code === 'Comma' ? -1 : 1);
         return;
       }
       const digit = /^Digit([1-8])$/.exec(e.code);
       if (digit) {
+        e.preventDefault();
         this.virtualPad(Number(digit[1]) - 1);
         return;
       }
-      const off = QWERTY[e.code];
-      if (off === undefined) return;
+      const note = this.win.notes.get(e.code);
+      if (note === undefined) return;
       e.preventDefault();
-      const note = (this.qwertyOctave + 1) * 12 + off;
       this.qwertyDown.set(e.code, note);
       this.emit({ type: 'noteon', note, velocity: 100, channel: 1, source: 'qwerty', time: e.timeStamp || performance.now() });
     };
     const up = (e: KeyboardEvent) => {
+      // macOS never sends key-ups for keys released while ⌘ was down, so letting go of ⌘ releases everything
+      if (e.key === 'Meta') return releaseQwerty();
       const note = this.qwertyDown.get(e.code);
       if (note === undefined) return;
       this.qwertyDown.delete(e.code);
+      // another computer key may still hold the same pitch (the window moved in between)
+      if ([...this.qwertyDown.values()].includes(note)) return;
       this.emit({ type: 'noteoff', note, channel: 1, source: 'qwerty', time: e.timeStamp || performance.now() });
     };
-    const blur = () => {
-      for (const [code, note] of this.qwertyDown) {
-        this.qwertyDown.delete(code);
-        this.emit({ type: 'noteoff', note, channel: 1, source: 'qwerty', time: performance.now() });
-      }
+    // key-ups go missing when the window loses focus or the tab is hidden: release what is down
+    const releaseQwerty = () => {
+      const notes = new Set(this.qwertyDown.values());
+      this.qwertyDown.clear();
+      for (const note of notes) this.emit({ type: 'noteoff', note, channel: 1, source: 'qwerty', time: performance.now() });
+    };
+    const hidden = () => {
+      if (document.hidden) releaseQwerty();
     };
     target.addEventListener('keydown', down);
     target.addEventListener('keyup', up);
-    target.addEventListener('blur', blur);
+    target.addEventListener('blur', releaseQwerty);
+    document.addEventListener('visibilitychange', hidden);
     return () => {
       target.removeEventListener('keydown', down);
       target.removeEventListener('keyup', up);
-      target.removeEventListener('blur', blur);
+      target.removeEventListener('blur', releaseQwerty);
+      document.removeEventListener('visibilitychange', hidden);
     };
+  }
+
+  /** Panic: let go of every held note, whatever is holding it. */
+  allNotesOff(): void {
+    this.qwertyDown.clear();
+    for (const note of [...this.held.keys()]) this.emit({ type: 'noteoff', note, channel: 1, source: 'screen', time: performance.now() });
   }
 }
 

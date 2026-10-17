@@ -28,6 +28,7 @@ export async function build(): Promise<boolean> {
   }
   await cp('src/client/index.html', `${outdir}/index.html`);
   await cp('src/client/styles.css', `${outdir}/styles.css`);
+  await cp('src/client/fonts', `${outdir}/fonts`, { recursive: true });
   return true;
 }
 

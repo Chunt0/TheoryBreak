@@ -17,6 +17,9 @@ const PATHS: Record<string, string> = {
   writing: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
   note: 'M9 18V5l12-2v13M6 15a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM18 13a3 3 0 1 0 0 6a3 3 0 1 0 0-6z',
   keyboard: 'M2 6h20v12H2zM6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10',
+  play: 'M7 4.8v14.4a.8.8 0 0 0 1.2.7l11.5-7.2a.8.8 0 0 0 0-1.4L8.2 4.1a.8.8 0 0 0-1.2.7z',
+  mute: 'M11 5L6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6',
+  wave: 'M2 12h3l2.5-6 4 13 3.5-10 2.5 5H22',
 };
 
 export type IconName = keyof typeof PATHS;

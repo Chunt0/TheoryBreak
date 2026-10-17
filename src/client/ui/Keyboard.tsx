@@ -41,21 +41,36 @@ export function Keyboard({ range, marks = {}, held = [], onDown, onUp, showOctav
   }
   const width = whites.length * WHITE_W;
   const heldSet = new Set(held);
-  const down = useRef<number | null>(null);
+  // one entry per finger / mouse button, so several keys can be held and each lets go of its own note
+  const down = useRef(new Map<number, number>());
   const playable = !!onDown;
 
+  const release = (e: { pointerId: number }) => {
+    const m = down.current.get(e.pointerId);
+    if (m === undefined) return;
+    down.current.delete(e.pointerId);
+    onUp?.(m);
+  };
   const press = (m: number, e: React.PointerEvent) => {
     if (!onDown) return;
     e.preventDefault();
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-    down.current = m;
-    onDown(m);
-  };
-  const release = () => {
-    if (down.current !== null) {
-      onUp?.(down.current);
-      down.current = null;
+    try {
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* pointer already gone: the window-level listener below still ends the note */
     }
+    release(e);
+    down.current.set(e.pointerId, m);
+    onDown(m);
+    // safety net: a release anywhere on the page ends this note even if the key element missed it
+    const end = (ev: PointerEvent) => {
+      if (ev.pointerId !== e.pointerId) return;
+      window.removeEventListener('pointerup', end, true);
+      window.removeEventListener('pointercancel', end, true);
+      release(ev);
+    };
+    window.addEventListener('pointerup', end, true);
+    window.addEventListener('pointercancel', end, true);
   };
 
   const markEl = (m: number, cx: number, black: boolean) => {

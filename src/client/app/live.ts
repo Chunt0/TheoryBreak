@@ -23,7 +23,8 @@ export function setLiveContext(c: LiveContext): void {
   }
 }
 
-const partFor = (c: LiveContext): PartId => (c === 'synth' ? PART.synth : PART.lesson);
+// Every keyboard plays your DX7 patch; the context only changes what pads and knobs do.
+const partFor = (_c: LiveContext): PartId => PART.synth;
 
 /** Extra handlers for pads on the synth page (preset stepping). */
 export const padHooks: { prevPreset?: () => void; nextPreset?: () => void } = {};
