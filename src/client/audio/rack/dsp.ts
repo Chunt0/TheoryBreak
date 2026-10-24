@@ -4,9 +4,10 @@
 // sets the voice count and everything downstream follows. A mono cable feeds
 // every voice. Feedback loops work, delayed by one block.
 
-import { BLOCK, C4, HIGH, Input, MAX_CH, Mod, Port, TAU, blep, ftanh } from './base';
+import { BLOCK, C4, HIGH, Input, MAX_CH, Mod, Port, TAU, blep, ftanh, type RackView } from './base';
 import { MORE_CLASSES } from './more';
-import { QUANT_SCALES, VOICE_COUNTS, type ModuleType } from './modules';
+import { VIEW_CLASSES } from './visual';
+import { MODULES, QUANT_SCALES, VOICE_COUNTS, type ModuleType } from './modules';
 import type { RackPatch } from './patch';
 
 export { BLOCK, MAX_CH, Mod, ftanh };
@@ -720,6 +721,7 @@ const CLASSES = {
   midi: MidiMod, vco: VcoMod, lfo: LfoMod, adsr: AdsrMod, vcf: VcfMod, ladder: LadderMod, vca: VcaMod, mix: MixMod,
   noise: NoiseMod, clock: ClockMod, seq: SeqMod, quant: QuantMod, delay: DelayMod, fold: FoldMod, util: UtilMod, out: OutMod,
   ...MORE_CLASSES,
+  ...VIEW_CLASSES,
 } as Record<ModuleType, new (id: string, type: ModuleType, sr: number) => Mod>;
 
 // ----------------------------------------------------------------------- rack
@@ -731,8 +733,8 @@ export interface RackStatus {
   display: Record<string, number>;
   /** output level 0..1+ per OUT module */
   out: Record<string, number>;
-  /** waveform points (volts) per SCOPE module */
-  scopes: Record<string, { a: number[]; b: number[] | null }>;
+  /** what each display module's screen shows */
+  views: Record<string, RackView>;
 }
 
 export class Rack {
@@ -745,6 +747,10 @@ export class Rack {
   private pressure = 0;
   private sustain = false;
   metering = false;
+  /** display modules, and the screens worked out since the last status */
+  private shows: Mod[] = [];
+  private views = new Map<string, RackView>();
+  private showAt = 0;
 
   constructor(private sr: number) {}
 
@@ -787,6 +793,7 @@ export class Rack {
     this.order = order;
     this.outs = order.filter((m): m is OutMod => m instanceof OutMod);
     this.midis = order.filter((m): m is MidiMod => m instanceof MidiMod);
+    this.shows = order.filter((m) => MODULES[m.type].family === 'view');
     for (const m of this.midis) {
       m.bend = this.bend;
       m.wheel = this.wheel;
@@ -855,9 +862,24 @@ export class Rack {
     }
   }
 
-  /** Meter peaks and panel numbers since the last call (resets the peaks). */
+  /**
+   * Work out one display module's screen. The worklet calls this every block while
+   * the rack is on screen, so the FFTs are spread out rather than all landing in the
+   * block that sends the status.
+   */
+  refreshView(): void {
+    for (let k = 0; k < this.shows.length; k++) {
+      const m = this.shows[this.showAt++ % this.shows.length];
+      if (this.views.has(m.id)) continue;
+      const v = m.view();
+      if (v) this.views.set(m.id, v);
+      return;
+    }
+  }
+
+  /** Meter peaks, panel numbers and screens since the last call (resets the peaks). */
   status(): RackStatus {
-    const s: RackStatus = { meters: {}, display: {}, out: {}, scopes: {} };
+    const s: RackStatus = { meters: {}, display: {}, out: {}, views: {} };
     for (const m of this.order) {
       for (const [id, p] of Object.entries(m.outs)) {
         if (!p.used) continue;
@@ -866,13 +888,16 @@ export class Rack {
       }
       const d = m.display();
       if (d >= 0) s.display[m.id] = d;
-      const sc = m.scope();
-      if (sc) s.scopes[m.id] = sc;
       if (m instanceof OutMod) {
         s.out[m.id] = Math.round(m.peak * 100) / 100;
         m.peak = 0;
       }
     }
+    for (const m of this.shows) {
+      const v = this.views.get(m.id) ?? m.view();
+      if (v) s.views[m.id] = v;
+    }
+    this.views.clear();
     return s;
   }
 }

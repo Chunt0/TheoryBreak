@@ -10,6 +10,27 @@ export const TAU = Math.PI * 2;
 const ZERO = new Float32Array(MAX_CH * BLOCK);
 export const HIGH = 1; // gate/trigger threshold, volts
 
+/**
+ * A display module's screen, sent to its panel with the meters (~20× a second).
+ * Pitches are MIDI numbers (60 = C4 = 0 V), levels dB (0 = a ±5 V sine), times seconds.
+ */
+export type RackView =
+  | { k: 'scope'; a: number[]; b: number[] | null }
+  /** log-spaced points from 20 Hz to 20 kHz; f0 = the fundamental heard on A, peak = its loudest partial (Hz, 0 = none) */
+  | { k: 'spectrum'; a: number[] | null; b: number[] | null; peaks: number[] | null; f0: number; peak: number }
+  /** new columns since the last view, low to high, 0–255 */
+  | { k: 'sono'; cols: number[][] }
+  /** fx, fy: the pitch on each axis (Hz, 0 = none) */
+  | { k: 'xy'; x: number[]; y: number[]; fx: number; fy: number }
+  /** note -1 = nothing to read */
+  | { k: 'tuner'; note: number; hz: number; from: 'cv' | 'audio' | '' }
+  /** every note sounding since the last view */
+  | { k: 'keys'; notes: number[] }
+  /** notes in the last `span` seconds, as flat [note, began, ended] triples (seconds ago; 0 = still sounding) */
+  | { k: 'roll'; span: number; notes: number[] }
+  /** per input: the latest voltage and the lowest and highest since the last view */
+  | { k: 'volts'; v: number[]; lo: number[]; hi: number[]; on: boolean[] };
+
 export class Port {
   readonly buf = new Float32Array(MAX_CH * BLOCK);
   ch = 1;
@@ -85,8 +106,8 @@ export abstract class Mod {
     return -1;
   }
 
-  /** Waveform points for a scope panel (volts), or null. */
-  scope(): { a: number[]; b: number[] | null } | null {
+  /** What a display module's screen draws (see RackView), or null. */
+  view(): RackView | null {
     return null;
   }
 

@@ -1,6 +1,6 @@
 // The second shelf of modules: wavetable, FM and string voices, drums,
 // function and random generators, rhythm and sequencing tools, the chord
-// generator, more filters and effects, and utilities (panner, scope…).
+// generator, more filters and effects, and utilities (logic, crossfader, panner).
 // Same conventions as dsp.ts: ±5 V audio, 1 V/oct pitch, 10 V gates.
 
 import { BLOCK, C4, Edges, HIGH, MAX_CH, Mod, TAU, ftanh, onePole, readDelay } from './base';
@@ -1118,57 +1118,9 @@ class PanMod extends Mod {
   }
 }
 
-const SCOPE_POINTS = 120;
-
-class ScopeMod extends Mod {
-  private a: Float32Array;
-  private b: Float32Array;
-  private w = 0;
-
-  constructor(id: string, type: ModuleType, sr: number) {
-    super(id, type, sr);
-    this.a = new Float32Array(Math.ceil(sr * 4.2));
-    this.b = new Float32Array(this.a.length);
-  }
-
-  process(n: number): void {
-    const { a, b } = this.ins;
-    const L = this.a.length;
-    for (let i = 0; i < n; i++) {
-      this.a[this.w] = a.buf[a.off(0) + i];
-      this.b[this.w] = b.buf[b.off(0) + i];
-      this.w = (this.w + 1) % L;
-    }
-  }
-
-  override scope(): { a: number[]; b: number[] | null } {
-    const L = this.a.length;
-    const W = Math.max(SCOPE_POINTS, Math.round(this.p.time * this.sr));
-    // end the window on a rising zero crossing of A, so a steady wave stands still
-    let end = this.w;
-    for (let k = 1; k < Math.min(W, L - W - 2); k++) {
-      const i = (this.w - k + L) % L;
-      const j = (i - 1 + L) % L;
-      if (this.a[j] < 0 && this.a[i] >= 0) {
-        end = i;
-        break;
-      }
-    }
-    const pick = (buf: Float32Array) => {
-      const pts: number[] = [];
-      for (let p = 0; p < SCOPE_POINTS; p++) {
-        const idx = (end - W + Math.floor((p * W) / SCOPE_POINTS) + L * 2) % L;
-        pts.push(Math.round(buf[idx] * this.p.scale * 100) / 100);
-      }
-      return pts;
-    };
-    return { a: this.ins.a.on ? pick(this.a) : [], b: this.ins.b.on ? pick(this.b) : null };
-  }
-}
-
 export const MORE_CLASSES: Partial<Record<ModuleType, new (id: string, type: ModuleType, sr: number) => Mod>> = {
   wt: WtMod, fmop: FmOpMod, string: StringMod, kick: KickMod, snare: SnareMod, hats: HatsMod,
   func: FuncMod, rand: RandMod, turing: TuringMod, euclid: EuclidMod, div: DivMod, coin: CoinMod, switch: SwitchMod, arp: ArpMod, chord: ChordMod,
   lpg: LpgMod, comb: CombMod, vowel: VowelMod, ring: RingMod, drive: DriveMod, crush: CrushMod,
-  verb: VerbMod, chorus: ChorusMod, phaser: PhaserMod, logic: LogicMod, xfade: XfadeMod, pan: PanMod, scope: ScopeMod,
+  verb: VerbMod, chorus: ChorusMod, phaser: PhaserMod, logic: LogicMod, xfade: XfadeMod, pan: PanMod,
 };

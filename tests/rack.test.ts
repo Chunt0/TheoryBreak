@@ -5,6 +5,8 @@ import { RACK_PRESETS, newModule, normalizeRack, type RackPatch } from '../src/c
 import { GUIDE } from '../src/client/audio/rack/guide';
 import { buildChord } from '../src/client/audio/rack/chords';
 import { euclid } from '../src/client/audio/rack/more';
+import { SONO_ROWS, SPECTRUM_POINTS, detectPitch, spectrumHz } from '../src/client/audio/rack/visual';
+import type { RackView } from '../src/client/audio/rack/base';
 
 const SR = 48000;
 
@@ -319,9 +321,144 @@ describe('second shelf', () => {
     const rack = new Rack(SR);
     rack.setPatch(patch([['v', 'vco'], ['s', 'scope']], [['v.sin', 's.a']]));
     render(rack, 0.1);
-    const sc = rack.status().scopes.s;
+    const sc = rack.status().views.s;
+    if (sc.k !== 'scope') throw new Error(sc.k);
     expect(sc.a.length).toBe(120);
     expect(Math.max(...sc.a)).toBeGreaterThan(4);
     expect(sc.b).toBeNull();
+  });
+});
+
+/** The view of display module `id`, checked to be of kind K. */
+function view<K extends RackView['k']>(rack: Rack, id: string, k: K): Extract<RackView, { k: K }> {
+  const v = rack.status().views[id];
+  if (!v || v.k !== k) throw new Error(`${id}: ${v?.k}`);
+  return v as Extract<RackView, { k: K }>;
+}
+const sine = (hz: number, n = 4096, sr = SR) => Float64Array.from({ length: n }, (_, i) => 3 * Math.sin((2 * Math.PI * hz * i) / sr));
+
+describe('display modules', () => {
+  test('pitch detection finds the fundamental of sines and a saw, and nothing in noise or silence', () => {
+    for (const hz of [41.2, 110, 261.63, 440, 1046.5]) expect(Math.abs(detectPitch(sine(hz), SR) / hz - 1)).toBeLessThan(0.003);
+    const saw = Float64Array.from({ length: 4096 }, (_, i) => 4 * (((i * 196) / SR) % 1) - 2);
+    expect(Math.abs(detectPitch(saw, SR) / 196 - 1)).toBeLessThan(0.003);
+    expect(detectPitch(new Float64Array(4096), SR)).toBe(0);
+    let seed = 1;
+    const noise = Float64Array.from({ length: 4096 }, () => ((seed = (seed * 16807) % 2147483647) / 2147483647) * 4 - 2);
+    expect(detectPitch(noise, SR)).toBe(0);
+  });
+
+  test('SPECTRUM: a saw shows its harmonics and names its fundamental; a sine has one partial', () => {
+    const rack = new Rack(SR);
+    rack.setPatch(patch([['v', 'vco', { oct: -1 }], ['s', 'spectrum', { smooth: 0 }]], [['v.saw', 's.a']]));
+    render(rack, 0.4);
+    const sp = view(rack, 's', 'spectrum');
+    const f0 = 261.6256 / 2;
+    expect(Math.abs(sp.f0 / f0 - 1)).toBeLessThan(0.005);
+    expect(Math.abs(sp.peak / f0 - 1)).toBeLessThan(0.02);
+    expect(sp.a!.length).toBe(SPECTRUM_POINTS);
+    expect(sp.b).toBeNull();
+    const at = (hz: number) => sp.a![Math.round((Math.log(hz / 20) / Math.log(1000)) * (SPECTRUM_POINTS - 1))];
+    // a saw's nth harmonic is 1/n as loud: the 4th about 12 dB down, and well above the floor
+    expect(at(f0) - at(f0 * 4)).toBeGreaterThan(8);
+    expect(at(f0 * 4)).toBeGreaterThan(-30);
+
+    rack.setPatch(patch([['v', 'vco', { oct: -1 }], ['s', 'spectrum', { smooth: 0 }]], [['v.sin', 's.a']]));
+    render(rack, 0.4);
+    const pure = view(rack, 's', 'spectrum');
+    const near = (hz: number) => pure.a![Math.round((Math.log(hz / 20) / Math.log(1000)) * (SPECTRUM_POINTS - 1))];
+    expect(near(f0)).toBeGreaterThan(-3);
+    expect(near(f0 * 3)).toBeLessThan(-50);
+    expect(spectrumHz(SPECTRUM_POINTS - 1)).toBeCloseTo(20000, 3);
+  });
+
+  test('SONO scrolls at its Time setting and lights the row of the note', () => {
+    const rack = new Rack(SR);
+    rack.setPatch(patch([['v', 'vco'], ['s', 'sono', { time: 6 }]], [['v.sin', 's.in']]));
+    render(rack, 0.5);
+    view(rack, 's', 'sono');
+    // the panel asks 20 times a second: 160 columns over 6 s is about 27 a second
+    const cols: number[][] = [];
+    for (let i = 0; i < 20; i++) {
+      render(rack, 0.05);
+      cols.push(...view(rack, 's', 'sono').cols);
+    }
+    expect(cols.length).toBeGreaterThanOrEqual(25);
+    expect(cols.length).toBeLessThanOrEqual(28);
+    const last = cols[cols.length - 1];
+    expect(last.length).toBe(SONO_ROWS);
+    const row = Math.round((Math.log(261.6256 / 30) / Math.log(16000 / 30)) * (SONO_ROWS - 1));
+    const brightest = last.indexOf(Math.max(...last));
+    expect(Math.abs(brightest - row)).toBeLessThanOrEqual(1);
+  });
+
+  test('XY reads both pitches: an FM OP at ×1.5 is a 3:2 fifth', () => {
+    const rack = new Rack(SR);
+    rack.setPatch(patch([['f', 'fmop', { ratio: 2, index: 0 }], ['x', 'xy']], [['f.out', 'x.x'], ['f.mod', 'x.y']]));
+    render(rack, 0.3);
+    const xy = view(rack, 'x', 'xy');
+    expect(xy.x.length).toBe(400);
+    expect(Math.abs(xy.fy / xy.fx - 1.5)).toBeLessThan(0.002);
+  });
+
+  test('TUNER names what it hears and tracks it as V/Oct; reads a V/Oct cable directly', () => {
+    const rack = new Rack(SR);
+    rack.setPatch(patch([['v', 'vco', { tune: 9 }], ['t', 'tuner'], ['o', 'out']], [['v.saw', 't.in'], ['t.voct', 'o.l']]));
+    render(rack, 0.3);
+    const t = view(rack, 't', 'tuner');
+    expect(t.from).toBe('audio');
+    expect(Math.abs(t.note - 69)).toBeLessThan(0.05);
+    expect(Math.abs(t.hz - 440)).toBeLessThan(1);
+
+    rack.setPatch(patch([['u', 'util', { a1: 0, o1: 7 / 12 }], ['t', 'tuner', { ref: 415.3 }]], [['u.out1', 't.voct']]));
+    render(rack, 0.05);
+    const cv = view(rack, 't', 'tuner');
+    expect(cv.from).toBe('cv');
+    // G4 at A440 is A♭4 when A = 415.3
+    expect(Math.abs(cv.note - 68)).toBeLessThan(0.01);
+  });
+
+  test('KEYS shows every voice of a chord; ROLL writes down a sequence', () => {
+    const rack = new Rack(SR);
+    rack.setPatch(patch([['m', 'midi', { voices: 0 }], ['c', 'chord', { key: 0, type: 16 }], ['k', 'keys']], [['m.voct', 'c.voct'], ['c.voct', 'k.voct'], ['m.gate', 'k.gate']]));
+    render(rack, 0.05);
+    view(rack, 'k', 'keys');
+    rack.noteOn(62, 100);
+    render(rack, 0.05);
+    const keys = view(rack, 'k', 'keys');
+    expect(new Set(keys.notes.map((n) => n % 12))).toEqual(new Set([2, 5, 9, 0]));
+    rack.noteOff(62);
+    render(rack, 0.05);
+    view(rack, 'k', 'keys');
+    expect(view(rack, 'k', 'keys').notes).toEqual([]);
+
+    rack.setPatch(patch([['c', 'clock', { bpm: 120 }], ['s', 'seq', { s0: 0, s1: 2, s2: 4, s3: 5, len: 4 }], ['r', 'roll', { time: 4 }]], [['c.q', 's.clk'], ['s.voct', 'r.voct'], ['s.gate', 'r.gate']]));
+    render(rack, 2.2);
+    const roll = view(rack, 'r', 'roll');
+    const notes = [];
+    for (let i = 0; i < roll.notes.length; i += 3) notes.push(roll.notes[i]);
+    expect(new Set(notes)).toEqual(new Set([60, 62, 64, 65]));
+    for (let i = 0; i < roll.notes.length; i += 3) expect(roll.notes[i + 1]).toBeGreaterThanOrEqual(roll.notes[i + 2]);
+  });
+
+  test('VOLTS reads a steady voltage and the swing of an LFO', () => {
+    const rack = new Rack(SR);
+    rack.setPatch(patch([['u', 'util', { a1: 0, o1: 2.5 }], ['l', 'lfo', { rate: 5 }], ['v', 'volts']], [['u.out1', 'v.in1'], ['l.sin', 'v.in2']]));
+    render(rack, 0.5);
+    const v = view(rack, 'v', 'volts');
+    expect(v.on).toEqual([true, true, false, false]);
+    expect(v.v[0]).toBeCloseTo(2.5, 2);
+    expect(v.lo[1]).toBeLessThan(-4.5);
+    expect(v.hi[1]).toBeGreaterThan(4.5);
+
+    // a poly cable: the meter follows the newest note, whichever voice it landed on
+    rack.setPatch(patch([['m', 'midi', { voices: 4 }], ['v', 'volts']], [['m.voct', 'v.in1'], ['m.gate', 'v.in2']]));
+    for (const note of [60, 64, 72]) {
+      rack.noteOn(note, 100);
+      render(rack, 0.05);
+    }
+    const poly = view(rack, 'v', 'volts');
+    expect(poly.v[0]).toBeCloseTo(1, 2);
+    expect(poly.v[1]).toBeCloseTo(10, 1);
   });
 });

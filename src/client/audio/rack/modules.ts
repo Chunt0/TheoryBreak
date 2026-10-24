@@ -12,10 +12,11 @@ export type ModuleType =
   | 'wt' | 'fmop' | 'string' | 'kick' | 'snare' | 'hats'
   | 'func' | 'rand' | 'turing' | 'euclid' | 'div' | 'coin' | 'logic' | 'switch' | 'arp' | 'chord'
   | 'lpg' | 'comb' | 'vowel' | 'ring' | 'drive' | 'crush'
-  | 'verb' | 'chorus' | 'phaser' | 'pan' | 'scope' | 'xfade';
+  | 'verb' | 'chorus' | 'phaser' | 'pan' | 'xfade'
+  | 'scope' | 'spectrum' | 'sono' | 'xy' | 'tuner' | 'keys' | 'roll' | 'volts';
 
 export type Curve = 'lin' | 'exp' | 'int';
-export type Unit = 'hz' | 's' | 'st' | 'v' | 'bpm' | 'pct' | 'x' | 'oct' | 'table' | 'vowel';
+export type Unit = 'hz' | 's' | 'st' | 'v' | 'bpm' | 'pct' | 'x' | 'oct' | 'table' | 'vowel' | 'db';
 
 export interface ParamDef {
   id: string;
@@ -36,7 +37,7 @@ export interface PortDef {
   label: string;
 }
 
-export type Family = 'io' | 'src' | 'drum' | 'mod' | 'seq' | 'filter' | 'amp' | 'fx' | 'util';
+export type Family = 'io' | 'src' | 'drum' | 'mod' | 'seq' | 'filter' | 'amp' | 'fx' | 'util' | 'view';
 
 export interface ModuleDef {
   type: ModuleType;
@@ -395,11 +396,61 @@ const LIST: ModuleDef[] = [
     ins: ports(['in', 'In'], ['cv', 'Pan']),
     outs: ports(['l', 'L'], ['r', 'R']),
   },
+  // ---------------------------------------------------------------- scopes and meters
   {
-    type: 'scope', name: 'SCOPE', title: 'Oscilloscope', family: 'util', cols: 4,
+    type: 'scope', name: 'SCOPE', title: 'Oscilloscope', family: 'view', cols: 4,
     blurb: 'Draws the voltage on its inputs over time: see the wave shapes, envelopes and LFOs you are hearing. Patch any output into it.',
     params: [knob('time', 'Time', 0.002, 2, 0.02, 'exp', 's'), knob('scale', 'Zoom', 0.25, 8, 1, 'exp', 'x')],
     ins: ports(['a', 'A'], ['b', 'B']),
+    outs: [],
+  },
+  {
+    type: 'spectrum', name: 'SPECTRUM', title: 'Spectrum analyser', family: 'view', cols: 5,
+    blurb: 'Every partial in a sound, low to high, with the Cs marked: the harmonic series of a saw, a filter carving it away, a chord’s overtones lining up or clashing.',
+    params: [knob('floor', 'Floor', -120, -30, -90, 'lin', 'db'), knob('smooth', 'Smooth', 0, 0.98, 0.7, 'lin', 'pct'), toggle('peaks', 'Peaks'), toggle('harm', 'Harm', 1)],
+    ins: ports(['a', 'A'], ['b', 'B']),
+    outs: [],
+  },
+  {
+    type: 'sono', name: 'SONO', title: 'Spectrogram', family: 'view', cols: 5,
+    blurb: 'The spectrum scrolling past as a heat map, time left to right and pitch upward: a filter sweep is a moving edge, a melody a staircase of bright lines.',
+    params: [knob('time', 'Time', 1, 30, 6, 'exp', 's'), knob('floor', 'Floor', -120, -30, -84, 'lin', 'db')],
+    ins: ports(['in', 'In']),
+    outs: [],
+  },
+  {
+    type: 'xy', name: 'XY', title: 'XY scope', family: 'view', cols: 3,
+    blurb: 'X moves the dot sideways, Y up and down. Two tones make a Lissajous figure that stands still for a pure ratio (3:2, 5:4) and turns for a tempered one; it names the interval.',
+    params: [knob('time', 'Time', 0.005, 0.5, 0.04, 'exp', 's'), knob('zoom', 'Zoom', 0.25, 8, 1, 'exp', 'x')],
+    ins: ports(['x', 'X'], ['y', 'Y']),
+    outs: [],
+  },
+  {
+    type: 'tuner', name: 'TUNER', title: 'Tuner and pitch tracker', family: 'view', cols: 3,
+    blurb: 'Names the note it hears and how many cents sharp or flat, or reads a V/Oct cable as a note. Also turns the pitch it hears back into V/Oct and a gate.',
+    params: [knob('ref', 'A4', 400, 480, 440, 'lin', 'hz')],
+    ins: ports(['in', 'In'], ['voct', 'V/Oct']),
+    outs: ports(['voct', 'V/Oct'], ['gate', 'Gate']),
+  },
+  {
+    type: 'keys', name: 'KEYS', title: 'Keyboard display', family: 'view', cols: 4,
+    blurb: 'Lights the keys a V/Oct cable is playing, every voice of a poly cable, and names the chord they make.',
+    params: [],
+    ins: ports(['voct', 'V/Oct'], ['gate', 'Gate']),
+    outs: [],
+  },
+  {
+    type: 'roll', name: 'ROLL', title: 'Piano roll', family: 'view', cols: 5,
+    blurb: 'Writes down the notes a V/Oct cable plays as they scroll past: a sequencer’s loop, a Turing machine’s tune slowly changing, the voice leading of a chord progression.',
+    params: [knob('time', 'Time', 1, 30, 8, 'exp', 's')],
+    ins: ports(['voct', 'V/Oct'], ['gate', 'Gate']),
+    outs: [],
+  },
+  {
+    type: 'volts', name: 'VOLTS', title: 'Voltmeter', family: 'view', cols: 4,
+    blurb: 'Four meters that read any cable in volts, with the range it swung through: what an LFO, envelope or sequencer is actually sending.',
+    params: [choice('range', 'Range', ['±1 V', '±5 V', '±10 V'], 2)],
+    ins: ports(['in1', '1'], ['in2', '2'], ['in3', '3'], ['in4', '4']),
     outs: [],
   },
 ];
@@ -437,6 +488,7 @@ export function formatParam(p: ParamDef, v: number): string {
     case 'x': return `×${v.toFixed(1)}`;
     case 'table': return WT_NAMES[Math.round(v)] ?? '';
     case 'vowel': return VOWELS[Math.round(v)] ?? '';
+    case 'db': return `${Math.round(v)}dB`;
     default: return p.curve === 'int' ? String(v) : v.toFixed(2);
   }
 }

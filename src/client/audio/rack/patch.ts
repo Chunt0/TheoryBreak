@@ -238,6 +238,39 @@ RACK_PRESETS.push(
       ['aenv.env', 'vca.cv'], ['vca.out', 'verb.in'], ['verb.l', 'out.l'], ['verb.r', 'out.r'],
     ]),
   },
+  {
+    notes: 'A saw through a ladder filter that a slow LFO opens and closes, watched three ways: the spectrum (the raw saw in yellow, after the filter in blue), the spectrogram and the tuner. Hold one low note.',
+    patch: rack('HARMONICS', [
+      ['midi', 'midi', { voices: 0 }], ['vco', 'vco', { oct: -1 }], ['lfo', 'lfo', { rate: 0.12 }], ['flt', 'ladder', { cutoff: 900, res: 0.35, cv: 0.5 }],
+      ['env', 'adsr', { a: 0.01, d: 0.3, s: 0.9, r: 0.4 }], ['vca', 'vca'], ['out', 'out', { level: 0.5 }],
+      ['sp', 'spectrum'], ['sono', 'sono'], ['tun', 'tuner'],
+    ], [
+      ['midi.voct', 'vco.voct'], ['vco.saw', 'flt.in'], ['lfo.tri', 'flt.cv'], ['flt.out', 'vca.in'], ['midi.gate', 'env.gate'], ['env.env', 'vca.cv'], ['vca.out', 'out.l'],
+      ['vco.saw', 'sp.a'], ['flt.out', 'sp.b'], ['flt.out', 'sono.in'], ['vco.saw', 'tun.in'],
+    ]),
+  },
+  {
+    notes: 'A pure fifth, an FM OP’s carrier and its ×1.5 modulator, drawn on an XY scope: the 3:2 figure stands still. Move the Y cable to the VCO, seven tempered semitones up, and it slowly rolls.',
+    patch: rack('LISSAJOUS', [
+      ['midi', 'midi', { voices: 0 }], ['fm', 'fmop', { ratio: 2, index: 0 }], ['vco', 'vco', { tune: 7 }], ['mix', 'mix', { l1: 0.5, l2: 0.5, l3: 0, l4: 0 }],
+      ['env', 'adsr', { a: 0.02, d: 0.3, s: 0.8, r: 0.5 }], ['vca', 'vca'], ['out', 'out', { level: 0.45 }], ['xy', 'xy'],
+    ], [
+      ['midi.voct', 'fm.voct'], ['midi.voct', 'vco.voct'], ['fm.out', 'mix.in1'], ['fm.mod', 'mix.in2'], ['mix.out', 'vca.in'],
+      ['midi.gate', 'env.gate'], ['env.env', 'vca.cv'], ['vca.out', 'out.l'], ['fm.out', 'xy.x'], ['fm.mod', 'xy.y'],
+    ]),
+  },
+  {
+    notes: 'Each note you play becomes its diatonic seventh chord in C. KEYS lights and names it; ROLL writes down how its four voices move from chord to chord.',
+    patch: rack('CHORD VIEW', [
+      ['midi', 'midi', { voices: 0 }], ['ch', 'chord', { key: 0, type: 16, inv: 0, voicing: 0 }], ['keys', 'keys'], ['roll', 'roll', { time: 12 }],
+      ['vco', 'vco', { pw: 0.4 }], ['flt', 'vcf', { cutoff: 1400, res: 0.2, cv: 0.3 }], ['env', 'adsr', { a: 0.01, d: 0.6, s: 0.6, r: 0.5 }], ['vca', 'vca'],
+      ['cho', 'chorus', { rate: 0.5, depth: 0.5, mix: 0.5 }], ['out', 'out', { level: 0.45 }],
+    ], [
+      ['midi.voct', 'ch.voct'], ['ch.voct', 'keys.voct'], ['midi.gate', 'keys.gate'], ['ch.voct', 'roll.voct'], ['midi.gate', 'roll.gate'],
+      ['ch.voct', 'vco.voct'], ['vco.saw', 'flt.in'], ['midi.gate', 'env.gate'], ['env.env', 'flt.cv'], ['flt.lp', 'vca.in'], ['env.env', 'vca.cv'],
+      ['vca.out', 'cho.in'], ['cho.l', 'out.l'], ['cho.r', 'out.r'],
+    ]),
+  },
 );
 
 export const rackPresetByName = (name: string): RackPatch | undefined => RACK_PRESETS.find((p) => p.patch.name === name)?.patch;

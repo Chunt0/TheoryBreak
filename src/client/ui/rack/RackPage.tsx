@@ -5,26 +5,23 @@
 
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { audio } from '../../audio/engine';
-import type { RackStatus } from '../../audio/rack/dsp';
 import { MODULES, MODULE_LIST, NOTE_NAMES, formatParam, fromNorm, toNorm, type Family, type ModuleType, type ParamDef } from '../../audio/rack/modules';
 import { RACK_PRESETS, type Jack, type RackCable, type RackModule } from '../../audio/rack/patch';
 import { buildChord } from '../../audio/rack/chords';
 import { euclid } from '../../audio/rack/more';
-import { createStore, useMini } from '../../app/createStore';
+import { useMini } from '../../app/createStore';
 import { addModule, connect, disconnect, moveModule, rack, redoRack, removeModule, saveRack, selectModule, selectStep, setModuleRow, setRackParam, undoRack } from '../../app/rackState';
 import { chooseSound } from '../../app/sounds';
 import { useStore } from '../../app/store';
 import { input } from '../../midi/input';
 import { Pick, releaseFocus, useMidiConnected, type Choice } from '../../simple/common';
 import { RackGuide, openGuide } from './RackGuide';
-
-/** Jack lights and panel numbers, refreshed ~20× a second while the rack is on screen. */
-const meters = createStore<RackStatus>({ meters: {}, display: {}, out: {}, scopes: {} });
+import { ModuleScreen, meters } from './Screens';
 
 const FAMILY_TITLE: Record<Family, string> = {
-  io: 'In & out', src: 'Sources', drum: 'Drums', mod: 'Modulation', seq: 'Clocks & sequencing', filter: 'Filters & shapers', amp: 'Amp & mix', fx: 'Effects', util: 'Utility',
+  io: 'In & out', src: 'Sources', drum: 'Drums', mod: 'Modulation', seq: 'Clocks & sequencing', filter: 'Filters & shapers', amp: 'Amp & mix', fx: 'Effects', util: 'Utility', view: 'Scopes & meters',
 };
-const ADD_GROUPS = (['src', 'drum', 'filter', 'amp', 'mod', 'seq', 'fx', 'util', 'io'] as Family[]).map((f) => ({
+const ADD_GROUPS = (['src', 'drum', 'filter', 'amp', 'mod', 'seq', 'fx', 'util', 'view', 'io'] as Family[]).map((f) => ({
   title: FAMILY_TITLE[f],
   types: MODULE_LIST.filter((m) => m.family === f),
 }));
@@ -436,7 +433,7 @@ const ModulePanel = memo(function ModulePanel({ m, index, row, autoRow, selected
       {m.type === 'clock' ? <span className="rk-beats">{[0, 1, 2, 3].map((b) => <i key={b} className={b === shown ? 'on' : ''} />)}</span> : null}
       {m.type === 'euclid' ? <EuclidRing steps={m.params.steps} fills={m.params.fills} rotate={m.params.rotate} now={shown} /> : null}
       {m.type === 'turing' ? <Bits value={shown} /> : null}
-      {m.type === 'scope' ? <ScopeScreen id={m.id} /> : null}
+      <ModuleScreen m={m} />
       <div className="rk-jacks">
         {fitsOneRow ? (
           <div className="rk-ports">{[...def.ins.map((p) => jack('in', p)), ...def.outs.map((p) => jack('out', p))]}</div>
@@ -467,22 +464,6 @@ function Bits({ value }: { value: number }) {
     <div className="rk-bits" aria-hidden="true">
       {[7, 6, 5, 4, 3, 2, 1, 0].map((b) => <i key={b} className={value >= 0 && (value >> b) & 1 ? 'on' : ''} />)}
     </div>
-  );
-}
-
-function ScopeScreen({ id }: { id: string }) {
-  const sc = useMini(meters, (s) => s.scopes[id]);
-  const W = 160;
-  const H = 70;
-  const line = (pts: number[] | null | undefined) =>
-    pts && pts.length ? pts.map((v, i) => `${((i / (pts.length - 1)) * W).toFixed(1)},${(H / 2 - Math.max(-H / 2, Math.min(H / 2, (v / 5) * (H / 2 - 3)))).toFixed(1)}`).join(' ') : '';
-  return (
-    <svg className="rk-scope" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-label="Oscilloscope">
-      {[1, 2, 3].map((k) => <line key={`v${k}`} x1={(W * k) / 4} x2={(W * k) / 4} y1={0} y2={H} className="grid" />)}
-      <line x1={0} x2={W} y1={H / 2} y2={H / 2} className="axis" />
-      {line(sc?.b) ? <polyline points={line(sc?.b)} className="tb" /> : null}
-      {line(sc?.a) ? <polyline points={line(sc?.a)} className="ta" /> : null}
-    </svg>
   );
 }
 

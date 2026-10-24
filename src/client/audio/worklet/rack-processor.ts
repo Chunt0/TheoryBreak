@@ -124,6 +124,7 @@ class RackProcessor extends scope.AudioWorkletProcessor {
       while (this.queue.length && this.queue[0].frame < end) this.apply(this.queue.shift()!.msg);
       this.rack.render(this.L, this.R, off, len);
     }
+    if (this.statusEnabled) this.rack.refreshView();
     out[0].set(this.L.subarray(0, n));
     if (out[1]) out[1].set(this.R.subarray(0, n));
 

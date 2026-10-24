@@ -1031,6 +1031,7 @@ body { overscroll-behavior: none; }
 .rk-mod.fam-util { --fam: #94a3b8; }
 .rk-mod.fam-drum { --fam: #f87171; }
 .rk-mod.fam-seq { --fam: #a3e635; }
+.rk-mod.fam-view { --fam: #fb923c; }
 .rk-mod.sel { box-shadow: inset 0 0 0 1.5px var(--fam), 0 0 0 1px var(--fam), 0 2px 10px rgb(0 0 0 / 0.6); }
 .rk-mod header { position: relative; display: flex; align-items: center; height: 26px; margin: 0 -4px; border-top: 3px solid var(--fam); border-radius: 4px 4px 0 0; }
 .rk-title {
@@ -1093,7 +1094,7 @@ body { overscroll-behavior: none; }
 .rk-bits { display: flex; justify-content: center; gap: 3px; }
 .rk-bits i { width: 9px; height: 9px; border-radius: 2px; background: #17191c; box-shadow: inset 0 0 0 1px #3a3d42; }
 .rk-bits i.on { background: #ff6b4a; box-shadow: 0 0 5px #ff6b4a; }
-.rk-scope { display: block; width: 100%; height: 70px; border-radius: 5px; background: #0a0d0a; box-shadow: inset 0 0 0 1px #000; }
+.rk-scope { display: block; width: 100%; flex: 1 1 0; min-height: 70px; max-height: 190px; border-radius: 5px; background: #0a0d0a; box-shadow: inset 0 0 0 1px #000; }
 .rk-scope .grid { stroke: #1d2a1d; stroke-width: 1; vector-effect: non-scaling-stroke; }
 .rk-scope .axis { stroke: #2c3d2c; stroke-width: 1; vector-effect: non-scaling-stroke; }
 .rk-scope .ta, .rk-scope .tb { fill: none; stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
@@ -1101,6 +1102,75 @@ body { overscroll-behavior: none; }
 .rk-scope .tb { stroke: #5ab0ff; }
 .rk-meter { align-self: center; width: 10px; height: 64px; display: flex; align-items: flex-end; border-radius: 3px; background: #121315; box-shadow: inset 0 0 0 1px #000; overflow: hidden; }
 .rk-meter i { width: 100%; background: linear-gradient(0deg, #2fbf71, #f5a524 80%, #e5484d); background-size: 100% 64px; background-position: bottom; transition: height 0.05s; }
+
+/* the display modules' screens: they take the panel's spare height */
+.rk-screen {
+  position: relative; flex: 1 1 0; min-height: 72px; max-height: 190px; overflow: hidden; border-radius: 5px;
+  background: #0a0d0a; box-shadow: inset 0 0 0 1px #000, inset 0 0 14px rgb(0 0 0 / 0.6);
+  font: 600 9.5px var(--mono); color: #b9d8b9; font-variant-numeric: tabular-nums;
+}
+.rk-screen > svg, .rk-screen > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.rk-screen .grid { stroke: #1a261a; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.rk-screen .axis { stroke: #2c3d2c; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.rk-screen .ta, .rk-screen .tb, .rk-screen .pk, .rk-screen .tx { fill: none; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.rk-screen .ta { stroke: #f5d142; stroke-width: 1.4; }
+.rk-screen .tb { stroke: #5ab0ff; stroke-width: 1.4; }
+.rk-screen .fa { fill: rgb(245 209 66 / 0.16); }
+.rk-screen .pk { stroke: rgb(255 255 255 / 0.4); stroke-width: 1; }
+.rk-screen .f0 { stroke: rgb(251 146 60 / 0.55); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.rk-screen .harm { stroke: #fb923c; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.rk-read { position: absolute; left: 5px; top: 3px; right: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e9f5e9; text-shadow: 0 1px 2px #000; pointer-events: none; }
+.rk-read b { color: #fb923c; font-weight: 700; }
+/* note-name ticks along an edge: across the bottom, or up the left side (.v) */
+.rk-axis { position: absolute; inset: auto 0 1px 0; height: 11px; pointer-events: none; color: #5d7a5d; font-size: 8px; }
+.rk-axis i { position: absolute; font-style: normal; translate: -50% 0; }
+.rk-axis.v { inset: 0 auto 0 2px; width: 26px; height: auto; }
+.rk-axis.v i { left: 0; translate: 0 50%; }
+.rk-roll .rk-axis.v i { translate: 0 -100%; }
+.rk-harm { position: absolute; inset: 18% 0 auto 0; height: 10px; pointer-events: none; color: #fb923c; font-size: 8px; }
+.rk-harm i { position: absolute; font-style: normal; translate: -50% 0; }
+.rk-sono > canvas { image-rendering: auto; }
+.rk-sono .rk-axis.v { color: rgb(255 255 255 / 0.55); text-shadow: 0 1px 2px #000; }
+.rk-xy { min-height: 110px; }
+.rk-xy .tx { stroke: #6cf08a; stroke-width: 1.4; filter: drop-shadow(0 0 2px rgb(108 240 138 / 0.7)); }
+.rk-xy .tx.t1 { opacity: 0.35; filter: none; }
+.rk-xy .tx.t2 { opacity: 0.15; filter: none; }
+.rk-xy .rk-read { top: auto; bottom: 3px; text-align: center; }
+/* tuner: the note big, a needle for the cents, green when in tune */
+.rk-tuner { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px 6px; --tn: #6b7f6b; }
+.rk-tuner.ok { --tn: #6cf08a; }
+.rk-tuner.near { --tn: #f5d142; }
+.rk-tuner.off { --tn: #ff7a59; }
+.rk-tn { font: 800 28px/1 var(--font); color: var(--tn); letter-spacing: 0.02em; }
+.rk-tn sub { font-size: 12px; vertical-align: baseline; margin-left: 1px; color: #8fa88f; }
+.rk-cents { position: relative; width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #3a1d18, #3a3518 35%, #183a20 45% 55%, #3a3518 65%, #3a1d18); }
+.rk-cents .mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: #8fa88f; }
+.rk-cents .needle { position: absolute; top: -3px; bottom: -3px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--tn); box-shadow: 0 0 6px var(--tn); transition: left 0.08s linear; }
+.rk-tsub { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8fa88f; }
+/* keyboard display */
+.rk-keys { display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 6px 5px; }
+.rk-keys > svg { position: static; flex: 1 1 0; min-height: 30px; max-height: 96px; }
+.rk-chord { font: 800 17px/1.1 var(--font); color: #fb923c; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rk-keys .rk-tsub { text-align: center; font-size: 10.5px; color: #c9dcc9; }
+.rk-keys .wk { fill: #d9d6cf; stroke: #0a0d0a; stroke-width: 0.6; }
+.rk-keys .wk.c4 { fill: #c4c0b7; }
+.rk-keys .bk { fill: #1b1d20; stroke: #000; stroke-width: 0.5; }
+.rk-keys .wk.on { fill: #fb923c; }
+.rk-keys .bk.on { fill: #e0701e; }
+/* piano roll */
+.rk-roll .lane { fill: rgb(255 255 255 / 0.035); }
+.rk-roll .nt { fill: color-mix(in oklab, #fb923c 70%, #0a0d0a); }
+.rk-roll .nt.now { fill: #fdba74; }
+.rk-roll .rk-axis.v { color: #7d967d; }
+/* voltmeter: four bipolar meters over the four jacks */
+.rk-volts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 4px; padding: 4px; }
+.rk-vm { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; min-height: 0; }
+.rk-vm b { font-weight: 700; color: #e9f5e9; white-space: nowrap; }
+.rk-vm.off b { color: #4b5b4b; }
+.rk-vm .track { position: relative; flex: 1; width: 12px; border-radius: 3px; background: #121812; box-shadow: inset 0 0 0 1px #000; }
+.rk-vm .zero { position: absolute; left: -3px; right: -3px; top: 50%; height: 1px; background: #4b5b4b; }
+.rk-vm .band { position: absolute; left: 0; right: 0; background: rgb(251 146 60 / 0.25); }
+.rk-vm .bar { position: absolute; left: 2px; right: 2px; background: #fb923c; box-shadow: 0 0 4px rgb(251 146 60 / 0.6); }
 
 /* cables: a coloured wire over a soft shadow, plugs at both ends */
 .rk-cables { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
@@ -1160,6 +1230,7 @@ body { overscroll-behavior: none; }
 .rk-g-topics .fam-io, .rk-g-body .fam-io { --fam: #8c939b; }
 .rk-g-topics .fam-drum, .rk-g-body .fam-drum { --fam: #e5484d; }
 .rk-g-topics .fam-seq, .rk-g-body .fam-seq { --fam: #7cb518; }
+.rk-g-topics .fam-view, .rk-g-body .fam-view { --fam: #ea7a28; }
 .rk-g-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) 18px; font-size: 14px; line-height: 1.55; -webkit-user-select: text; user-select: text; }
 .rk-g-body h2 { margin: 0 0 6px; font-size: 18px; display: flex; align-items: baseline; gap: 8px; }
 .rk-g-name { padding: 1px 8px; border-radius: 6px; background: #24272b; color: #f0ece4; border-top: 3px solid var(--fam); font: 800 12.5px var(--font); letter-spacing: 0.14em; }
@@ -1273,7 +1344,9 @@ body { overscroll-behavior: none; }
   .rk-meter { height: 34px; }
   .rk-help { display: none; }
   .rk-q { width: 15px; height: 15px; font-size: 9.5px; }
-  .rk-scope { height: 46px; }
+  .rk-scope { min-height: 44px; }
+  .rk-screen { min-height: 44px; }
+  .rk-tn { font-size: 20px; }
   .rk-pattern i { width: 6px; height: 6px; }
   .rk-guide-btn { height: 30px; padding: 0 10px; font-size: 13px; }
   .rk-g-body dl > div { grid-template-columns: 80px 1fr; }
