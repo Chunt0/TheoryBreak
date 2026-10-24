@@ -131,7 +131,7 @@ export function HomePage() {
           </a>
         ))}
       </div>
-      <p className="tiny faint" style={{ marginTop: 24 }}>Data stays on this machine{store.syncState === 'synced' ? ' and the Theory Break server' : ''}.</p>
+      <p className="tiny faint" style={{ marginTop: 24 }}>Data stays on this machine{store.syncState === 'synced' ? ' and the server' : ''}.</p>
     </div>
   );
 }

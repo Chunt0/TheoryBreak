@@ -1,0 +1,506 @@
+// The rack's manual: what each module is for, what every knob and jack does,
+// and a small patch to try. Shown by the guide panel (? on a module, or Guide).
+// Plain data, keyed by the catalogue in modules.ts; a test checks it covers
+// every knob and jack there.
+
+import type { ModuleType } from './modules';
+
+export interface ModuleGuide {
+  /** what it is, in a sentence or two */
+  what: string;
+  /** param id → what turning it does */
+  knobs: Record<string, string>;
+  /** input id → what to patch in */
+  ins: Record<string, string>;
+  /** output id → what comes out */
+  outs: Record<string, string>;
+  /** a patch to try, step by step ('module.jack' names as on the panels) */
+  tryIt: string[];
+  /** a closing tip */
+  tip?: string;
+}
+
+export const BASICS: { title: string; body: string }[] = [
+  {
+    title: 'Signals are voltages',
+    body: 'Every cable carries a voltage that changes over time. Fast wiggles (hundreds of times a second) are audio you hear; slow changes are control voltage (CV) that move a knob for you. The same jack takes either — patch an LFO into a filter and it sweeps, patch an oscillator into it and it growls.',
+  },
+  {
+    title: 'The usual ranges',
+    body: 'Audio swings ±5 V. Pitch is 1 V per octave: 0 V is middle C, +1 V the C above, 1/12 V a semitone. Gates are 10 V while a key is held and 0 V otherwise. Envelopes rise from 0 to 10 V; LFOs swing ±5 V.',
+  },
+  {
+    title: 'Patching',
+    body: 'Outputs sit on dark plates; inputs are bare jacks. Drag from one to the other, or tap one then the other. An output can feed many inputs; an input takes one cable, so patching into a used input replaces its cable. Tap a patched input (or drag its plug away) to unplug it.',
+  },
+  {
+    title: 'The voice chain',
+    body: 'Most sounds are the same chain: MIDI gives pitch and a gate → a VCO makes a tone → a filter shapes its brightness → a VCA, opened by an envelope, makes it start and stop → OUT. INIT is that chain at its smallest. Everything else is modulation: something changing something else over time.',
+  },
+  {
+    title: 'Polyphony',
+    body: 'Cables carry up to 8 voices at once. The MIDI module’s Voices knob decides how many; every module downstream runs one copy per voice, so a chord keeps each note’s envelope and filter separate. Mono sources (an LFO, the clock) feed every voice the same.',
+  },
+  {
+    title: 'Module colours',
+    body: 'The stripe on top of each module says what kind it is: amber sources (oscillators), red drums, purple modulation, lime clocks and sequencers, teal filters, blue amps and mixers, pink effects, grey utilities and in/out.',
+  },
+  {
+    title: 'Lights and knobs',
+    body: 'The small light next to an output glows with the signal in it. Drag a knob up or right to turn it up, double-tap to reset it. Tap a module’s name to select it — with a MiniLab, its knobs and faders then turn that module’s knobs.',
+  },
+];
+
+export const GUIDE: Record<ModuleType, ModuleGuide> = {
+  midi: {
+    what: 'Turns your playing into voltages: which note (V/Oct), whether a key is down (Gate), how hard (Vel), plus the mod and pitch strips. Nothing makes sound without it unless a clock and sequencer play the rack instead.',
+    knobs: {
+      voices: 'How many notes at once. 1 is mono, last note wins, and overlapping notes slide without restarting envelopes — the classic lead and bass feel. 2–8 make every cable polyphonic.',
+      glide: 'Portamento: pitch slides to each new note over this time instead of jumping.',
+      bend: 'How far the pitch strip bends, in semitones.',
+    },
+    ins: {},
+    outs: {
+      voct: 'Pitch of the key, 1 V/oct (middle C = 0 V), including glide and bend. Patch into a VCO’s V/Oct, and into a filter’s V/Oct so it brightens as you play higher.',
+      gate: '10 V while a key is held. Patch into an envelope’s Gate.',
+      vel: 'How hard you hit the key, 0–10 V. Patch into a VCA’s CV or a filter’s CV so harder notes are louder or brighter.',
+      trig: 'A short 10 V blip at the start of each note — for retriggering envelopes or clocking a sample & hold.',
+      mod: 'The mod strip, 0–10 V. Patch into an LFO’s Rate or a mixer level for hands-on vibrato and wah.',
+      at: 'Pressure, 0–10 V, on keyboards that send aftertouch.',
+    },
+    tryIt: ['Load INIT, then set Voices to 1 and Glide to about 150 ms.', 'Play legato: overlapping notes slide into each other.'],
+  },
+  vco: {
+    what: 'The voltage-controlled oscillator — the tone source. It plays four waveforms at once; pick one by which output you patch. Sine is pure, triangle soft, saw bright and buzzy, square hollow (like a clarinet).',
+    knobs: {
+      oct: 'Shifts the pitch in octaves.',
+      tune: 'Fine pitch in semitones. Two VCOs a few hundredths apart beat against each other and sound thick.',
+      fm: 'How much the FM input bends the pitch. Small amounts from an LFO are vibrato; audio-rate amounts make metallic, bell-like tones.',
+      pw: 'Width of the square wave: 50% is hollow and square, narrow is thin and nasal.',
+      pwm: 'How much the PWM input moves the width.',
+    },
+    ins: {
+      voct: 'Pitch, 1 V/oct — usually MIDI V/Oct, a sequencer or a quantizer.',
+      fm: 'Frequency modulation, scaled by the FM knob. An LFO here = vibrato; another VCO here = FM synthesis.',
+      pwm: 'Moves the square’s width. A slow LFO here gives the classic shimmering, chorus-like PWM pad.',
+      sync: 'Each rising edge restarts this oscillator’s cycle. Feed another VCO and tune this one up: hard-sync screams.',
+    },
+    outs: {
+      sin: 'Sine: one pure partial. Great for sub-bass, FM, and folding.',
+      tri: 'Triangle: soft, flute-like, a few odd harmonics.',
+      saw: 'Saw: every harmonic — the brightest wave, home of strings and brass.',
+      sqr: 'Square / pulse: odd harmonics, hollow. Narrow widths turn nasal.',
+    },
+    tryIt: ['Load INIT, select the VCO and add an LFO.', 'Patch LFO Tri → VCO FM and turn FM to about 0.05: vibrato.', 'Turn the LFO Rate up past 30 Hz and FM higher: the tone goes clangorous.'],
+  },
+  lfo: {
+    what: 'A low-frequency oscillator: a wave too slow to hear, used to move other knobs over and over — vibrato, wah, tremolo, panning.',
+    knobs: { rate: 'Speed in cycles per second (Hz). Below 1 Hz is a slow sweep; 5–7 Hz is vibrato speed.' },
+    ins: {
+      rate: 'Speeds the LFO up or down, 1 V/oct. Patch MIDI Mod here and the mod strip speeds the vibrato.',
+      reset: 'A rising edge restarts the wave from the top — patch MIDI Gate so every note’s vibrato starts the same way.',
+    },
+    outs: { sin: 'Smooth and round.', tri: 'Even, straight up and down.', saw: 'Ramps up, then drops: a repeating swell.', sqr: 'Flips between two values: trills and on/off tremolo.' },
+    tryIt: ['Load INIT and add an LFO and a VCF between VCO and VCA.', 'Patch LFO Sin → VCF CV with Rate around 0.5 Hz: an automatic wah.'],
+  },
+  adsr: {
+    what: 'The envelope: a shape that plays once per note. It rises while the gate is high (Attack), falls to a holding level (Decay to Sustain), and falls away after you let go (Release). Into a VCA it shapes loudness; into a filter, brightness.',
+    knobs: {
+      a: 'Attack: time to rise to full. Short = percussive pluck; long = bowed swell.',
+      d: 'Decay: time to fall from full to the sustain level.',
+      s: 'Sustain: the level held while the key stays down. 0 makes a pluck that dies away even if you hold the key.',
+      r: 'Release: time to fade to silence after the key is let go.',
+    },
+    ins: {
+      gate: 'Starts the envelope while high — MIDI Gate, a sequencer gate or a clock.',
+      retrig: 'Restarts the attack while the gate is still held (for trills on a mono voice).',
+    },
+    outs: { env: 'The envelope, 0–10 V.' },
+    tryIt: ['Load INIT. Set Attack 5 ms, Decay 300 ms, Sustain 0: a pluck.', 'Now Attack 600 ms, Sustain 80%, Release 1.5 s: a pad.'],
+    tip: 'Use two envelopes — one on the VCA, a snappier one on the filter — for sounds that start bright and mellow out.',
+  },
+  vcf: {
+    what: 'A state-variable filter: removes part of the sound’s harmonics. Low-pass (LP) keeps the lows and darkens, high-pass (HP) thins, band-pass (BP) keeps a narrow band like a wah. All three come out at once.',
+    knobs: {
+      cutoff: 'Where the filter starts cutting. Low = dark and muffled, high = open and bright.',
+      res: 'Resonance: boosts the frequencies right at the cutoff. High settings whistle and squelch.',
+      cv: 'How much the CV input moves the cutoff, in octaves per volt; negative values move it the other way.',
+    },
+    ins: {
+      in: 'Audio to filter.',
+      cv: 'Moves the cutoff — patch an envelope for each-note brightness, or an LFO for a sweep.',
+      voct: 'Moves the cutoff 1 V/oct, so patching MIDI V/Oct here keeps high notes as bright as low ones (key tracking).',
+      res: 'Moves the resonance.',
+    },
+    outs: { lp: 'Low-pass: the warm, classic synth tone.', bp: 'Band-pass: nasal, vocal, wah-like.', hp: 'High-pass: thin and airy — good for hats from noise.' },
+    tryIt: ['Load POLY PAD and select the VCF.', 'Turn Cutoff down and Res up while holding a chord.', 'Move the VCA’s input cable from LP to BP, then HP, and listen to each.'],
+  },
+  ladder: {
+    what: 'A transistor-ladder low-pass (24 dB): steeper, fatter and more saturated than the VCF. It is the sound of most acid basslines and fat leads, and it self-oscillates into a pure tone near full resonance.',
+    knobs: {
+      cutoff: 'Where the filter starts cutting.',
+      res: 'Resonance. Near full it rings at the cutoff; it also thins the low end, as on the real circuit.',
+      cv: 'How much the CV input moves the cutoff, octaves per volt.',
+      drive: 'Input gain: pushes the circuit into warm saturation.',
+    },
+    ins: { in: 'Audio to filter.', cv: 'Moves the cutoff — an envelope here is the acid squelch.', voct: 'Key tracking, 1 V/oct.' },
+    outs: { out: 'Low-pass output.' },
+    tryIt: ['Load MONO LEAD.', 'Turn the ladder’s Res to about 80% and play staccato in the bass: squelch.', 'Raise the filter envelope’s Decay to lengthen each “wow”.'],
+  },
+  vca: {
+    what: 'The voltage-controlled amplifier: a volume knob that a voltage turns. With an envelope on CV, it is what makes a note start and stop. With nothing in CV it just passes the signal at Level.',
+    knobs: { level: 'Overall gain.', resp: 'Lin follows the CV evenly; Exp is snappier — quiet tails fall away fast, good for plucks and drums.' },
+    ins: { in: 'The signal to control (audio or CV — a VCA on an LFO fades vibrato in and out).', cv: 'The gain, 0–10 V → 0–100%.' },
+    outs: { out: 'The signal, scaled.' },
+    tryIt: ['In INIT, unplug ADSR Env → VCA CV: the oscillator drones.', 'Plug it back in: notes start and stop again.'],
+  },
+  mix: {
+    what: 'Adds up to four signals, each with its own level. Use it to layer oscillators, or to combine control voltages (an envelope plus an LFO into one filter CV).',
+    knobs: { l1: 'Level of input 1.', l2: 'Level of input 2.', l3: 'Level of input 3.', l4: 'Level of input 4.' },
+    ins: { in1: 'Signal 1.', in2: 'Signal 2.', in3: 'Signal 3.', in4: 'Signal 4.' },
+    outs: { out: 'The sum.' },
+    tryIt: ['Patch two VCOs (one an octave down) into a MIX and the MIX into the filter: a fat layered tone.'],
+    tip: 'Mixing pitch voltages adds them: a sequencer plus MIDI V/Oct transposes the sequence by the key you hold.',
+  },
+  noise: {
+    what: 'White and pink noise, plus a sample & hold. Noise makes hats, snares, wind and breath. The S&H grabs a voltage each time it is clocked and holds it until the next — with nothing in In, a random one each time: the classic random bleeps.',
+    knobs: { level: 'Noise level.' },
+    ins: { clk: 'Each rising edge takes a new sample.', in: 'What to sample. Leave empty for random values.' },
+    outs: { white: 'White noise: hiss, all frequencies equally.', pink: 'Pink noise: softer, more like rain or surf.', sh: 'The held sample: a stepped random voltage.' },
+    tryIt: ['Load S&H BLEEPS — clock → S&H → quantizer → VCO.', 'Change the quantizer’s scale and root while it plays.'],
+  },
+  clock: {
+    what: 'A metronome made of gates. It drives sequencers, sample & holds and envelopes in time. The four outputs are the same tempo at different speeds.',
+    knobs: { bpm: 'Tempo in beats per minute.', run: 'Start and stop. Esc (or a long pitch-strip push down) stops every clock too.' },
+    ins: {},
+    outs: { q: 'Quarter notes.', e: 'Eighth notes.', s: 'Sixteenth notes.', bar: 'Once per bar of 4/4.' },
+    tryIt: ['Load DORIAN SEQ and change the clock’s tempo.', 'Move the sequencer’s Clock cable from ♪ to 16th: double time.'],
+  },
+  seq: {
+    what: 'An 8-step sequencer: each clock pulse moves to the next step, which sends its pitch and (if its light is on) a gate. Pitch is in semitones from the root.',
+    knobs: {
+      s0: 'Step pitches, in semitones (−12 to +12).',
+      g0: 'Step gates: lit = the step plays, dark = a rest.',
+      len: 'How many steps before it loops — 5 or 7 against a 4/4 clock makes shifting, polymetric lines.',
+    },
+    ins: { clk: 'Advances one step per rising edge — patch a clock.', reset: 'Jumps back to step 1 — patch the clock’s Bar output to keep it locked to the bar.' },
+    outs: { voct: 'The current step’s pitch, 1 V/oct.', gate: 'A gate on each step whose light is on.' },
+    tryIt: ['Load DORIAN SEQ. Change the step knobs: the quantizer keeps every note in D Dorian.', 'Turn off a few step lights for rests, and set Length to 7.'],
+  },
+  quant: {
+    what: 'Snaps any voltage to the nearest note of a scale, so random or sweeping voltages play in key. Trig fires whenever the note changes.',
+    knobs: { root: 'The scale’s root note.', scale: 'The scale: majors, minors, modes, pentatonics, blues, whole-tone, diminished, altered…' },
+    ins: { in: 'Any pitch voltage: a sequencer, the sample & hold, an LFO.' },
+    outs: { out: 'The voltage, snapped to the scale (1 V/oct).', trig: 'A short pulse each time the note changes — patch into an envelope so every new note plays.' },
+    tryIt: ['Load S&H BLEEPS. Try Lydian on F, then Altered on G: the same randomness, different harmony.'],
+    tip: 'Patch an LFO’s triangle into the quantizer and its Trig into the envelope: scales run up and down by themselves.',
+  },
+  delay: {
+    what: 'Echoes: the input comes back after Time, again and again as Feedback feeds the echo back in. Tone darkens each repeat, like tape.',
+    knobs: {
+      time: 'Gap between echoes. Turning it while echoes ring bends their pitch, like tape.',
+      fb: 'How much of each echo returns. High settings repeat for a long time.',
+      mix: 'Balance between the dry sound and the echoes.',
+      tone: 'Darkens the echoes so they sit behind the dry sound.',
+    },
+    ins: { in: 'Audio (all voices are summed in).', time: 'Moves the delay time — a slow LFO here gives a chorused, warbling echo.' },
+    outs: { out: 'Dry plus echoes.' },
+    tryIt: ['Load POLY PAD. Raise Feedback to 70% and play short chords.', 'Turn Time slowly while the echoes ring: tape-style pitch bends.'],
+  },
+  fold: {
+    what: 'A wavefolder, the west-coast way to brighten a sound. Push a wave past the edge and it folds back on itself, adding overtones. Driven softly it barely changes; driven hard it gets glassy and metallic.',
+    knobs: { fold: 'How hard the input is driven into the folds.', bias: 'Shifts the wave before folding: makes the folds lopsided and adds even harmonics.', cv: 'How much the CV input adds to Fold.' },
+    ins: { in: 'Audio — a sine or triangle shows off the folding best.', cv: 'Adds to Fold: an envelope here makes notes start bright and soften, like a plucked string.' },
+    outs: { out: 'The folded wave.' },
+    tryIt: ['Load WEST COAST and select FOLD.', 'Turn Fold up slowly while holding a note, then sweep Bias.'],
+  },
+  util: {
+    what: 'Two lanes of Out = In × Gain + Offset. Turns a signal down, flips it upside down (negative Gain), or shifts it. With nothing patched in, it is a steady voltage set by hand — a manual knob for any input.',
+    knobs: {
+      a1: 'Lane 1 gain: 1 = unchanged, 0 = off, negative = inverted.',
+      o1: 'Lane 1 offset, added after the gain.',
+      a2: 'Lane 2 gain.',
+      o2: 'Lane 2 offset.',
+    },
+    ins: { in1: 'Lane 1 input.', in2: 'Lane 2 input.' },
+    outs: { out1: 'Lane 1 result.', out2: 'Lane 2 result.' },
+    tryIt: ['Add ATT/OFS with nothing in it and patch Out 1 → VCO V/Oct: Offset 1 now tunes the oscillator by hand (1 V = an octave).'],
+    tip: 'Inverting an envelope (Gain −1) into a filter CV makes notes close the filter instead of opening it.',
+  },
+  // ------------------------------------------------------------ second shelf: sources
+  wt: {
+    what: 'A wavetable oscillator: eight single-cycle waves in a row — sine, triangle, saw, square, pulse, organ, vocal, glass — and Table slides smoothly between neighbours. Modulate Table and the timbre moves while the pitch stays put.',
+    knobs: {
+      oct: 'Shifts the pitch in octaves.',
+      tune: 'Fine pitch in semitones.',
+      table: 'Which wave, or how far between two: 2.5 is half saw, half square.',
+      cv: 'How much the Table input moves the position; negative turns it the other way.',
+      fm: 'How much the FM input bends the pitch (vibrato, or metallic at audio rate).',
+    },
+    ins: { voct: 'Pitch, 1 V/oct.', table: 'Moves through the tables — an LFO, an envelope, or FUNC looping for a slow evolving sweep.', fm: 'Pitch modulation, scaled by FM.' },
+    outs: { out: 'The wave, ±5 V.' },
+    tryIt: ['Load ARP LPG: a FUNC loops slowly and sweeps the WT’s Table while the arpeggio plays.', 'Select the WT and turn Table by hand to hear each wave.'],
+    tip: 'Organ, vocal and glass are hard to get from a VCO and filter — they’re the reason to reach for a wavetable.',
+  },
+  fmop: {
+    what: 'Two sine oscillators in one: the modulator wobbles the carrier’s phase, as in the DX7. At Index 0 you hear a pure sine; turn Index up and overtones bloom. Ratio decides which overtones — whole numbers sound harmonic, 3.5 sounds like a bell.',
+    knobs: {
+      oct: 'Shifts the pitch in octaves.',
+      tune: 'Fine pitch in semitones.',
+      ratio: 'The modulator’s frequency as a multiple of the carrier’s. ×1 is brass-like, ×2 hollow, ×3.5 and ×7 bell and metal.',
+      index: 'Modulation depth: brightness. Changing it over a note is what makes FM sounds speak.',
+      fb: 'Feeds the modulator back into itself, turning its sine toward a saw for grittier tones.',
+      cv: 'How much the Index input adds to Index.',
+    },
+    ins: { voct: 'Pitch, 1 V/oct.', index: 'Adds to Index — patch an envelope for a bright attack that mellows, the classic FM piano and bell.', fm: 'Extra phase modulation from any audio source.' },
+    outs: { out: 'The carrier: the FM sound.', mod: 'The modulator on its own — another sine, at Ratio × the pitch.' },
+    tryIt: ['Load FM BELLS: an envelope on Index makes each note strike bright and fade to a pure tone.', 'Change Ratio while playing: ×1, ×2, ×3.5, ×7.'],
+  },
+  string: {
+    what: 'A plucked string, physically modelled: each Pluck fills a tuned delay with a burst of noise that circulates, loses its brightness a little on every trip, and settles into a pitched tone — the Karplus–Strong algorithm. Sounds like harp, guitar, koto or clavinet.',
+    knobs: {
+      oct: 'Shifts the pitch in octaves.',
+      decay: 'How long the string rings.',
+      tone: 'How bright the ringing stays. Low = dull nylon, high = bright steel.',
+      bright: 'How bright the pluck itself is: soft finger to sharp pick.',
+    },
+    ins: { voct: 'Pitch, 1 V/oct.', trig: 'Each rising edge plucks the string — MIDI Trig, a clock or a sequencer gate.', in: 'Excite the string with any audio instead of (or as well as) a pluck: bowed or blown strings, or a resonator for drums.' },
+    outs: { out: 'The string.' },
+    tryIt: ['Load HARP and play chords.', 'Turn Tone down and Decay short: a muted guitar.'],
+  },
+  kick: {
+    what: 'A bass drum in the 808/909 tradition: a sine whose pitch drops quickly after each hit, then fades out.',
+    knobs: {
+      tune: 'The drum’s pitch once the drop has settled.',
+      decay: 'How long it booms. Short for punchy techno, long for 808 bass.',
+      punch: 'How far and fast the pitch drops — the click and thump of the attack.',
+      drive: 'Saturation: rounder at 1, more aggressive above 3.',
+    },
+    ins: { trig: 'Each rising edge is a hit.', accent: 'Hit level, 0–10 V (patch MIDI Vel for touch sensitivity). Empty = full level.' },
+    outs: { out: 'The drum.' },
+    tryIt: ['Load DRUM MACHINE.', 'Turn the KICK’s Decay up to a second and Tune down: an 808 boom.'],
+  },
+  snare: {
+    what: 'A snare: two tuned body tones for the drum heads plus a burst of filtered noise for the wires underneath.',
+    knobs: {
+      tune: 'Pitch of the drum heads.',
+      decay: 'Length of the hit.',
+      snappy: 'Balance of noise (the wires) against the body.',
+      tone: 'Brightness of the noise.',
+    },
+    ins: { trig: 'Each rising edge is a hit.', accent: 'Hit level, 0–10 V. Empty = full level.' },
+    outs: { out: 'The drum.' },
+    tryIt: ['In DRUM MACHINE, turn Snappy down for a tom-like drum, up for a clap-like crack.'],
+  },
+  hats: {
+    what: 'Hi-hats made the way the TR-808 made them: six square waves at clashing frequencies plus noise, high-passed into a metallic hiss. A closed hit chokes a ringing open one, like a real hi-hat pedal.',
+    knobs: { decay: 'Length of a closed hat.', open: 'Length of an open hat.', tone: 'Pitch and brightness of the metal.' },
+    ins: { trig: 'Closed hat.', open: 'Open hat.', accent: 'Hit level, 0–10 V. Empty = full level.' },
+    outs: { out: 'The hats.' },
+    tryIt: ['DRUM MACHINE sends 16ths through a COIN: most go to the closed input, a few to the open one.'],
+  },
+  // ------------------------------------------------------------ modulation
+  func: {
+    what: 'A function generator, after Make Noise’s Maths. On a trigger it rises to 10 V and falls back: an envelope. With Loop on it repeats: an LFO whose up and down slopes you set separately. Patch a signal into In instead and it follows it no faster than Rise and Fall allow: slew, portamento, smoothing.',
+    knobs: {
+      rise: 'Time to rise (or fastest climb when following In).',
+      fall: 'Time to fall (or fastest drop when following In).',
+      shape: 'Curve of the slopes: Log bulges up, Exp sags down, Lin is straight.',
+      loop: 'Cycle forever: a rise-fall LFO. A short rise and long fall is a ramp; equal times a triangle.',
+    },
+    ins: { trig: 'Starts a rise-and-fall.', in: 'A voltage to follow, smoothed by Rise and Fall.' },
+    outs: { out: 'The shape, 0–10 V (or the smoothed input).', end: 'A trigger when each fall finishes — patch it back into Trig, or chain several FUNCs.' },
+    tryIt: ['Patch a sequencer’s V/Oct through FUNC In before the VCO: notes glide into each other.', 'Turn Loop on with Rise 2 s, Fall 4 s and patch Out into a filter CV: a slow breathing sweep.'],
+  },
+  rand: {
+    what: 'Random voltages. Each tick — at Rate, or on every clock if one is patched — it picks a new value. Step jumps straight there; Smooth glides. On a poly cable each voice gets its own value, which makes chords drift apart in a lifelike way.',
+    knobs: { rate: 'Ticks per second when no clock is patched.', amt: 'How far the values range, up to ±5 V.' },
+    ins: { clk: 'Each rising edge is a tick (Rate is ignored).' },
+    outs: { step: 'Stepped random: sample & hold.', smooth: 'The same values, joined by smooth curves.', trig: 'A short trigger on every tick.' },
+    tryIt: ['Patch Smooth at Rate 0.3 Hz into a VCO’s FM with FM at 0.02: analogue-style pitch drift.', 'Patch Step through a QUANT into a VCO for random melodies.'],
+  },
+  // ------------------------------------------------------------ sequencing
+  turing: {
+    what: 'The Turing Machine: a loop of 16 bits that shifts one place on every clock. The bits make a voltage — a melody — and a gate. At Change 0 the loop repeats exactly; nudge Change up and bits flip now and then, so the tune slowly evolves. Find a phrase you like, turn Change to 0, and it’s locked.',
+    knobs: {
+      change: 'Chance a bit flips as it comes round. 0 = locked loop, a little = slow evolution, 50% = fully random.',
+      length: 'Loop length in steps (2–16).',
+      range: 'Voltage range of the melody: 1 V = one octave.',
+    },
+    ins: { clk: 'Moves the loop on one step.' },
+    outs: { cv: 'The melody voltage — through a QUANT to stay in key.', gate: 'A gate on steps whose newest bit is 1: a rhythm that loops with the melody.' },
+    tryIt: ['Load TURING BASS. Turn Change up until the line changes, then back to 0 to keep it.', 'Change Length to 5 or 7 against the 4/4 drums.'],
+  },
+  euclid: {
+    what: 'Euclidean rhythm generator: spreads Hits as evenly as possible across Steps. Many of the world’s rhythms fall out of it — 3 in 8 is the Cuban tresillo, 5 in 8 the cinquillo, 7 in 12 a West African bell pattern, 5 in 16 a bossa nova.',
+    knobs: { steps: 'Length of the pattern.', fills: 'How many hits to spread over it.', rotate: 'Turns the pattern so it starts on a different step.' },
+    ins: { clk: 'Moves one step per pulse — usually a clock’s 16th output.', reset: 'Back to step 1 — patch the clock’s Bar output.' },
+    outs: { gate: 'A gate on every hit.', off: 'A gate on every rest — the pattern’s mirror image.' },
+    tryIt: ['DRUM MACHINE uses two: the kick on 3 in 16, the snare on 2 in 16 rotated by 4 (the backbeat).', 'Try the kick on 5 in 16, then rotate it.'],
+  },
+  div: {
+    what: 'A clock divider and multiplier: from one clock it makes double time and every 2nd, 3rd, 4th, 6th and 8th pulse. Drive different parts from different outputs and they lock together in polyrhythm — 3 against 4, 3 against 2.',
+    knobs: {},
+    ins: { clk: 'The clock to divide.', reset: 'Restarts the count so every output lines up again.' },
+    outs: {
+      x2: 'Twice as fast (measured from the last two pulses).',
+      d2: 'Every 2nd pulse.',
+      d3: 'Every 3rd pulse: against ÷2 or ÷4, a 3-against-2 polyrhythm.',
+      d4: 'Every 4th pulse.',
+      d6: 'Every 6th pulse.',
+      d8: 'Every 8th pulse.',
+    },
+    tryIt: ['Clock a SEQ from ÷3 and an EUCLID from ÷2 off the same clock: they meet every 6 pulses.'],
+  },
+  coin: {
+    what: 'A Bernoulli gate: tosses a coin for every incoming gate and sends it out of A or B. Use it to vary a rhythm (most hats closed, some open), or to split one rhythm between two sounds.',
+    knobs: { prob: 'Chance a gate goes to B. 0 = always A, 100% = always B.' },
+    ins: { in: 'The gates to route.', prob: 'Adds to the chance: 10 V adds 100%.' },
+    outs: { a: 'The gates that landed on A.', b: 'The gates that landed on B.' },
+    tryIt: ['In DRUM MACHINE, turn the COIN’s chance up for more open hats.'],
+  },
+  switch: {
+    what: 'A sequential switch: each clock moves the output to the next input, round and round. Switch between two sequences every bar, or between sounds note by note.',
+    knobs: { steps: 'How many inputs it cycles through (2–4).' },
+    ins: { clk: 'Moves to the next input.', reset: 'Back to input 1.', in1: 'Input 1.', in2: 'Input 2.', in3: 'Input 3.', in4: 'Input 4.' },
+    outs: { out: 'Whichever input is selected.' },
+    tryIt: ['Patch two ATT/OFS offsets (0 V and +5/12 V) into 1 and 2, the clock’s Bar output into Clock and Out into a sequencer’s pitch path through a MIX: the line moves up a 4th every other bar.'],
+  },
+  arp: {
+    what: 'An arpeggiator: plays the notes you hold one after another, up, down, up and down, or at random, across one to four octaves. It needs several notes at once, so set the MIDI module to 2 or more voices.',
+    knobs: {
+      mode: 'Order: Up, Down, Up-down (without repeating the end notes) or random.',
+      oct: 'How many octaves it climbs.',
+      rate: 'Notes per second when no clock is patched.',
+      len: 'Note length as a share of each step: short for staccato, full for legato.',
+    },
+    ins: { voct: 'MIDI V/Oct (poly).', gate: 'MIDI Gate (poly): which notes are held.', clk: 'Plays one note per pulse (Rate is ignored) — sync it to the drums.' },
+    outs: { voct: 'The arpeggio’s pitch, 1 V/oct.', gate: 'A gate per arpeggio note.' },
+    tryIt: ['Load ARP LPG and hold a chord. Try Up-down over 2 octaves.'],
+  },
+  // ------------------------------------------------------------ filters and shapers
+  lpg: {
+    what: 'A low-pass gate, Don Buchla’s instrument: a filter and a VCA opened together by a light shining on a photocell (a vactrol). Louder is brighter, as with real instruments, and a Ping strikes it open and lets it decay like a plucked or struck object.',
+    knobs: {
+      decay: 'How slowly it closes after a Ping.',
+      mode: 'Both = filter and level (the classic); LP = filter only; VCA = level only.',
+      level: 'How open it sits with nothing in CV.',
+    },
+    ins: { in: 'Audio.', cv: 'Opens it, 0–10 V — an envelope or LFO.', ping: 'Strikes it fully open, then it decays — a gate, trigger or clock. No envelope needed.' },
+    outs: { out: 'The gated sound.' },
+    tryIt: ['Load ARP LPG: every arpeggio gate pings the LPG, giving each note a natural, woody decay.'],
+  },
+  comb: {
+    what: 'A comb filter: a very short delay fed back into itself. Its echoes are so close they become a pitch — metallic resonance, flanging, or with V/Oct patched a tuned resonator that rings at the note you play. Negative feedback sounds an octave lower and hollower.',
+    knobs: { freq: 'The resonant pitch (1 ÷ the delay time).', fb: 'How strongly it rings; near ±1 it sustains. Negative = hollow, odd harmonics.', mix: 'Dry against filtered.' },
+    ins: { in: 'Audio — noise or drums make it sing.', voct: 'Tunes the resonance, 1 V/oct: play it like an instrument.' },
+    outs: { out: 'The filtered sound.' },
+    tryIt: ['Patch NOISE White → COMB In and MIDI V/Oct → COMB V/Oct, Freq to 260 Hz, Feedback 0.95: a pitched, bowed noise.'],
+  },
+  vowel: {
+    what: 'A formant filter: three resonant peaks placed where a singer’s mouth puts them for A, E, I, O and U. A saw through it sounds like a voice; sweeping the vowel is the talk box sound of Roger Troutman and Zapp.',
+    knobs: {
+      vowel: 'The vowel: A E I O U, gliding between them.',
+      shift: 'Moves all formants up or down: a smaller or larger mouth.',
+      res: 'How sharp and vocal the peaks are.',
+      cv: 'How much the Vowel input moves the vowel.',
+    },
+    ins: { in: 'Audio — a bright saw or square works best.', cv: 'Moves through the vowels — an LFO, an envelope, or the mod strip (MIDI Mod).' },
+    outs: { out: 'The vowel sound.' },
+    tryIt: ['Load TALKBOX FUNK and play with the mod strip: it morphs the vowel.'],
+  },
+  ring: {
+    what: 'A ring modulator: multiplies two signals. What comes out is the sum and difference of their frequencies — not the originals — so musical intervals turn clangorous and bell-like. With nothing in Carrier it uses its own sine at Freq.',
+    knobs: { freq: 'The internal carrier’s frequency, used when Carrier is empty.', mix: 'Dry against ring-modulated.' },
+    ins: { a: 'The sound to modulate.', b: 'The carrier: another oscillator (or an LFO, for tremolo that flips phase).' },
+    outs: { out: 'The product.' },
+    tryIt: ['Insert a RING between a VCO and the filter. Set Freq to 30 Hz for a robot voice, then 1.1 kHz for bells.'],
+  },
+  drive: {
+    what: 'Overdrive: pushes the signal into saturation, adding harmonics. Soft is tape and tube warmth, Hard is clipping fuzz, Tube is lopsided (even harmonics, like a valve amp). Tone tames the fizz.',
+    knobs: { drive: 'How hard it is pushed.', shape: 'Soft, Hard or Tube saturation.', tone: 'A low-pass after the drive, to smooth the top end.', mix: 'Dry against driven — parallel distortion keeps the attack.' },
+    ins: { in: 'Audio.', cv: 'More drive, exponentially: an envelope here makes notes bite harder at the start.' },
+    outs: { out: 'The driven sound.' },
+    tryIt: ['Put DRIVE after the ladder filter in MONO LEAD, Drive ×8, Tone 3k.'],
+  },
+  crush: {
+    what: 'A bitcrusher: fewer bits put stairs in the wave (grit and noise), a lower sample rate folds high frequencies back down as inharmonic, ringing tones. The sound of early samplers and game consoles.',
+    knobs: { bits: 'Bit depth: 16 is clean, 4 is crunchy, 1 is a square wave.', rate: 'Sample rate: under 4 kHz rings and aliases.', mix: 'Dry against crushed.' },
+    ins: { in: 'Audio.' },
+    outs: { out: 'The crushed sound.' },
+    tryIt: ['Put CRUSH on the drums in DRUM MACHINE: 6 bits at 12 kHz.'],
+  },
+  // ------------------------------------------------------------ effects
+  verb: {
+    what: 'A reverb: a network of eight echoes and four diffusers per side (the Freeverb design) — the sound of a room around the sound. Mono in, stereo out.',
+    knobs: { size: 'Room size: how long the tail lasts.', damp: 'How quickly the tail loses its high end: soft rooms damp more.', mix: 'Dry against reverberant.' },
+    ins: { in: 'Audio (all voices are summed in).' },
+    outs: { l: 'Left.', r: 'Right.' },
+    tryIt: ['Load HARP, select the VERB and turn Size to 90%.'],
+    tip: 'The app has a gentle reverb on everything already (⚙). VERB is for when the rack wants its own big space.',
+  },
+  chorus: {
+    what: 'Chorus: copies of the sound, slightly delayed and gently wobbling in pitch, one left and one right — the shimmer of a Juno or a Rhodes through a chorus pedal. With Feedback it becomes a flanger’s jet-plane sweep.',
+    knobs: { rate: 'Wobble speed.', depth: 'Wobble amount.', fb: 'Feedback: above zero it flanges.', mix: 'Dry against chorused.' },
+    ins: { in: 'Audio (all voices are summed in).' },
+    outs: { l: 'Left.', r: 'Right.' },
+    tryIt: ['Load DIATONIC 7THS: the chords go through a CHORUS into a VERB. Turn Feedback up to hear it flange.'],
+  },
+  phaser: {
+    what: 'A phaser: six all-pass stages shift the sound’s phase so that, mixed with the dry signal, notches appear — and an LFO sweeps them up and down. The swirling 70s sound on Rhodes, clavinet and funk guitar.',
+    knobs: { rate: 'Sweep speed.', depth: 'How far the notches travel.', fb: 'Feedback: deeper, more resonant notches.', mix: 'Dry against phased; 50% gives the deepest notches.' },
+    ins: { in: 'Audio (all voices are summed in).' },
+    outs: { out: 'The phased sound.' },
+    tryIt: ['Put a PHASER on the DX7-style FM BELLS rack, Rate 0.3 Hz, Feedback 70%.'],
+  },
+  // ------------------------------------------------------------ utilities
+  chord: {
+    what: 'A chord generator: one note in, every tone of a chord out on a poly cable, so one VCO and one filter play the whole chord. Pick a quality — triads, 7ths, 9ths, 13ths, altered — or Key 3 / Key 7 for the diatonic triad or 7th chord of the key on whatever note you play: C in C gives Cmaj7, D gives Dm7, G gives G7. The panel names the chord.',
+    knobs: {
+      key: 'The key for Key 3 and Key 7. Ignored by the other qualities.',
+      type: 'Chord quality. Key 3 and Key 7 harmonise in the key: play the scale and hear its chords.',
+      inv: 'Inversion: how many times the bottom note moves up an octave.',
+      voicing: 'Close (as stacked), Drop 2 (second-highest note down an octave — the jazz guitar and big-band sound) or Spread (every other note up).',
+    },
+    ins: { voct: 'The root, 1 V/oct (voice 1 of a poly cable).', type: 'Steps through the qualities: every ½ V is one more.', inv: 'Adds inversions: every volt is one more.' },
+    outs: { voct: 'The chord: one voice per tone, 1 V/oct. Patch into a VCO.', bass: 'The root an octave down: patch into a second VCO for a bass line.' },
+    tryIt: ['Load DIATONIC 7THS and play a C major scale: every note harmonises as its chord in C.', 'Change Key to F and play again; then try Drop 2.'],
+    tip: 'Leave the MIDI module at 1 voice for this: CHORD makes the voices.',
+  },
+  logic: {
+    what: 'Gate logic: compares two gates. AND is high only when both are, OR when either is, XOR when exactly one is, NOT A whenever A is low. Combine two simple rhythms into a new one.',
+    knobs: {},
+    ins: { a: 'Gate A (anything over 1 V counts as high).', b: 'Gate B.' },
+    outs: { and: 'Both high.', or: 'Either high.', xor: 'One but not both.', nota: 'A, inverted.' },
+    tryIt: ['Patch two EUCLIDs (3 in 8 and 5 in 8) into A and B, and XOR into the hats: a rhythm neither pattern has alone.'],
+  },
+  xfade: {
+    what: 'A crossfader: blends from A to B. Slowly modulated, it morphs between two sounds; driven by an envelope, a note can start as one sound and end as another.',
+    knobs: { fade: 'Position: 0 = all A, 100% = all B.' },
+    ins: { a: 'Signal A.', b: 'Signal B.', cv: 'Adds to Fade: 10 V moves it all the way.' },
+    outs: { out: 'The blend.' },
+    tryIt: ['Patch a VCO’s saw into A and its square into B, an LFO into CV: the tone breathes between them.'],
+  },
+  pan: {
+    what: 'A stereo panner: places a sound between left and right, with equal-power curves so it keeps its loudness in the middle. Spread fans the voices of a chord across the field.',
+    knobs: { pan: 'Position, left to right.', spread: 'How far apart the voices of a poly cable are spread.' },
+    ins: { in: 'Audio (mono or poly).', cv: 'Moves the position: ±5 V sweeps fully left and right.' },
+    outs: { l: 'Left.', r: 'Right.' },
+    tryIt: ['Load POLY PAD, put a PAN between the VCA and the delay, and patch its L and R to OUT L and R. Hold a chord: the notes spread out.'],
+  },
+  scope: {
+    what: 'An oscilloscope: draws the voltage on its inputs over time, so you can see what you hear — wave shapes, envelopes rising and falling, LFOs, gates. It holds a repeating wave still by starting each picture where it crosses zero going up.',
+    knobs: { time: 'How much time fits across the screen: a few ms for audio waves, a second or two for envelopes and LFOs.', scale: 'Vertical zoom.' },
+    ins: { a: 'Trace A (yellow). Voice 1 of a poly cable.', b: 'Trace B (blue).' },
+    outs: {},
+    tryIt: ['Add a SCOPE to INIT and patch VCO Saw into A: a saw. Move the cable to Sqr, Tri, Sin.', 'Patch ADSR Env into B with Time at 1 s and play: the envelope draws itself.'],
+    tip: 'Patch a filter’s input into A and its output into B to see what the filter takes away.',
+  },
+  out: {
+    what: 'The speakers. Every voice reaching L and R is added up, gently limited, and sent out with the app’s reverb.',
+    knobs: { level: 'Output level. The meter turns red when you are pushing into the limiter.' },
+    ins: { l: 'Left (and right too, when R is empty).', r: 'Right — patch a second signal here for stereo.' },
+    outs: {},
+    tryIt: ['Patch one VCO into L and a slightly detuned one into R: a wide stereo tone.'],
+  },
+};

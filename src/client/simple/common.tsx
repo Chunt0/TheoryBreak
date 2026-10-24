@@ -1,14 +1,18 @@
 // Shared bits for the practice modes: the big keyboard's marks, note
 // listeners, the options row, answer pickers, playback and saved preferences.
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { audio, PART, type NoteEvent, type PartId } from '../audio/engine';
+import { COMMAND_CODE, commandLabel, controllerKind, type Command, type ControllerKind } from '../midi/commands';
 import { input } from '../midi/input';
-import { createStore } from '../app/createStore';
+import { createStore, useMini } from '../app/createStore';
+import { clearPointer, pointer, registerAnswers } from '../app/pointer';
 import { store, useStore } from '../app/store';
 import { LETTERS, N, noteName, pc, sameNote, type Note } from '../theory/core';
 import type { KeyMark } from '../ui/Keyboard';
 import { Icon } from '../ui/Icon';
+import { LessonsButton, type Help } from './Lessons';
+import { Score, type Tally } from './stats';
 
 /** What the big keyboard shows: marks per MIDI note. Modes own it while mounted. */
 export const kb = createStore<{ marks: Record<number, KeyMark> }>({ marks: {} });
@@ -30,7 +34,10 @@ export function useNoteOn(fn: (note: number, time: number) => void): void {
   }), []);
 }
 
-/** Shortcut keys that are not notes (Space, Enter, Backspace, digits). Ignored while typing in a field. */
+/**
+ * Shortcut keys that are not notes (Space, Enter, Backspace, digits). Ignored while typing in a field.
+ * Controller commands (the MiniLab's encoder and pads) arrive here too, as the key they stand for.
+ */
 export function useHotkeys(fn: (e: KeyboardEvent) => void): void {
   const ref = useRef(fn);
   ref.current = fn;
@@ -41,8 +48,47 @@ export function useHotkeys(fn: (e: KeyboardEvent) => void): void {
       ref.current(e);
     };
     window.addEventListener('keydown', on);
-    return () => window.removeEventListener('keydown', on);
+    const off = input.on((e) => {
+      const code = e.type === 'command' ? COMMAND_CODE[e.cmd] : undefined;
+      if (code) ref.current({ code, key: code, repeat: false, preventDefault() {} } as KeyboardEvent);
+    });
+    return () => {
+      window.removeEventListener('keydown', on);
+      off();
+    };
   }, []);
+}
+
+const midiConnected = () => input.anyMidiConnected;
+const midiKind = (): ControllerKind | null => {
+  const port = input.ports.find((p) => p.connected && !input.disabledPorts.has(p.id));
+  return port ? controllerKind(port.name) : null;
+};
+
+/** True while a MIDI controller is plugged in. */
+export function useMidiConnected(): boolean {
+  return useSyncExternalStore((fn) => input.onChange(fn), midiConnected);
+}
+
+/** What the plugged-in controller has: a MiniLab's encoder and pads, or just strips and Hold (null = none). */
+export function useControllerKind(): ControllerKind | null {
+  return useSyncExternalStore((fn) => input.onChange(fn), midiKind);
+}
+
+/**
+ * Lets the mod strip point at one of `count` answers and Enter (Hold) pick it.
+ * Returns the index pointed at, for highlighting. Count 0 = no answers on screen.
+ */
+export function useAnswerPointer(count: number, pick: (i: number) => void, open: boolean): number | null {
+  const latest = useRef({ count, pick, open });
+  latest.current = { count, pick, open };
+  const active = count > 0;
+  useEffect(() => (active ? registerAnswers({ count: () => latest.current.count, pick: (i) => latest.current.pick(i), open: () => latest.current.open }) : undefined), [active]);
+  useEffect(() => {
+    if (!open) clearPointer();
+  }, [open]);
+  const i = useMini(pointer, (p) => p.index);
+  return open && i !== null && i < count ? i : null;
 }
 
 /** Clears the keyboard marks, stops clicks and puts the computer keys back on C when a mode unmounts. */
@@ -126,12 +172,17 @@ export interface Choice<T extends string> {
   title?: string;
 }
 
-/** The options row above an exercise: controls in the middle, this session's score on the right. */
-export function Bar({ children, score }: { children: ReactNode; score?: { ok: number; bad: number } }) {
+/** The options row above an exercise: controls in the middle; the lessons ? and the score (with its weak spots) on the right. */
+export function Bar({ children, tally, help }: { children: ReactNode; tally?: Tally; help?: Help }) {
   return (
     <div className="s-bar">
       <div className="s-bar-main">{children}</div>
-      {score ? <Score {...score} /> : null}
+      {tally || help ? (
+        <div className="s-bar-side">
+          {help ? <LessonsButton help={help} /> : null}
+          {tally ? <Score tally={tally} /> : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -192,42 +243,50 @@ export function Listen({ onClick, label = 'Hear it' }: { onClick: () => void; la
   );
 }
 
-export function Score({ ok, bad }: { ok: number; bad: number }) {
-  return (
-    <span className={`s-score ${ok || bad ? '' : 'empty'}`} aria-label={`${ok} right, ${bad} wrong`} title="Right and wrong answers since you opened this tab">
-      <span className="ok">✓ {ok}</span>
-      <span className="bad">✗ {bad}</span>
-    </span>
-  );
+
+const KEY_COMMAND: Record<string, Command> = { Space: 'space', Enter: 'enter', '⌫': 'back', Backspace: 'back', Esc: 'panic' };
+
+/** Tiny keyboard-key badge. With a controller plugged in, it names the controller's button for that key instead. */
+export function K({ children }: { children: string }) {
+  const kind = useControllerKind();
+  const controls = useStore((d) => d.settings.controls);
+  const cmd = KEY_COMMAND[children];
+  const ctl = kind && cmd ? commandLabel(controls, cmd, kind) : null;
+  return <span className={`kbd ${ctl ? 'ctl' : ''}`}>{ctl ?? children}</span>;
 }
 
-/** Tiny keyboard-key badge. */
-export const K = ({ children }: { children: string }) => <span className="kbd">{children}</span>;
-
 /** Multiple-choice answers with digit shortcuts. `right`/`picked` colour them once answered. */
-export function Answers<T extends string>({ options, onPick, right, picked, wide }: {
+export function Answers<T extends string>({ options, onPick, right, picked, wide, render, className = '' }: {
   options: Choice<T>[];
   onPick: (id: T) => void;
   right?: T | null;
   picked?: T | null;
   wide?: boolean;
+  /** draw an answer as something other than its label (a rhythm grid…) */
+  render?: (o: Choice<T>) => ReactNode;
+  /** extra layout class, e.g. "sig" for a grid of fifteen keys */
+  className?: string;
 }) {
   const answered = picked !== undefined && picked !== null;
+  const pointed = useAnswerPointer(options.length, (i) => onPick(options[i].id), !answered);
   // pads 1–8 pick answers: MiniLab pads, and the digit keys (which the input hub turns into pad hits)
   const latest = useRef({ options, onPick, answered });
   latest.current = { options, onPick, answered };
   useEffect(() => input.on((e) => {
     const { options: opts, onPick: pick, answered: done } = latest.current;
-    if (e.type === 'pad' && e.on && !done && e.pad < opts.length) pick(opts[e.pad].id);
+    if (e.type !== 'pad' || !e.on || done || e.pad >= Math.min(8, opts.length)) return;
+    // a pad bound to a command (Space, Enter…) does that instead
+    const bound = Object.values(store.get().settings.controls).some((list) => list.some((t) => t.kind === 'pad' && t.pad === e.pad));
+    if (!bound) pick(opts[e.pad].id);
   }), []);
   return (
-    <div className={`s-answers ${wide ? 'wide' : ''} ${answered ? 'answered' : ''}`}>
+    <div className={`s-answers ${wide ? 'wide' : ''} ${className} ${answered ? 'answered' : ''}`}>
       {options.map((o, i) => {
         const cls = answered ? (o.id === right ? 'right' : o.id === picked ? 'wrongpick' : '') : '';
         return (
-          <button key={o.id} type="button" className={`s-answer ${cls}`} title={o.title} onClick={() => !answered && onPick(o.id)}>
+          <button key={o.id} type="button" className={`s-answer ${cls} ${i === pointed ? 'pointed' : ''}`} title={o.title} onClick={() => !answered && onPick(o.id)}>
             {i < 8 ? <span className="dig">{i + 1}</span> : null}
-            {o.label}
+            {render ? render(o) : o.label}
           </button>
         );
       })}
@@ -237,6 +296,8 @@ export function Answers<T extends string>({ options, onPick, right, picked, wide
 
 /** Spelled-note answer grid: seven letters × ♭ / ♮ / ♯ (so E♯ and C♭ are real answers). */
 export function NotePicker({ answer, picked, onPick }: { answer: Note; picked: Note | null; onPick: (n: Note) => void }) {
+  // the mod strip runs along the grid row by row: C♭ … B♭, C … B, C♯ … B♯
+  const pointed = useAnswerPointer(21, (i) => onPick({ letter: i % 7, acc: Math.floor(i / 7) - 1 }), !picked);
   return (
     <div className={`s-notegrid ${picked ? 'answered' : ''}`} role="group" aria-label="Pick the note">
       {[-1, 0, 1].map((acc) => (
@@ -244,7 +305,8 @@ export function NotePicker({ answer, picked, onPick }: { answer: Note; picked: N
           {LETTERS.map((_, letter) => {
             const n: Note = { letter, acc };
             const cls = picked ? (sameNote(n, answer) ? 'right' : sameNote(n, picked) ? 'wrongpick' : '') : '';
-            return <button key={letter} type="button" className={`s-answer ${cls}`} onClick={() => !picked && onPick(n)}>{noteName(n)}</button>;
+            const here = pointed === (acc + 1) * 7 + letter;
+            return <button key={letter} type="button" className={`s-answer ${cls} ${here ? 'pointed' : ''}`} onClick={() => !picked && onPick(n)}>{noteName(n)}</button>;
           })}
         </div>
       ))}

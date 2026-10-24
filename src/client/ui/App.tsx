@@ -108,7 +108,7 @@ export function App() {
   return (
     <div className="shell">
       <nav className="sidebar" aria-label="Main">
-        <div className="brand"><span className="brand-badge">♪</span> Theory Break</div>
+        <div className="brand"><span className="brand-badge">♪</span></div>
         {NAV.map((n) => (
           <a key={n.id} href={href(n.id)} className={`nav-link ${page === n.id ? 'active' : ''}`}>
             <span className="nav-icon"><Icon name={n.icon} /></span>

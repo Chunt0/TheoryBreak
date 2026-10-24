@@ -20,14 +20,14 @@ export function ProgressPage() {
     const blob = new Blob([JSON.stringify(store.get(), null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `theory-break-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `theory-progress-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
   };
   const importData = async (f: File) => {
     try {
       store.replace(JSON.parse(await f.text()));
     } catch {
-      alert('That file is not a Theory Break export.');
+      alert('That file is not a progress export from this app.');
     }
   };
 

@@ -47,7 +47,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
         ['7♯5', 'Whole tone'],
         ['m(maj7), m6', 'Melodic minor'],
       ] },
-      { t: 'note', kind: 'keys', md: 'Hold the chord in your left hand (or sustain pedal) and run the scale with your right on the MiniLab — let the avoid notes rub so you *hear* why they are avoided.' },
+      { t: 'note', kind: 'keys', md: 'Hold the chord in your left hand (or sustain pedal) and run the scale with your right — let the avoid notes rub so you *hear* why they are avoided.' },
       { t: 'example', title: 'Em7 in C major vs Em7 in D major', steps: [
         'In C, Em7 is iii: C major\'s notes from E give E Phrygian (E F G A B C D).',
         'Its F (♭9) and C (♭13) sit a half step above chord tones: use them as passing notes, not as landing notes.',
@@ -396,7 +396,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
         ['Chromatic planing', 'Dm7 G7 → E♭m7 A♭7 Dm7 G7', 'approach the cadence from a half step above'],
         ['Pedal point', 'Dm7/G – G7', 'tension over a held bass'],
       ] },
-      { t: 'note', kind: 'writing', md: 'Reharmonise *against the melody*: every melody note must be a chord tone or available tension of the new chord. Try it in **Lab → Progression Lab** with a melody note held on the MiniLab.' },
+      { t: 'note', kind: 'writing', md: 'Reharmonise *against the melody*: every melody note must be a chord tone or available tension of the new chord. Hold a melody note with one hand and try new chords under it with the other.' },
       { t: 'example', title: 'Which chords can sit under a held G (in C)?', steps: [
         'Cmaj7: G is the 5th. Em7 (iii for I): G is its ♭3. Am7 (vi): G is its ♭7 — all fine.',
         'A♭maj7 (♭VI, borrowed): G is its major 7th — darker, still consonant.',

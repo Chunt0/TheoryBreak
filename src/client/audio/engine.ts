@@ -1,11 +1,14 @@
-// Main-thread audio engine: owns the AudioContext, the DX7 worklet, the
-// effects chain (reverb + limiter), an analyser for the scope, and simple
-// Web Audio metronome/drum voices for rhythm work.
+// Main-thread audio engine: owns the AudioContext, the DX7 and modular
+// worklets, the effects chain (reverb + limiter), an analyser for the scope,
+// and simple Web Audio metronome/drum voices for rhythm work.
 
 import type { PartStatus } from './dx7/dsp';
 import { defaultPartConfig, normalizePatch, type PartConfig, type Patch } from './dx7/patch';
 import { presetByName } from './dx7/presets';
+import type { RackStatus } from './rack/dsp';
+import { defaultRack, type RackPatch } from './rack/patch';
 import type { WorkletIn, WorkletOut } from './worklet/dx7-processor';
+import type { RackIn, RackOut } from './worklet/rack-processor';
 
 export const PART = { synth: 0, lesson: 1, bass: 2 } as const;
 export type PartId = 0 | 1 | 2;
@@ -23,6 +26,9 @@ export type DrumKind = 'kick' | 'snare' | 'hat' | 'click' | 'accent';
 
 export type EngineState = 'idle' | 'starting' | 'running' | 'suspended' | 'error';
 
+/** What the keyboards and "your patch" play: the DX7 synth part or the modular rack. */
+export type Instrument = 'dx7' | 'rack';
+
 class AudioEngine {
   ctx: AudioContext | null = null;
   analyser: AnalyserNode | null = null;
@@ -31,6 +37,11 @@ class AudioEngine {
   status: PartStatus[] = [];
 
   private node: AudioWorkletNode | null = null;
+  private rackNode: AudioWorkletNode | null = null;
+  private rackPatch: RackPatch = defaultRack();
+  private rackPending: RackIn[] = [];
+  private rackListeners = new Set<(s: RackStatus) => void>();
+  instrument: Instrument = 'dx7';
   private master: GainNode | null = null;
   private wet: GainNode | null = null;
   private clickBus: GainNode | null = null;
@@ -71,16 +82,26 @@ class AudioEngine {
     if (!window.isSecureContext) {
       throw new Error('Audio worklets need a secure context: open the app via http://localhost or HTTPS.');
     }
+    // iOS: play through the ringer switch, like a music app
+    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+    if (session) session.type = 'playback';
     const ctx = new AudioContext({ latencyHint: 'interactive' });
     this.ctx = ctx;
     ctx.onstatechange = () => this.setState(ctx.state === 'running' ? 'running' : ctx.state === 'suspended' ? 'suspended' : 'idle');
-    await ctx.audioWorklet.addModule(new URL('/dx7-processor.js', location.href).href);
+    await Promise.all([
+      ctx.audioWorklet.addModule(new URL('/dx7-processor.js', location.href).href),
+      ctx.audioWorklet.addModule(new URL('/rack-processor.js', location.href).href),
+    ]);
     const node = new AudioWorkletNode(ctx, 'dx7', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
     node.port.onmessage = (e: MessageEvent<WorkletOut>) => {
       if (e.data.t === 'status') {
         this.status = e.data.parts;
         this.statusListeners.forEach((l) => l(this.status));
       }
+    };
+    const rackNode = new AudioWorkletNode(ctx, 'rack', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+    rackNode.port.onmessage = (e: MessageEvent<RackOut>) => {
+      if (e.data.t === 'status') this.rackListeners.forEach((l) => l(e.data.status));
     };
 
     const comp = ctx.createDynamicsCompressor();
@@ -103,10 +124,13 @@ class AudioEngine {
 
     node.connect(comp);
     node.connect(verb).connect(wet).connect(comp);
+    rackNode.connect(comp);
+    rackNode.connect(verb);
     comp.connect(master).connect(analyser).connect(ctx.destination);
     clickBus.connect(master);
 
     this.node = node;
+    this.rackNode = rackNode;
     this.master = master;
     this.wet = wet;
     this.analyser = analyser;
@@ -116,6 +140,10 @@ class AudioEngine {
     this.configs.forEach((config, part) => this.post({ t: 'config', part, config }));
     this.pending.splice(0).forEach((m) => this.post(m));
     if (this.statusListeners.size) this.post({ t: 'status', enabled: true });
+    this.postRack({ t: 'patch', patch: this.rackPatch });
+    this.postRack({ t: 'active', on: this.instrument === 'rack' });
+    this.rackPending.splice(0).forEach((m) => this.postRack(m));
+    if (this.rackListeners.size) this.postRack({ t: 'status', enabled: true });
     await ctx.resume();
     this.setState(ctx.state === 'running' ? 'running' : 'suspended');
   }
@@ -146,6 +174,45 @@ class AudioEngine {
   private post(msg: WorkletIn): void {
     if (this.node) this.node.port.postMessage(msg);
     else if (this.starting && !('at' in msg && msg.at) && this.pending.length < 64) this.pending.push(msg);
+  }
+
+  private postRack(msg: RackIn): void {
+    if (this.rackNode) this.rackNode.port.postMessage(msg);
+    else if (this.starting && msg.t !== 'patch' && !('at' in msg && msg.at) && this.rackPending.length < 64) this.rackPending.push(msg);
+  }
+
+  /** The synth part is played by the rack while it is the instrument. */
+  private racked(part: PartId | undefined): boolean {
+    return this.instrument === 'rack' && part === PART.synth;
+  }
+
+  // ---------------------------------------------------------------- modular
+
+  setInstrument(i: Instrument): void {
+    if (i === this.instrument) return;
+    this.post({ t: 'allOff', part: PART.synth });
+    this.instrument = i;
+    this.postRack({ t: 'active', on: i === 'rack' });
+  }
+
+  setRack(patch: RackPatch): void {
+    this.rackPatch = patch;
+    this.postRack({ t: 'patch', patch });
+  }
+
+  /** A knob turn: `patch` already holds the new value; only the value is sent, which is cheaper than the whole patch. */
+  setRackParam(patch: RackPatch, mod: string, key: string, value: number): void {
+    this.rackPatch = patch;
+    this.postRack({ t: 'param', mod, key, value });
+  }
+
+  onRackStatus(fn: (s: RackStatus) => void): () => void {
+    this.rackListeners.add(fn);
+    this.postRack({ t: 'status', enabled: true });
+    return () => {
+      this.rackListeners.delete(fn);
+      if (!this.rackListeners.size) this.postRack({ t: 'status', enabled: false });
+    };
   }
 
   private impulse(ctx: AudioContext, seconds: number): AudioBuffer {
@@ -205,33 +272,42 @@ class AudioEngine {
   }
 
   noteOn(part: PartId, note: number, vel = 100, at?: number): void {
-    this.post({ t: 'on', part, note, vel, at });
+    if (this.racked(part)) this.postRack({ t: 'on', note, vel, at });
+    else this.post({ t: 'on', part, note, vel, at });
   }
   noteOff(part: PartId, note: number, at?: number): void {
-    this.post({ t: 'off', part, note, at });
+    if (this.racked(part)) this.postRack({ t: 'off', note, at });
+    else this.post({ t: 'off', part, note, at });
   }
   bend(part: PartId, value: number): void {
-    this.post({ t: 'bend', part, value });
+    if (this.racked(part)) this.postRack({ t: 'bend', value });
+    else this.post({ t: 'bend', part, value });
   }
   wheel(part: PartId, value: number): void {
-    this.post({ t: 'wheel', part, value });
+    if (this.racked(part)) this.postRack({ t: 'wheel', value });
+    else this.post({ t: 'wheel', part, value });
   }
   aftertouch(part: PartId, value: number): void {
-    this.post({ t: 'aftertouch', part, value });
+    if (this.racked(part)) this.postRack({ t: 'aftertouch', value });
+    else this.post({ t: 'aftertouch', part, value });
   }
   sustain(part: PartId, on: boolean): void {
-    this.post({ t: 'sustain', part, on });
+    if (this.racked(part)) this.postRack({ t: 'sustain', on });
+    else this.post({ t: 'sustain', part, on });
   }
   allOff(part?: PartId): void {
     this.post({ t: 'allOff', part });
+    if (part === undefined || part === PART.synth) this.postRack({ t: 'allOff' });
   }
   /** Drop scheduled notes and release sounding ones (stop a playing example). */
   stop(part?: PartId): void {
     this.post({ t: 'cancel', part });
+    if (part === undefined || part === PART.synth) this.postRack({ t: 'cancel' });
     if (part === undefined || part === PART.lesson) this.stopScheduledClicks();
   }
   panic(): void {
     this.post({ t: 'panic' });
+    this.postRack({ t: 'panic' });
     this.stopScheduledClicks();
   }
 
@@ -246,8 +322,8 @@ class AudioEngine {
       const part = e.part ?? opts.part ?? PART.lesson;
       const on = t0 + e.start;
       const off = on + Math.max(0.03, e.dur);
-      this.post({ t: 'on', part, note: e.note, vel: e.vel ?? 96, at: on });
-      this.post({ t: 'off', part, note: e.note, at: off });
+      this.noteOn(part, e.note, e.vel ?? 96, on);
+      this.noteOff(part, e.note, off);
       end = Math.max(end, off);
     }
     return { start: t0, end };

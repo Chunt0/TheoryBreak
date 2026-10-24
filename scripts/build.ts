@@ -12,15 +12,15 @@ export async function build(): Promise<boolean> {
     entrypoints: ['src/client/main.tsx'],
     outdir,
     naming: '[name].[ext]',
-    define: { 'process.env.NODE_ENV': JSON.stringify(dev ? 'development' : 'production') },
+    // the build time shows in ⚙, so you can tell whether a phone runs the latest version
+    define: { 'process.env.NODE_ENV': JSON.stringify(dev ? 'development' : 'production'), 'process.env.BUILD_TIME': JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC') },
   });
-  const worklet = await Bun.build({
-    ...common,
-    entrypoints: ['src/client/audio/worklet/dx7-processor.ts'],
-    outdir,
-    naming: 'dx7-processor.[ext]',
-  });
-  for (const r of [app, worklet]) {
+  // worklets and the service worker run in their own scopes: one file each, fixed names
+  const single = (entry: string, name: string) => Bun.build({ ...common, entrypoints: [entry], outdir, naming: `${name}.[ext]` });
+  const worklet = await single('src/client/audio/worklet/dx7-processor.ts', 'dx7-processor');
+  const rack = await single('src/client/audio/worklet/rack-processor.ts', 'rack-processor');
+  const sw = await single('src/client/sw.ts', 'sw');
+  for (const r of [app, worklet, rack, sw]) {
     if (!r.success) {
       for (const log of r.logs) console.error(log);
       return false;
@@ -28,7 +28,10 @@ export async function build(): Promise<boolean> {
   }
   await cp('src/client/index.html', `${outdir}/index.html`);
   await cp('src/client/styles.css', `${outdir}/styles.css`);
+  await cp('src/client/themes.css', `${outdir}/themes.css`);
   await cp('src/client/fonts', `${outdir}/fonts`, { recursive: true });
+  await cp('src/client/icons', `${outdir}/icons`, { recursive: true });
+  await cp('src/client/manifest.webmanifest', `${outdir}/manifest.webmanifest`);
   return true;
 }
 

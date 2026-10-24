@@ -20,6 +20,8 @@ const PATHS: Record<string, string> = {
   play: 'M7 4.8v14.4a.8.8 0 0 0 1.2.7l11.5-7.2a.8.8 0 0 0 0-1.4L8.2 4.1a.8.8 0 0 0-1.2.7z',
   mute: 'M11 5L6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6',
   wave: 'M2 12h3l2.5-6 4 13 3.5-10 2.5 5H22',
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  shrink: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
 };
 
 export type IconName = keyof typeof PATHS;

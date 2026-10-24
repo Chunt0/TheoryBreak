@@ -5,6 +5,9 @@
 import { useSyncExternalStore } from 'react';
 import { defaultPartConfig, normalizePatch, type PartConfig, type Patch } from '../audio/dx7/patch';
 import { presetByName } from '../audio/dx7/presets';
+import type { Instrument } from '../audio/engine';
+import { defaultRack, normalizeRack, type RackPatch } from '../audio/rack/patch';
+import { CONTROLS_VERSION, defaultCommands, normalizeBindings, type Bindings } from '../midi/commands';
 import { minilab3Defaults, type CcMapping } from '../midi/mapping';
 import type { ProgressData } from '../learn/types';
 import type { Tag } from '../learn/library/types';
@@ -24,6 +27,18 @@ export interface Settings {
   padChannel: number;
   /** what exercises play back with: your current DX7 patch or the plain practice piano */
   practiceSound: 'patch' | 'piano';
+  /** what the keys play: the DX7 or the modular rack */
+  instrument: Instrument;
+  /** controller buttons, encoders, pads and strips standing in for Space, Enter… */
+  controls: Bindings;
+  /** factory layout the controls were saved with (older ones are reset to the new defaults) */
+  controlsVersion: number;
+  /** show the on-screen keyboard (it can fold away when a controller does the playing) */
+  showKeys: boolean;
+  /** a theme key from app/themes.ts, or "auto" (Mono, light or dark with the system) */
+  theme: string;
+  /** what sits behind the exercise: the theme's own moving background, the dot grid, or nothing */
+  backdrop: 'theme' | 'dots' | 'off';
 }
 
 export interface SongIdea {
@@ -49,6 +64,11 @@ export interface AppData {
     config: PartConfig;
     mappings: CcMapping[];
   };
+  /** the modular synth: the rack on the bench and the ones you saved */
+  rack: {
+    current: RackPatch;
+    user: RackPatch[];
+  };
   ideas: SongIdea[];
   /** practice-mode choices and records, keyed by name (see simple/common.tsx) */
   practice: Record<string, unknown>;
@@ -65,6 +85,12 @@ export const defaultSettings = (): Settings => ({
   autoAdvance: true,
   padChannel: 10,
   practiceSound: 'patch',
+  instrument: 'dx7',
+  controls: defaultCommands(),
+  controlsVersion: CONTROLS_VERSION,
+  showKeys: true,
+  theme: 'auto',
+  backdrop: 'theme',
 });
 
 export function defaultData(): AppData {
@@ -74,6 +100,7 @@ export function defaultData(): AppData {
     progress: emptyProgress(),
     settings: defaultSettings(),
     synth: { current: presetByName('TINE PIANO'), userPatches: [], config: defaultPartConfig(), mappings: minilab3Defaults() },
+    rack: { current: defaultRack(), user: [] },
     ideas: [],
     practice: {},
   };
@@ -88,12 +115,21 @@ function hydrate(raw: unknown): AppData {
     version: 1,
     updatedAt: typeof r.updatedAt === 'number' ? r.updatedAt : 0,
     progress: { ...d.progress, ...(r.progress ?? {}) },
-    settings: { ...d.settings, ...(r.settings ?? {}) },
+    settings: {
+      ...d.settings,
+      ...(r.settings ?? {}),
+      controls: (r.settings?.controlsVersion ?? 0) >= CONTROLS_VERSION ? normalizeBindings(r.settings?.controls) : defaultCommands(),
+      controlsVersion: CONTROLS_VERSION,
+    },
     synth: {
       current: r.synth?.current ? normalizePatch(r.synth.current) : d.synth.current,
       userPatches: Array.isArray(r.synth?.userPatches) ? r.synth!.userPatches.map(normalizePatch) : [],
       config: { ...d.synth.config, ...(r.synth?.config ?? {}) },
       mappings: Array.isArray(r.synth?.mappings) ? r.synth!.mappings : d.synth.mappings,
+    },
+    rack: {
+      current: normalizeRack(r.rack?.current) ?? d.rack.current,
+      user: Array.isArray(r.rack?.user) ? r.rack!.user.map(normalizeRack).filter((x): x is RackPatch => x !== null) : [],
     },
     ideas: Array.isArray(r.ideas) ? r.ideas : [],
     practice: r.practice && typeof r.practice === 'object' && !Array.isArray(r.practice) ? r.practice : {},

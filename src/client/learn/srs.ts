@@ -69,15 +69,19 @@ export function isDue(s: SkillStat | undefined, now = Date.now()): boolean {
   return !!s && s.n > 0 && s.due <= now;
 }
 
-/** Weighted random pick favouring weak, unseen and long-unseen items. */
-export function weightedPick<T extends string>(items: readonly T[], stats: Record<string, ItemStat> | undefined, rnd: () => number, now = Date.now()): T {
+/**
+ * Weighted random pick favouring weak, unseen and long-unseen items. `focus`
+ * leans hard on the weak ones: a missed item comes up many times as often as
+ * one you know, and new ones wait their turn.
+ */
+export function weightedPick<T extends string>(items: readonly T[], stats: Record<string, ItemStat> | undefined, rnd: () => number, now = Date.now(), focus = false): T {
   if (items.length === 1) return items[0];
   const weights = items.map((it) => {
     const st = stats?.[it];
-    if (!st || st.n === 0) return 2.2;
+    if (!st || st.n === 0) return focus ? 0.6 : 2.2;
     const weakness = 1 - st.ema; // 0..1
     const staleness = Math.min(1, (now - st.last) / (3 * DAY));
-    return 0.35 + weakness * 2.5 + staleness * 0.6;
+    return focus ? 0.12 + weakness * weakness * 10 + staleness * 0.3 : 0.35 + weakness * 2.5 + staleness * 0.6;
   });
   const total = weights.reduce((a, b) => a + b, 0);
   let r = rnd() * total;

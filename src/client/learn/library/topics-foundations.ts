@@ -206,7 +206,7 @@ export const FOUNDATION_TOPICS: Topic[] = [
         'Keep saying it while you tap, and tap only on the highlighted syllables.',
         'A hit on "a" belongs to the next beat — feel it pushing forward rather than late.',
       ] },
-      { t: 'note', kind: 'keys', md: 'Tap on Space, a pad or any computer key; Space or a pad starts the count-in. If you land consistently early or late, calibrate the tap offset once in Settings.' },
+      { t: 'note', kind: 'keys', md: 'Count the grid out loud while the metronome runs: "1 e & a 2 e & a". Then tap only the highlighted slots and keep counting through the rests.' },
       { t: 'drill', skill: 'rhythm.tap.16', count: 2 },
     ],
     drills: ['rhythm.tap.16', 'rhythm.tap.sync', 'rhythm.tap.shuffle', 'rhythm.ear.funk'],

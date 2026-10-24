@@ -22,7 +22,7 @@ export function degreeLine(n: number, octaves: number, pattern: Pattern, dir: Di
   return dir === 'up' ? up : dir === 'down' ? down : [...up, ...down.slice(1)];
 }
 
-export type NumeralLevel = 'basic' | 'diatonic' | 'sevenths' | 'minor';
+export type NumeralLevel = 'basic' | 'diatonic' | 'sevenths' | 'minor' | 'secondary' | 'borrowed' | 'subs';
 
 /** Roman numerals to listen for; the first one is the tonic every progression starts on. */
 export const NUMERAL_SETS: Record<NumeralLevel, string[]> = {
@@ -30,14 +30,38 @@ export const NUMERAL_SETS: Record<NumeralLevel, string[]> = {
   diatonic: ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'],
   sevenths: ['Imaj7', 'ii7', 'iii7', 'IVmaj7', 'V7', 'vi7', 'viiø7'],
   minor: ['i', 'iiø7', '♭III', 'iv', 'V7', '♭VI', '♭VII'],
+  secondary: ['I', 'ii', 'IV', 'V', 'vi', 'V7/ii', 'V7/IV', 'V7/V', 'V7/vi'],
+  borrowed: ['I', 'ii', 'IV', 'V', 'vi', 'iv', '♭III', '♭VI', '♭VII'],
+  subs: ['Imaj7', 'ii7', 'V7', 'vi7', 'VI7', '♭II7', '♭III7', '♭VI7'],
 };
 
-/** A progression that starts on the tonic and never repeats a chord back to back. */
-export function randomProgression(set: string[], len = 4, rnd: () => number = Math.random): string[] {
+/**
+ * Chords that only make sense going somewhere: a secondary dominant resolves to
+ * its target, a tritone sub down a half step.
+ */
+export const RESOLVES: Record<string, string> = {
+  'V7/ii': 'ii', 'V7/IV': 'IV', 'V7/V': 'V', 'V7/vi': 'vi',
+  '♭II7': 'Imaj7', VI7: 'ii7', '♭III7': 'ii7', '♭VI7': 'V7',
+};
+
+/**
+ * A progression that starts on the tonic and never repeats a chord back to back.
+ * Chords in RESOLVES are followed by their resolution and never end it.
+ * `pick` chooses each next chord (the app leans it toward the ones you miss).
+ */
+export function randomProgression(set: string[], len = 4, rnd: () => number = Math.random, pick?: (choices: string[]) => string): string[] {
   const out = [set[0]];
   while (out.length < len) {
-    const choices = set.filter((c) => c !== out[out.length - 1]);
-    out.push(choices[Math.floor(rnd() * choices.length)]);
+    const last = out[out.length - 1];
+    const to = RESOLVES[last];
+    if (to && set.includes(to)) {
+      out.push(to);
+      continue;
+    }
+    // the last chord can't leave you hanging on one that needs resolving
+    const final = out.length === len - 1;
+    const choices = set.filter((c) => c !== last && !(final && RESOLVES[c] && set.includes(RESOLVES[c])) && RESOLVES[c] !== last);
+    out.push(pick ? pick(choices) : choices[Math.floor(rnd() * choices.length)]);
   }
   return out;
 }

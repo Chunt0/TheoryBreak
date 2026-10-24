@@ -4,7 +4,10 @@ import { chordNotes, chordSymbol, getChord } from '../theory/chords';
 import { INTERVALS, mod, noteName, pc, spellPc, type Note } from '../theory/core';
 import { diatonicChords, FUNCTION_NAMES, keyName, MAJOR_KEYS, relativeMinor, type Key, type KeyChord } from '../theory/keys';
 import type { KeyMark } from '../ui/Keyboard';
-import { Answers, Bar, Chips, K, Listen, Pick, pickAny, pickOther, playBlock, playLine, ROOTS, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
+import { SKILL_HELP } from '../learn/help';
+import type { Help } from './Lessons';
+import { ladder, pickFor, useTally } from './stats';
+import { Answers, Bar, Chips, K, Listen, Pick, pickAny, playBlock, playLine, ROOTS, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
 
 type Task = 'build' | 'hear' | 'key';
 type Level = 'triads' | 'sevenths' | 'sixsus' | 'ext' | 'alt';
@@ -55,15 +58,44 @@ function keyChords(k: Key, sevenths: boolean): KeyChord[] {
   return nat.map((c, i) => (i === 4 || i === 6 ? harm[i] : c));
 }
 
+/** What the record keeps for In a key: the numeral and the mode ("major:vi7"). */
+const keyItem = (mode: KeyMode, numeral: string) => `${mode}:${numeral}`;
+const itemLabel = (item: string) => {
+  const [mode, numeral] = item.split(':');
+  return mode === 'major' || mode === 'minor' ? `${numeral} in ${mode}` : getChord(item).name;
+};
+
+const hearHelp = (h: string): Help => ({ topics: [SKILL_HELP[h].lesson, 'core.tensions', 'jazz.voicings'].filter((t, i, a) => a.indexOf(t) === i), method: SKILL_HELP[h].method });
+const HELP: Record<Task, Record<Level, Help>> = {
+  build: {
+    triads: { topics: ['core.intervals', 'core.sevenths'], method: SKILL_HELP['gym.spell.7'].method },
+    sevenths: { topics: ['core.sevenths', 'jazz.voicings'], method: SKILL_HELP['gym.spell.7'].method },
+    sixsus: { topics: ['core.sevenths', 'core.tensions'], method: SKILL_HELP['gym.spell.7'].method },
+    ext: { topics: ['core.tensions', 'jazz.voicings', 'jazz.ust'], method: [...SKILL_HELP['gym.spell.ext'].method, ...SKILL_HELP['gym.play.ext'].method.slice(0, 2)] },
+    alt: { topics: ['core.tensions', 'jazz.ust', 'core.melodic'], method: [...SKILL_HELP['gym.spell.ext'].method, SKILL_HELP['gym.play.ext'].method[2]] },
+  },
+  hear: { triads: hearHelp('ear.chord.inv'), sevenths: hearHelp('ear.chord.7'), sixsus: hearHelp('ear.chord.ext'), ext: hearHelp('ear.chord.ext'), alt: hearHelp('ear.chord.alt') },
+  key: Object.fromEntries((['triads', 'sevenths', 'sixsus', 'ext', 'alt'] as Level[]).map((l) => [l, { topics: ['core.diatonic', 'core.modes', 'jazz.secondary'], method: SKILL_HELP['gym.keys7'].method.slice(0, 2) }])) as Record<Level, Help>,
+};
+
+const MINOR_KEY_HELP: Help = {
+  topics: ['core.diatonic', 'jazz.minor', 'core.modes'],
+  method: [
+    'Minor keys here are natural minor with the raised 7th for V and vii° — the way players use them.',
+    'Triads: i ii° ♭III iv V ♭VI vii°. 7ths: i7 iiø7 ♭IIImaj7 iv7 V7 ♭VImaj7 vii°7.',
+    'Find the root on that degree (♭III a minor 3rd up, ♭VI a minor 6th up, vii° a half step below the tonic), then apply the quality.',
+  ],
+};
+
 function newQ(task: Task, level: Level, inv: Inv, keyMode: KeyMode, prev: Q | null): Q {
   if (task === 'key') {
     const major = pickAny(MAJOR_KEYS.filter((m) => Math.abs(m.sig) <= 6)).tonic;
     const key: Key = { tonic: keyMode === 'major' ? major : relativeMinor(major), mode: keyMode };
     const chords = keyChords(key, level !== 'triads');
-    const kc = pickOther(chords, prev?.kc ? chords.find((c) => c.degree === prev.kc!.degree) ?? null : null);
+    const kc = pickFor('chord.key', chords, prev?.kc ? chords.find((c) => c.degree === prev.kc!.degree) ?? null : null, (c) => keyItem(keyMode, c.numeral));
     return { root: kc.root, type: kc.typeId, inv: 0, key, kc };
   }
-  const type = pickOther(SETS[level], prev?.type ?? null);
+  const type = pickFor(`chord.${task}`, SETS[level], prev?.type ?? null);
   const tones = getChord(type).intervals.length;
   const canInvert = level === 'triads' || level === 'sevenths';
   let root = ROOTS[Math.floor(Math.random() * 12)];
@@ -85,9 +117,13 @@ export function ChordsMode() {
   const [found, setFound] = useState<Map<number, number>>(new Map()); // pc → MIDI note played
   const [answer, setAnswer] = useState<{ ok: boolean; picked: string | null } | null>(null);
   const [misses, setMisses] = useState(0);
-  const [score, setScore] = useState({ ok: 0, bad: 0 });
   const [wrong, flash] = useFlash();
   const [said, setSaid] = useState('');
+  const pool = task === 'key' && q.key ? keyChords(q.key, level !== 'triads').map((c) => keyItem(keyMode, c.numeral)) : SETS[level];
+  const steps = task === 'key'
+    ? ladder(LEVELS.slice(0, 2), level === 'triads' ? 'triads' : 'sevenths', (l) => { setLevel(l); next(task, l); })
+    : ladder(LEVELS, level, (l) => { setLevel(l); next(task, l); });
+  const tally = useTally(`chord.${task}`, `Chords · ${TASKS.find((t) => t.id === task)!.label}`, pool, itemLabel, steps);
 
   const type = getChord(q.type);
   const spelled = chordNotes(q.root, q.type);
@@ -127,7 +163,7 @@ export function ChordsMode() {
 
   const settle = (ok: boolean, picked: string | null) => {
     setAnswer({ ok, picked });
-    setScore((s) => (ok ? { ...s, ok: s.ok + 1 } : { ...s, bad: s.bad + 1 }));
+    tally.record(task === 'key' && q.kc ? keyItem(keyMode, q.kc.numeral) : q.type, ok);
   };
 
   useNoteOn((note) => {
@@ -180,7 +216,7 @@ export function ChordsMode() {
 
   return (
     <div className="s-mode">
-      <Bar score={score}>
+      <Bar tally={tally} help={task === 'key' && keyMode === 'minor' ? MINOR_KEY_HELP : HELP[task][level]}>
         <Chips label="Task" value={task} options={TASKS} onChange={(t) => { setTask(t); next(t); }} />
         {task === 'key' ? (
           <>

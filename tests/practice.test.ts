@@ -6,6 +6,9 @@ import { progressionEvents, transposeSymbol } from '../src/client/learn/music';
 import { mod, N, pc } from '../src/client/theory/core';
 import { JAZZ_MAJOR_TONICS, JAZZ_MINOR_TONICS, keyFromName, prefersFlats, type Key } from '../src/client/theory/keys';
 import { PROGRESSIONS } from '../src/client/theory/progressions';
+import { readdirSync, readFileSync } from 'node:fs';
+import { weightedPick } from '../src/client/learn/srs';
+import { TOPIC_BY_ID } from '../src/client/learn/library';
 
 describe('computer keys laid out like a piano', () => {
   test('from C: middle row is white, top row has the black keys where a piano has them', () => {
@@ -121,5 +124,51 @@ describe('keyboard range', () => {
         expect(Math.max(...notes)).toBeLessThanOrEqual(hi);
       }
     }
+  });
+});
+
+describe('weak spots', () => {
+  const stats = {
+    weak: { n: 6, ema: 0.25, last: Date.now() },
+    known: { n: 6, ema: 0.95, last: Date.now() },
+    solid: { n: 6, ema: 0.9, last: Date.now() },
+  };
+  const share = (focus: boolean, items: string[], want: string) => {
+    let hits = 0;
+    for (let i = 0; i < 4000; i++) if (weightedPick(items, stats, Math.random, Date.now(), focus) === want) hits++;
+    return hits / 4000;
+  };
+
+  test('missed items come up more often, and far more often with Weak spots on', () => {
+    const items = ['weak', 'known', 'solid'];
+    const normal = share(false, items, 'weak');
+    const focus = share(true, items, 'weak');
+    expect(normal).toBeGreaterThan(0.45);
+    expect(focus).toBeGreaterThan(0.85);
+  });
+
+  test('new items lead normally but wait behind a weak one with Weak spots on', () => {
+    expect(share(false, ['new', 'known'], 'new')).toBeGreaterThan(0.6);
+    expect(share(true, ['new', 'weak'], 'weak')).toBeGreaterThan(0.8);
+  });
+
+  test('progressions take their chords from the picker', () => {
+    const p = randomProgression(NUMERAL_SETS.diatonic, 4, Math.random, (choices) => choices[choices.length - 1]);
+    expect(p).toEqual(['I', 'vii°', 'vi', 'vii°']);
+  });
+});
+
+describe('lessons behind the ? buttons', () => {
+  test('every topic a drill names exists', () => {
+    const dir = `${import.meta.dir}/../src/client/simple`;
+    const named = new Set<string>();
+    for (const f of readdirSync(dir).filter((f) => f.endsWith('Mode.tsx'))) {
+      const src = readFileSync(`${dir}/${f}`, 'utf8');
+      for (const m of src.matchAll(/topics: \[([^\]]*)\]|'((?:core|jazz|funk|soul|bach|rhythm)\.[a-z]+)'/g)) {
+        for (const id of (m[1] ?? `'${m[2]}'`).matchAll(/'([a-z]+\.[a-z]+)'/g)) named.add(id[1]);
+      }
+    }
+    expect(named.size).toBeGreaterThan(20);
+    for (const id of named) expect(TOPIC_BY_ID[id]).toBeDefined();
   });
 });

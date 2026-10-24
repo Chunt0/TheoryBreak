@@ -1,11 +1,17 @@
 import { N, octaveOf, parseNote, spellPc } from '../theory/core';
 import type { StaffChord } from '../learn/types';
 
+export type Clef = 'grand' | 'treble' | 'bass';
+
 interface Props {
   chords: StaffChord[];
   /** four-voice chorale layout: S/A on treble (stems up/down), T/B on bass */
   satb?: boolean;
   ariaLabel?: string;
+  /** one staff only, every note on it (ledger lines as needed) */
+  clef?: Clef;
+  /** key signature after the clef: + sharps, − flats */
+  keySig?: number;
 }
 
 const GAP = 10; // staff line spacing
@@ -60,29 +66,55 @@ const F_CLEF: [number, number][] = [[0, 0], [2, -6], [7, -9.5], [12.5, -8], [15,
 const trebleClef = smooth(G_CLEF.map(([x, y]) => [24 + x * 1.5, TREBLE_TOP + GAP * 3 + y]));
 const bassClef = smooth(F_CLEF.map(([x, y]) => [16 + x, BASS_TOP + GAP + y]));
 
-export function Staff({ chords, satb = false, ariaLabel }: Props) {
-  const width = LEFT + chords.length * COL + 20;
-  const height = BASS_TOP + GAP * 4 + 56;
+// key signature accidentals, as staff steps (letter + 7 × octave), in the order they are written
+const SIG_STEPS = {
+  treble: { sharp: [3 + 35, 0 + 35, 4 + 35, 1 + 35, 5 + 28, 2 + 35, 6 + 28], flat: [6 + 28, 2 + 35, 5 + 28, 1 + 35, 4 + 28, 0 + 35, 3 + 28] },
+  bass: { sharp: [3 + 21, 0 + 21, 4 + 21, 1 + 21, 5 + 14, 2 + 21, 6 + 14], flat: [6 + 14, 2 + 21, 5 + 14, 1 + 21, 4 + 14, 0 + 21, 3 + 14] },
+};
+const SIG_W = 9;
+
+export function Staff({ chords, satb = false, ariaLabel, clef = 'grand', keySig = 0 }: Props) {
+  const left = LEFT + Math.abs(keySig) * SIG_W;
+  const width = left + chords.length * COL + 20;
+  const showT = clef !== 'bass';
+  const showB = clef !== 'treble';
+  // one staff: crop the picture to it, with room for two ledger lines either side
+  const top = clef === 'bass' ? BASS_TOP - 34 : 0;
+  const height = clef === 'treble' ? TREBLE_TOP + GAP * 4 + 34 : BASS_TOP + GAP * 4 + (clef === 'bass' ? 34 : 56) - top;
   // keep a line on one staff when it fits there (ledger lines beat jumping staves)
   const all = chords.flatMap((c) => c.notes);
-  const split = Math.min(...all) >= 55 ? -Infinity : Math.max(...all) <= 64 ? Infinity : 60;
+  const split = clef === 'treble' ? -Infinity : clef === 'bass' ? Infinity : Math.min(...all) >= 55 ? -Infinity : Math.max(...all) <= 64 ? Infinity : 60;
 
-  const lines = (top: number) =>
-    Array.from({ length: 5 }, (_, i) => <line key={`${top}-${i}`} x1={10} x2={width - 8} y1={top + i * GAP} y2={top + i * GAP} className="st-line" />);
+  const lines = (y0: number) =>
+    Array.from({ length: 5 }, (_, i) => <line key={`${y0}-${i}`} x1={10} x2={width - 8} y1={y0 + i * GAP} y2={y0 + i * GAP} className="st-line" />);
+  const sig = (treble: boolean) =>
+    (keySig > 0 ? SIG_STEPS[treble ? 'treble' : 'bass'].sharp : SIG_STEPS[treble ? 'treble' : 'bass'].flat).slice(0, Math.abs(keySig)).map((step, i) => (
+      <text key={`${treble}-${i}`} x={LEFT - 14 + i * SIG_W} y={yOf({ step, acc: 0, treble }) + 4} className="st-acc sig">{keySig > 0 ? '♯' : '♭'}</text>
+    ));
 
   return (
-    <svg className="staff" viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: Math.round(width * 1.45) }} role="img" aria-label={ariaLabel ?? 'Grand staff'}>
-      {lines(TREBLE_TOP)}
-      {lines(BASS_TOP)}
-      <line x1={10} x2={10} y1={TREBLE_TOP} y2={BASS_TOP + GAP * 4} className="st-line" />
-      <path d={trebleClef} className="st-clef" />
-      <circle cx={24 - 4.2 * 1.5} cy={TREBLE_TOP + GAP * 3 + 23.6} r={2.3} className="st-dot" />
-      <path d={bassClef} className="st-clef" />
-      <circle cx={17} cy={BASS_TOP + GAP + 0.5} r={3} className="st-dot" />
-      <circle cx={36} cy={BASS_TOP + GAP - 5} r={1.6} className="st-dot" />
-      <circle cx={36} cy={BASS_TOP + GAP + 5} r={1.6} className="st-dot" />
+    <svg className={`staff ${clef}`} viewBox={`0 ${top} ${width} ${height}`} style={{ maxWidth: Math.round(width * 1.45) }} role="img" aria-label={ariaLabel ?? (clef === 'grand' ? 'Grand staff' : `${clef} staff`)}>
+      {showT ? lines(TREBLE_TOP) : null}
+      {showB ? lines(BASS_TOP) : null}
+      {clef === 'grand' ? <line x1={10} x2={10} y1={TREBLE_TOP} y2={BASS_TOP + GAP * 4} className="st-line" /> : null}
+      {showT ? (
+        <>
+          <path d={trebleClef} className="st-clef" />
+          <circle cx={24 - 4.2 * 1.5} cy={TREBLE_TOP + GAP * 3 + 23.6} r={2.3} className="st-dot" />
+          {sig(true)}
+        </>
+      ) : null}
+      {showB ? (
+        <>
+          <path d={bassClef} className="st-clef" />
+          <circle cx={17} cy={BASS_TOP + GAP + 0.5} r={3} className="st-dot" />
+          <circle cx={36} cy={BASS_TOP + GAP - 5} r={1.6} className="st-dot" />
+          <circle cx={36} cy={BASS_TOP + GAP + 5} r={1.6} className="st-dot" />
+          {sig(false)}
+        </>
+      ) : null}
       {chords.map((c, ci) => {
-        const x = LEFT + ci * COL + COL / 2;
+        const x = left + ci * COL + COL / 2;
         const placed: Placed[] = c.notes.map((m, i) => {
           const { step, acc } = place(m, c.names?.[i]);
           const treble = satb && c.notes.length === 4 ? i >= 2 : m >= split;
@@ -130,7 +162,7 @@ export function Staff({ chords, satb = false, ariaLabel }: Props) {
               );
             })}
             {c.label ? (
-              <text x={x} y={height - 6} className="st-label">
+              <text x={x} y={top + height - 6} className="st-label">
                 {c.label}
               </text>
             ) : null}

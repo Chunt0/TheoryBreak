@@ -1,6 +1,8 @@
 // Unified note/controller input: Web MIDI (Arturia MiniLab 3 or any controller),
 // the computer keyboard (A-row piano layout) and on-screen keys/fretboards.
 
+import type { Command } from './commands';
+
 export type InputSource = 'midi' | 'qwerty' | 'screen';
 
 export type InputEvent =
@@ -9,7 +11,9 @@ export type InputEvent =
   | { type: 'cc'; cc: number; value: number; channel: number; time: number }
   | { type: 'pitchbend'; value: number; channel: number; time: number }
   | { type: 'aftertouch'; value: number; channel: number; time: number }
-  | { type: 'pad'; pad: number; velocity: number; on: boolean; time: number };
+  | { type: 'pad'; pad: number; velocity: number; on: boolean; time: number }
+  /** a controller button/encoder/pad bound to a computer-key action (see commands.ts) */
+  | { type: 'command'; cmd: Command; time: number };
 
 export interface MidiPortInfo {
   id: string;
@@ -127,6 +131,11 @@ class InputHub {
     const time = performance.now();
     this.emit({ type: 'pad', pad, velocity: 100, on: true, time });
     this.emit({ type: 'pad', pad, velocity: 0, on: false, time });
+  }
+
+  /** Fire a command (Space, Enter… from a controller). */
+  command(cmd: Command): void {
+    this.emit({ type: 'command', cmd, time: performance.now() });
   }
 
   heldNotes(): number[] {

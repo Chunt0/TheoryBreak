@@ -2,17 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <title>Theory Break</title>
+    <meta name="theme-color" content="#f5f5f6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e10" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <title>Music theory practice</title>
     <meta name="description" content="15-minute music theory workouts — jazz, funk, R&amp;B and Bach — plus a DX7-style FM synth. Play on the computer keyboard or a MIDI controller." />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f59e0b'/%3E%3Cpath d='M20 46V18l26-6v28' stroke='%23111' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='15' cy='46' r='6' fill='%23111'/%3E%3Ccircle cx='41' cy='40' r='6' fill='%23111'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e0e10'/%3E%3Cpath d='M20 46V18l26-6v28' stroke='%23e06c75' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='15' cy='46' r='6' fill='%23e06c75'/%3E%3Ccircle cx='41' cy='40' r='6' fill='%23e06c75'/%3E%3C/svg%3E" />
     <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/themes.css" />
+    <!-- the saved theme before the first paint, so it never flashes the default -->
+    <script>try { var t = JSON.parse(localStorage.getItem('theory-break:data')).settings.theme; if (t && t !== 'auto') document.documentElement.dataset.theme = t; } catch (e) {}</script>
   </head>
   <body>
     <div id="root"></div>
-    <noscript>Theory Break needs JavaScript (and Chrome or Edge for MIDI).</noscript>
+    <noscript>This needs JavaScript (and Chrome or Edge for MIDI).</noscript>
     <script type="module" src="/main.js"></script>
   </body>
 </html>

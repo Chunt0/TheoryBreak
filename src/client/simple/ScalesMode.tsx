@@ -6,6 +6,7 @@ import { mod, noteName, transpose } from '../theory/core';
 import { getScale, scaleNotes, scaleSemis } from '../theory/scales';
 import type { KeyMark } from '../ui/Keyboard';
 import { degreeLine, type Dir, type Pattern } from './logic';
+import type { Help } from './Lessons';
 import { Bar, K, Listen, Pick, playLine, rootByPc, rootMidi, savePref, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
 
 const SCALE_GROUPS: { title: string; ids: string[] }[] = [
@@ -14,6 +15,26 @@ const SCALE_GROUPS: { title: string; ids: string[] }[] = [
   { title: 'Jazz', ids: ['lydian_dom', 'altered', 'dim_hw', 'whole_tone', 'bebop_dom'] },
   { title: 'Pentatonic & blues', ids: ['major_pent', 'minor_pent', 'blues'] },
 ];
+/** The lessons behind each scale, most relevant first. */
+const SCALE_TOPICS: Record<string, string[]> = {
+  melodic_minor: ['core.melodic', 'core.chordscale'],
+  lydian_dom: ['core.melodic', 'core.chordscale'],
+  altered: ['core.melodic', 'core.chordscale', 'core.tensions'],
+  dim_hw: ['core.symmetric', 'core.chordscale'],
+  whole_tone: ['core.symmetric', 'core.chordscale'],
+  bebop_dom: ['jazz.bebop', 'core.chordscale'],
+  minor_pent: ['funk.harmony', 'jazz.blues'],
+  blues: ['jazz.blues', 'funk.harmony'],
+};
+const scaleHelp = (id: string): Help => ({
+  topics: [...(SCALE_TOPICS[id] ?? []), 'core.modes', 'core.chordscale'].filter((t, i, a) => a.indexOf(t) === i),
+  method: [
+    'Say the formula before you play (Dorian: 1 2 ♭3 4 5 6 ♭7) and spell it from the root: one letter per degree.',
+    'Patterns: in 3rds, play each degree and the one a 3rd above, then step on; groups of four run 1-2-3-4, 2-3-4-5…',
+    'Clean before fast: only runs with no wrong notes set a record. Raise the tempo once a key is clean.',
+  ],
+});
+
 const SHORT: Record<string, string> = {
   major: 'Major', minor: 'Natural minor', harmonic_minor: 'Harmonic minor', melodic_minor: 'Melodic minor',
   dorian: 'Dorian', phrygian: 'Phrygian', lydian: 'Lydian', mixolydian: 'Mixolydian', locrian: 'Locrian',
@@ -216,7 +237,7 @@ export function ScalesMode() {
 
   return (
     <div className="s-mode">
-      <Bar>
+      <Bar help={scaleHelp(scaleId)}>
         <Pick label="Scale" value={scaleId} groups={SCALE_CHOICES} onChange={setScaleId} />
         <Pick label="Pattern" value={pattern} options={PATTERNS} onChange={setPattern} />
         <Pick label="Range" value={octs} options={OCTAVES} onChange={setOcts} />

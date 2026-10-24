@@ -1,4 +1,4 @@
-// Theory Break server: serves the built client and stores progress JSON in a
+// Server: serves the built client and stores progress JSON in a
 // data directory (a Docker volume), so practice history follows you between
 // browsers. Optional TLS (needed for Web MIDI/AudioWorklet off localhost) and
 // optional basic auth for exposed deployments.
@@ -98,7 +98,8 @@ async function serveStatic(req: Request, pathname: string): Promise<Response> {
   // Bundles keep fixed names (main.js, dx7-processor.js), so every file is
   // revalidated: an updated image never runs yesterday's JS with today's HTML.
   const etag = `W/"${file.size.toString(36)}-${file.lastModified.toString(36)}"`;
-  const headers = { 'cache-control': 'no-cache', etag, ...SECURITY_HEADERS };
+  const headers: Record<string, string> = { 'cache-control': 'no-cache', etag, ...SECURITY_HEADERS };
+  if (full.endsWith('.webmanifest')) headers['content-type'] = 'application/manifest+json';
   if (req.headers.get('if-none-match') === etag) return new Response(null, { status: 304, headers });
   return new Response(file, { headers });
 }
@@ -109,7 +110,7 @@ const server = Bun.serve({
   ...(TLS_CERT && TLS_KEY && existsSync(TLS_CERT) && existsSync(TLS_KEY) ? { tls: { cert: Bun.file(TLS_CERT), key: Bun.file(TLS_KEY) } } : {}),
   async fetch(req) {
     if (!authorized(req)) {
-      return new Response('Authentication required', { status: 401, headers: { 'www-authenticate': 'Basic realm="Theory Break"' } });
+      return new Response('Authentication required', { status: 401, headers: { 'www-authenticate': 'Basic realm="Music theory practice"' } });
     }
     const url = new URL(req.url);
     if (url.pathname === '/api/health') return json({ ok: true });
@@ -123,4 +124,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`Theory Break listening on ${server.url} (data: ${DATA_DIR})`);
+console.log(`Listening on ${server.url} (data: ${DATA_DIR})`);

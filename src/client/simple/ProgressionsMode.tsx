@@ -6,6 +6,9 @@ import { JAZZ_MAJOR_TONICS, JAZZ_MINOR_TONICS, keyFromName, keyName, prefersFlat
 import { PROG_GROUP_NAMES, PROGRESSIONS, type ProgGroup, type ProgressionDef } from '../theory/progressions';
 import { Answers, Bar, Chips, K, Listen, Pick, pickAny, playEvents, setMarks, useHotkeys, useModeCleanup, usePref, type Choice } from './common';
 import { NUMERAL_SETS, randomProgression, type NumeralLevel } from './logic';
+import { SKILL_HELP } from '../learn/help';
+import type { Help } from './Lessons';
+import { ladder, pickFor, useTally } from './stats';
 
 type Task = 'numerals' | 'library';
 const TASKS: Choice<Task>[] = [
@@ -17,6 +20,9 @@ const LEVELS: Choice<NumeralLevel>[] = [
   { id: 'diatonic', label: 'All triads' },
   { id: 'sevenths', label: 'Diatonic 7ths' },
   { id: 'minor', label: 'Minor key' },
+  { id: 'secondary', label: 'Secondary dominants', title: 'V7/ii, V7/IV, V7/V, V7/vi — each resolves to its target' },
+  { id: 'borrowed', label: 'Borrowed chords', title: 'iv, ♭III, ♭VI, ♭VII from the parallel minor' },
+  { id: 'subs', label: 'Tritone subs', title: '♭II7, ♭III7, ♭VI7 standing in for V7, VI7, II7' },
 ];
 type Group = ProgGroup | 'all';
 const GROUPS: Choice<Group>[] = [
@@ -29,6 +35,64 @@ const FEEL: Record<ProgGroup, { style: CompStyle; bpm: number; beats: number }> 
   soul: { style: 'ballad', bpm: 76, beats: 2 },
   funk: { style: 'funk', bpm: 100, beats: 4 },
   bach: { style: 'block', bpm: 76, beats: 2 },
+};
+
+const NUMERAL_HELP: Help = {
+  topics: ['core.degrees', 'core.rootmotion', 'core.diatonic'],
+  method: [
+    'The first chord is the tonic: hum its root and keep it in your ear.',
+    'Hum each new bass note and count scale steps from the tonic: that is the numeral.',
+    'Then the quality: upper case major, lower case minor, ° diminished. Among the 7ths, V7 is the only dominant.',
+    'Root motion helps: up a 4th (down a 5th) is the strongest move; 3rds share two notes and sound gentle.',
+  ],
+};
+/** The out-of-key levels add what to listen for. */
+const LEVEL_HELP: Partial<Record<NumeralLevel, Help>> = {
+  secondary: {
+    topics: ['jazz.secondary', 'core.degrees'],
+    method: [
+      'A major chord where the key has a minor one (II, III, VI) or a ♭7 on I is a secondary dominant: V7 of the chord a 5th below.',
+      'It always resolves here, so hear where it goes: VI7 → ii, II7 → V, III7 → vi, I7 → IV.',
+      'Listen for the note from outside the key: V7/ii adds ♯1, V7/V adds ♯4, V7/vi adds ♯5, V7/IV adds ♭7 — each moves a half step into the next chord.',
+    ],
+  },
+  borrowed: {
+    topics: ['jazz.backdoor', 'soul.gospel', 'core.degrees'],
+    method: [
+      'Borrowed chords come from the parallel minor: iv, ♭III, ♭VI, ♭VII. They darken the key without leaving it.',
+      'iv after IV is the classic "minor plagal" sigh: the 6 falls to ♭6.',
+      '♭VI and ♭VII are major chords whose roots sit a whole step apart; ♭VII–I is the rock / backdoor cadence.',
+      'Bass a major 3rd below the tonic (♭VI) or a whole step below (♭VII) gives them away.',
+    ],
+  },
+  subs: {
+    topics: ['jazz.tritone', 'jazz.turnarounds', 'jazz.secondary'],
+    method: [
+      'A tritone sub is a dominant 7th a tritone from the one it replaces, so the bass slides down a half step to its target.',
+      '♭II7 → Imaj7 replaces V7; ♭VI7 → V7 replaces II7; ♭III7 → ii7 replaces VI7.',
+      'Hear the bass: falling 5ths are the originals; chromatic half steps down are the subs.',
+    ],
+  },
+};
+
+const JAZZ_EAR = [
+  'Hum the bass line first and sketch its motion.',
+  ...SKILL_HELP['ear.prog.jazz'].method.slice(1),
+];
+const LIB_HELP: Record<Group, Help> = {
+  jazz: { topics: ['jazz.turnarounds', 'jazz.iivi', 'jazz.minor', 'jazz.rhythm'], method: JAZZ_EAR },
+  subs: { topics: ['jazz.tritone', 'jazz.backdoor', 'jazz.secondary', 'jazz.coltrane', 'jazz.reharm'], method: SKILL_HELP['ear.prog.subs'].method },
+  soul: { topics: ['soul.neo', 'soul.gospel', 'jazz.backdoor'], method: SKILL_HELP['ear.prog.soul'].method },
+  funk: {
+    topics: ['funk.harmony', 'jazz.modal', 'funk.groove'],
+    method: [
+      'Vamps sit on one or two chords: name the colour first (m7/m9 = Dorian, 9 or 13 = dominant, 7♯9 = the Hendrix chord).',
+      'Then the motion: i7–IV9 is the Dorian vamp; a chord a half step above and back is a chromatic neighbour.',
+      'A longer chain falling in 5ths over four-on-the-floor is the disco cycle.',
+    ],
+  },
+  bach: { topics: ['bach.cadences', 'bach.chromatic', 'bach.sequences', 'bach.voiceleading'], method: SKILL_HELP['ear.prog.bach'].method },
+  all: { topics: ['jazz.turnarounds', 'jazz.tritone', 'soul.neo', 'funk.harmony', 'bach.cadences'], method: JAZZ_EAR },
 };
 
 /** A random practical key in the given mode. */
@@ -52,13 +116,16 @@ interface LibQ {
 }
 
 function newNumQ(level: NumeralLevel): NumQ {
-  return { key: randomKey(level === 'minor' ? 'minor' : 'major'), chords: randomProgression(NUMERAL_SETS[level]), picks: [] };
+  const chords = randomProgression(NUMERAL_SETS[level], 4, Math.random, (choices) => pickFor('prog.numerals', choices));
+  return { key: randomKey(level === 'minor' ? 'minor' : 'major'), chords, picks: [] };
 }
 
+const poolOf = (group: Group) => PROGRESSIONS.filter((p) => group === 'all' || p.group === group);
+const progName = (id: string) => PROGRESSIONS.find((p) => p.id === id)?.name ?? id;
+
 function newLibQ(group: Group, prev: LibQ | null): LibQ {
-  const pool = PROGRESSIONS.filter((p) => group === 'all' || p.group === group);
-  let def = pickAny(pool);
-  if (pool.length > 1) while (def.id === prev?.def.id) def = pickAny(pool);
+  const pool = poolOf(group);
+  const def = pickFor('prog.library', pool, prev?.def ?? null, (p) => p.id);
   const ref = keyFromName(def.key);
   const key = randomKey(ref.mode);
   const shift = mod(pc(key.tonic) - pc(ref.tonic), 12);
@@ -75,7 +142,13 @@ export function ProgressionsMode() {
   const [nq, setNq] = useState<NumQ>(() => newNumQ(level));
   const [lq, setLq] = useState<LibQ>(() => newLibQ(group, null));
   const [playing, setPlaying] = useState<number | null>(null);
-  const [score, setScore] = useState({ ok: 0, bad: 0 });
+  const tally = useTally(
+    `prog.${task}`,
+    `Progressions · ${TASKS.find((t) => t.id === task)!.label}`,
+    task === 'numerals' ? NUMERAL_SETS[level] : poolOf(group).map((p) => p.id),
+    task === 'numerals' ? (n) => n : progName,
+    task === 'numerals' ? ladder(LEVELS, level, (l) => { setLevel(l); next(task, l); }) : undefined,
+  );
   const timers = useRef<number[]>([]);
 
   const numDone = nq.picks.length === nq.chords.length - 1;
@@ -113,14 +186,13 @@ export function ProgressionsMode() {
   const pickNumeral = (n: string) => {
     if (numDone) return;
     const i = nq.picks.length + 1;
-    const ok = n === nq.chords[i];
-    setScore((s) => (ok ? { ...s, ok: s.ok + 1 } : { ...s, bad: s.bad + 1 }));
+    tally.record(nq.chords[i], n === nq.chords[i]);
     setNq({ ...nq, picks: [...nq.picks, n] });
   };
 
   const pickLib = (id: string) => {
     setLq({ ...lq, picked: id });
-    setScore((s) => (id === lq.def.id ? { ...s, ok: s.ok + 1 } : { ...s, bad: s.bad + 1 }));
+    tally.record(lq.def.id, id === lq.def.id);
   };
 
   useHotkeys((e) => {
@@ -141,7 +213,7 @@ export function ProgressionsMode() {
 
   return (
     <div className="s-mode">
-      <Bar score={score}>
+      <Bar tally={tally} help={task === 'numerals' ? LEVEL_HELP[level] ?? NUMERAL_HELP : LIB_HELP[group]}>
         <Chips label="Task" value={task} options={TASKS} onChange={(t) => { setTask(t); next(t); }} />
         {task === 'numerals'
           ? <Pick label="Chords" value={level} options={LEVELS} onChange={(l) => { setLevel(l); next(task, l); }} />

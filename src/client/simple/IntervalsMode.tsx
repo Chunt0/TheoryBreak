@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { input } from '../midi/input';
 import { getInterval, intervalForSemis, mod, noteName, sameNote, transpose, type Note } from '../theory/core';
 import type { KeyMark } from '../ui/Keyboard';
-import { Answers, article, Bar, Chips, K, Listen, NotePicker, Pick, pickOther, playBlock, playLine, ROOTS, rootMidi, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
+import { SKILL_HELP } from '../learn/help';
+import type { Help } from './Lessons';
+import { ladder, pickFor, useTally } from './stats';
+import { Answers, article, Bar, Chips, K, Listen, NotePicker, Pick, playBlock, playLine, ROOTS, rootMidi, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
 
 type Task = 'play' | 'hear' | 'name';
 type Level = 'basic' | 'all' | 'ext';
@@ -32,13 +35,30 @@ interface Q {
   ivl: string;
 }
 
-/** A fresh question; spelled answers stay within single sharps and flats. */
-function newQ(level: Level, dir: Dir, prev: Q | null): Q {
+const ARROW: Record<Dir, string> = { up: '↑', down: '↓', harm: 'together' };
+/** What the record keeps: the interval and its direction ("m6:down"). */
+const itemOf = (ivl: string, dir: Dir) => `${ivl}:${dir}`;
+const itemLabel = (item: string) => {
+  const [ivl, dir] = item.split(':') as [string, Dir];
+  return `${label(ivl)} ${ARROW[dir]}`;
+};
+/** Task never Together outside Hear it. */
+const dirFor = (task: Task, d: Dir): Dir => (task !== 'hear' && d === 'harm' ? 'up' : d);
+
+/** A fresh question, leaning toward the intervals you miss; spelled answers stay within single sharps and flats. */
+function newQ(task: Task, level: Level, dir: Dir, prev: Q | null): Q {
+  const ivl = pickFor(`ivl.${task}`, SETS[level], prev?.ivl ?? null, (i) => itemOf(i, dir));
   for (;;) {
-    const q = { root: ROOTS[Math.floor(Math.random() * 12)], ivl: pickOther(SETS[level], prev?.ivl ?? null) };
+    const q = { root: ROOTS[Math.floor(Math.random() * 12)], ivl };
     if (Math.abs(transpose(q.root, q.ivl, dir === 'down' ? -1 : 1).acc) <= 1) return q;
   }
 }
+
+const HELP: Record<Task, Help> = {
+  play: { topics: ['core.intervals'], method: ['Count semitones up from the root: m3 = 3, M3 = 4, P4 = 5, TT = 6, P5 = 7, m6 = 8, M6 = 9, m7 = 10, M7 = 11, P8 = 12.', 'Shortcuts: a 6th is an octave minus a 3rd (M6 = 8ve − m3), a 7th is an octave minus a 2nd.', 'Tensions: 9 = 2nd, 11 = 4th, 13 = 6th, in any octave above.'] },
+  hear: { topics: ['core.intervals', 'core.tensions'], method: [...SKILL_HELP['ear.int'].method.slice(0, 3), 'Not sure? Play both notes on the keys and compare before you answer.', 'Tensions: hear the top note an octave lower to get the simple interval, then add 7 (a 2nd becomes a 9th).'] },
+  name: { topics: ['core.intervals'], method: SKILL_HELP['gym.int.spell'].method },
+};
 
 interface Answer {
   ok: boolean;
@@ -52,10 +72,12 @@ export function IntervalsMode() {
   const [task, setTask] = usePref<Task>('ivl.task', 'play');
   const [level, setLevel] = usePref<Level>('ivl.level', 'basic');
   const [dirPref, setDir] = usePref<Dir>('ivl.dir', 'up');
-  const dir: Dir = task !== 'hear' && dirPref === 'harm' ? 'up' : dirPref;
-  const [q, setQ] = useState<Q>(() => newQ(level, dir, null));
+  const dir = dirFor(task, dirPref);
+  const [q, setQ] = useState<Q>(() => newQ(task, level, dir, null));
   const [answer, setAnswer] = useState<Answer | null>(null);
-  const [score, setScore] = useState({ ok: 0, bad: 0 });
+  // a question counts once, on its first try
+  const [counted, setCounted] = useState(false);
+  const tally = useTally(`ivl.${task}`, `Intervals · ${TASKS.find((t) => t.id === task)!.label}`, SETS[level].map((i) => itemOf(i, dir)), itemLabel, ladder(LEVELS, level, (l) => { setLevel(l); next(l); }));
   const [wrong, flash] = useFlash();
   const [said, setSaid] = useState<string | null>(null);
 
@@ -67,10 +89,16 @@ export function IntervalsMode() {
   const ext = level === 'ext';
   const word = TENSION[q.ivl] ?? ivl.name.toLowerCase();
 
-  const next = (lvl = level, d = dir) => {
-    setQ((p) => newQ(lvl, d, p));
+  const next = (lvl = level, d = dir, t = task) => {
+    setQ((p) => newQ(t, lvl, dirFor(t, d), p));
     setAnswer(null);
+    setCounted(false);
     setSaid(null);
+  };
+  const count = (ok: boolean) => {
+    if (counted) return;
+    setCounted(true);
+    tally.record(itemOf(q.ivl, dir), ok);
   };
 
   const sound = () => {
@@ -99,7 +127,7 @@ export function IntervalsMode() {
 
   const settle = (a: Answer) => {
     setAnswer(a);
-    setScore((s) => (a.ok ? { ...s, ok: s.ok + 1 } : { ...s, bad: s.bad + 1 }));
+    count(a.ok);
     if (task !== 'hear') playLine([rootM, otherM], 0.45, 0.6, 0.1);
   };
 
@@ -110,14 +138,14 @@ export function IntervalsMode() {
     const hit = ext ? semis > 0 && mod(semis, 12) === mod(ivl.semis, 12) : semis === ivl.semis;
     if (hit) {
       setAnswer({ ok: true, picked: q.ivl });
-      setScore((s) => ({ ...s, ok: s.ok + 1 }));
+      count(true);
       playBlock([rootM, note], 1, 0.15);
       window.setTimeout(() => next(), 1100);
     } else if (note !== rootM) {
       flash(note);
       const name = intervalForSemis(semis).name;
       setSaid(semis > 0 && semis <= 24 ? `That's ${article(name)} ${semis > 12 ? 'compound ' : ''}${name.toLowerCase()} ${down ? 'below' : 'above'}` : `Go ${down ? 'down' : 'up'} from ${noteName(q.root)}`);
-      setScore((s) => ({ ...s, bad: s.bad + 1 }));
+      count(false);
     }
   });
 
@@ -136,8 +164,8 @@ export function IntervalsMode() {
 
   return (
     <div className="s-mode">
-      <Bar score={score}>
-        <Chips label="Task" value={task} options={TASKS} onChange={(t) => { setTask(t); next(); }} />
+      <Bar tally={tally} help={HELP[task]}>
+        <Chips label="Task" value={task} options={TASKS} onChange={(t) => { setTask(t); next(level, dirPref, t); }} />
         <Pick label="Intervals" value={level} options={LEVELS} onChange={(l) => { setLevel(l); next(l); }} />
         <Pick label="Direction" value={dir} options={dirs} onChange={(d) => { setDir(d); next(level, d); }} />
       </Bar>

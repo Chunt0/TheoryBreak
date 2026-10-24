@@ -4,7 +4,10 @@ import { presetByName } from './audio/dx7/presets';
 import { input } from './midi/input';
 import { store } from './app/store';
 import { initSynthFromStore } from './app/synthState';
+import { initRackFromStore } from './app/rackState';
 import { wireLive } from './app/live';
+import { keepAwake } from './app/wake';
+import { initTheme } from './app/themes';
 import { SimpleApp } from './simple/SimpleApp';
 
 function applySettings(): void {
@@ -13,14 +16,18 @@ function applySettings(): void {
   audio.setReverb(s.reverb);
   audio.setMetronome(s.metronome);
   audio.setPatch(PART.lesson, presetByName(s.lessonPatch));
+  audio.setInstrument(s.instrument);
   input.pads.channel = s.padChannel;
 }
 
 store.loadLocal();
+initTheme();
 applySettings();
 initSynthFromStore();
+initRackFromStore();
 input.attachKeyboard(window);
 wireLive();
+keepAwake();
 void input.requestMidi();
 
 // Browsers only allow audio after a user gesture.
@@ -47,9 +54,29 @@ document.addEventListener('click', (e) => {
 void store.syncFromServer().then(() => {
   applySettings();
   initSynthFromStore();
+  initRackFromStore();
 });
 
+// Installed to the home screen, the app opens (and works) with no connection: a
+// service worker keeps the files. Dev builds clear it so edits always show.
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  if (process.env.NODE_ENV === 'production') {
+    window.addEventListener('load', () => void navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    // a new build's worker took over from an older one: reload once so this page runs the new code too
+    const hadWorker = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadWorker || reloaded) return;
+      reloaded = true;
+      store.flush();
+      location.reload();
+    });
+  } else {
+    void navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => void r.unregister()));
+  }
+}
+
 // Handy for poking at the engine from DevTools.
-(window as unknown as Record<string, unknown>).theoryBreak = { audio, input, store };
+(window as unknown as Record<string, unknown>).app = { audio, input, store };
 
 createRoot(document.getElementById('root')!).render(<SimpleApp />);
