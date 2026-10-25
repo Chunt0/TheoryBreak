@@ -71,6 +71,13 @@ export function setRackParam(mod: string, key: string, value: number): void {
   audio.setRackParam(next, mod, key, value);
 }
 
+let commandSeq = 0;
+/** Press a module's button (the looper's): sent as a changing hidden param, so it is neither saved nor undone. */
+export function rackCommand(mod: string, key: string, cmd: number): void {
+  commandSeq++;
+  audio.rackCommand(mod, key, commandSeq * 8 + cmd);
+}
+
 export function loadRack(p: RackPatch): void {
   const patch = normalizeRack(structuredClone(p));
   if (!patch) return;

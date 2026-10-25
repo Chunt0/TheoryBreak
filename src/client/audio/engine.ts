@@ -206,6 +206,11 @@ class AudioEngine {
     this.postRack({ t: 'param', mod, key, value });
   }
 
+  /** A one-shot command to a module (a button press, not a knob): the patch is untouched. */
+  rackCommand(mod: string, key: string, value: number): void {
+    this.postRack({ t: 'param', mod, key, value });
+  }
+
   onRackStatus(fn: (s: RackStatus) => void): () => void {
     this.rackListeners.add(fn);
     this.postRack({ t: 'status', enabled: true });

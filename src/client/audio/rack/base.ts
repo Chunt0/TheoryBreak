@@ -29,7 +29,9 @@ export type RackView =
   /** notes in the last `span` seconds, as flat [note, began, ended] triples (seconds ago; 0 = still sounding) */
   | { k: 'roll'; span: number; notes: number[] }
   /** per input: the latest voltage and the lowest and highest since the last view */
-  | { k: 'volts'; v: number[]; lo: number[]; hi: number[]; on: boolean[] };
+  | { k: 'volts'; v: number[]; lo: number[]; hi: number[]; on: boolean[] }
+  /** the granular looper: tempo, beat of the bar, looper state (see LOOP_* in cosm.ts), play position 0–1, loop length s */
+  | { k: 'cosm'; bpm: number; beat: number; loop: number; pos: number; len: number; frozen: boolean };
 
 export class Port {
   readonly buf = new Float32Array(MAX_CH * BLOCK);

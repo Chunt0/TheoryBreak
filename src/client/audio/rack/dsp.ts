@@ -6,6 +6,7 @@
 
 import { BLOCK, C4, HIGH, Input, MAX_CH, Mod, Port, TAU, blep, ftanh, type RackView } from './base';
 import { MORE_CLASSES } from './more';
+import { COSM_CLASSES } from './cosm';
 import { VIEW_CLASSES } from './visual';
 import { MODULES, QUANT_SCALES, VOICE_COUNTS, type ModuleType } from './modules';
 import type { RackPatch } from './patch';
@@ -722,6 +723,7 @@ const CLASSES = {
   noise: NoiseMod, clock: ClockMod, seq: SeqMod, quant: QuantMod, delay: DelayMod, fold: FoldMod, util: UtilMod, out: OutMod,
   ...MORE_CLASSES,
   ...VIEW_CLASSES,
+  ...COSM_CLASSES,
 } as Record<ModuleType, new (id: string, type: ModuleType, sr: number) => Mod>;
 
 // ----------------------------------------------------------------------- rack
@@ -793,7 +795,7 @@ export class Rack {
     this.order = order;
     this.outs = order.filter((m): m is OutMod => m instanceof OutMod);
     this.midis = order.filter((m): m is MidiMod => m instanceof MidiMod);
-    this.shows = order.filter((m) => MODULES[m.type].family === 'view');
+    this.shows = order.filter((m) => m.view !== Mod.prototype.view);
     for (const m of this.midis) {
       m.bend = this.bend;
       m.wheel = this.wheel;

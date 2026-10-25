@@ -271,6 +271,27 @@ RACK_PRESETS.push(
       ['vca.out', 'cho.in'], ['cho.l', 'out.l'], ['cho.r', 'out.r'],
     ]),
   },
+  {
+    notes: 'Plucked chords into MICROCOSM’s Mosaic D: overlapping loops of what you just played, an octave below to two above, in a medium room. Play a few notes and listen to them stack; try the other effects with the Effect knob.',
+    patch: rack('MICRO LOOPS', [
+      ['midi', 'midi', { voices: 2 }], ['vco', 'vco', { pw: 0.35 }], ['flt', 'vcf', { cutoff: 1800, res: 0.25, cv: 0.4 }], ['env', 'adsr', { a: 0.002, d: 0.45, s: 0.1, r: 0.35 }],
+      ['vca', 'vca'], ['mc', 'cosm', { fx: 0, var: 3, act: 0.6, rep: 0.45, shape: 0.45, mix: 0.5, space: 0.45, time: 90 }], ['out', 'out', { level: 0.5 }],
+    ], [
+      ['midi.voct', 'vco.voct'], ['vco.saw', 'flt.in'], ['midi.gate', 'env.gate'], ['env.env', 'flt.cv'], ['flt.lp', 'vca.in'], ['env.env', 'vca.cv'],
+      ['vca.out', 'mc.l'], ['mc.l', 'out.l'], ['mc.r', 'out.r'],
+    ]),
+  },
+  {
+    notes: 'A clocked minor-pentatonic line into MICROCOSM’s Blocks B, sharing the clock: every note it hears sets off a burst of chopped, octave-shifted blocks in time. Turn Activity for more chaos, Repeats for longer bursts.',
+    patch: rack('GLITCH SEQ', [
+      ['clk', 'clock', { bpm: 104 }], ['seq', 'seq', { s0: 0, s1: 7, s2: 3, s3: 10, s4: 12, s5: 5, s6: 7, s7: 15, g2: 0, g5: 0 }], ['q', 'quant', { root: 9, scale: 10 }],
+      ['vco', 'vco'], ['flt', 'vcf', { cutoff: 900, res: 0.4, cv: 0.45 }], ['env', 'adsr', { a: 0.002, d: 0.18, s: 0, r: 0.12 }], ['vca', 'vca', { resp: 1 }],
+      ['mc', 'cosm', { fx: 6, var: 1, act: 0.55, rep: 0.4, mix: 0.55, space: 0.3, div: 3 }], ['out', 'out', { level: 0.5 }],
+    ], [
+      ['clk.e', 'seq.clk'], ['seq.voct', 'q.in'], ['q.out', 'vco.voct'], ['vco.saw', 'flt.in'], ['seq.gate', 'env.gate'], ['env.env', 'flt.cv'],
+      ['flt.lp', 'vca.in'], ['env.env', 'vca.cv'], ['vca.out', 'mc.l'], ['clk.q', 'mc.clock'], ['mc.l', 'out.l'], ['mc.r', 'out.r'],
+    ]),
+  },
 );
 
 export const rackPresetByName = (name: string): RackPatch | undefined => RACK_PRESETS.find((p) => p.patch.name === name)?.patch;

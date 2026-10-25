@@ -13,7 +13,8 @@ export type ModuleType =
   | 'func' | 'rand' | 'turing' | 'euclid' | 'div' | 'coin' | 'logic' | 'switch' | 'arp' | 'chord'
   | 'lpg' | 'comb' | 'vowel' | 'ring' | 'drive' | 'crush'
   | 'verb' | 'chorus' | 'phaser' | 'pan' | 'xfade'
-  | 'scope' | 'spectrum' | 'sono' | 'xy' | 'tuner' | 'keys' | 'roll' | 'volts';
+  | 'scope' | 'spectrum' | 'sono' | 'xy' | 'tuner' | 'keys' | 'roll' | 'volts'
+  | 'cosm';
 
 export type Curve = 'lin' | 'exp' | 'int';
 export type Unit = 'hz' | 's' | 'st' | 'v' | 'bpm' | 'pct' | 'x' | 'oct' | 'table' | 'vowel' | 'db';
@@ -77,6 +78,11 @@ export const QUANT_SCALES: { name: string; semis: number[] }[] = [
   { name: 'Altered', semis: [0, 1, 3, 4, 6, 8, 10] },
   { name: 'Lydian ♭7', semis: [0, 2, 4, 6, 7, 9, 10] },
 ];
+
+/** The granular looper's effects, and the family each belongs to. */
+export const COSM_EFFECTS = ['Mosaic', 'Seq', 'Glide', 'Haze', 'Tunnel', 'Strum', 'Blocks', 'Interrupt', 'Arp', 'Pattern', 'Warp'];
+export const COSM_FAMILIES = ['Micro loop', 'Micro loop', 'Micro loop', 'Granules', 'Granules', 'Granules', 'Glitch', 'Glitch', 'Glitch', 'Multidelay', 'Multidelay'];
+export const COSM_DIVS = ['1/1', '1/2', '1/4.', '1/4', '1/4T', '1/8', '1/8T', '1/16'];
 
 const knob = (id: string, label: string, min: number, max: number, def: number, curve: Curve = 'lin', unit?: Unit): ParamDef => ({ id, label, min, max, def, curve, unit });
 const toggle = (id: string, label: string, def = 0): ParamDef => ({ id, label, min: 0, max: 1, def, kind: 'toggle', curve: 'int' });
@@ -366,6 +372,22 @@ const LIST: ModuleDef[] = [
     params: [knob('rate', 'Rate', 0.05, 8, 0.4, 'exp', 'hz'), knob('depth', 'Depth', 0, 1, 0.7, 'lin', 'pct'), knob('fb', 'Feedback', 0, 0.95, 0.5, 'lin', 'pct'), knob('mix', 'Mix', 0, 1, 0.5, 'lin', 'pct')],
     ins: ports(['in', 'In']),
     outs: ports(['out', 'Out']),
+  },
+  {
+    type: 'cosm', name: 'MICROCOSM', title: 'Granular looper (after the Hologram Microcosm)', family: 'fx', cols: 8,
+    blurb: 'Cuts what you play into loops, grains, glitches and echoes in time with a tempo or clock: eleven effects, four variations each, a resonant filter, a reverb and a 60-second looper.',
+    params: [
+      knob('act', 'Activity', 0, 1, 0.5, 'lin', 'pct'), knob('rep', 'Repeats', 0, 1, 0.5, 'lin', 'pct'), knob('shape', 'Shape', 0, 1, 0.5, 'lin', 'pct'),
+      knob('filter', 'Filter', 60, 20000, 20000, 'exp', 'hz'), knob('mix', 'Mix', 0, 1, 0.5, 'lin', 'pct'), knob('space', 'Space', 0, 1, 0.3, 'lin', 'pct'),
+      knob('time', 'Tempo', 40, 240, 100, 'int', 'bpm'), knob('loop', 'Loop', 0, 1, 0.8, 'lin', 'pct'),
+      choice('fx', 'Effect', COSM_EFFECTS, 0), choice('var', 'Var', ['A', 'B', 'C', 'D'], 0), choice('div', 'Subdiv', COSM_DIVS, 3),
+      knob('res', 'Res', 0, 1, 0.1, 'lin', 'pct'), choice('verb', 'Room', ['Small', 'Medium', 'Large', 'Huge'], 1),
+      knob('mdep', 'Wobble', 0, 1, 0, 'lin', 'pct'), knob('mrate', 'W rate', 0.05, 8, 0.6, 'exp', 'hz'),
+      choice('lspd', 'Speed', ['−2×', '−1×', '−½×', '½×', '1×', '2×'], 4), knob('fade', 'Fade', 0.01, 20, 0.05, 'exp', 's'),
+      toggle('rev', 'Reverse'), toggle('freeze', 'Freeze'), toggle('pre', 'Pre-FX'),
+    ],
+    ins: ports(['l', 'In L'], ['r', 'In R'], ['clock', 'Clock'], ['freeze', 'Freeze'], ['loop', 'Loop'], ['act', 'Activity']),
+    outs: ports(['l', 'L'], ['r', 'R']),
   },
   // ---------------------------------------------------------------- more utilities
   {
