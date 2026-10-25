@@ -82,6 +82,9 @@ export const QUANT_SCALES: { name: string; semis: number[] }[] = [
 ];
 
 /** The granular looper's effects, and the family each belongs to. */
+/** Step sequencer: steps, and their default pitches (a minor-seventh line, then its answer) */
+export const SEQ_LEN = 16;
+const SEQ_STEPS = [0, 3, 7, 10, 12, 7, 5, 3, 0, 5, 7, 12, 10, 7, 5, -2];
 export const COSM_EFFECTS = ['Mosaic', 'Seq', 'Glide', 'Haze', 'Tunnel', 'Strum', 'Blocks', 'Interrupt', 'Arp', 'Pattern', 'Warp'];
 export const COSM_FAMILIES = ['Micro loop', 'Micro loop', 'Micro loop', 'Granules', 'Granules', 'Granules', 'Glitch', 'Glitch', 'Glitch', 'Multidelay', 'Multidelay'];
 /** The Time knob's six subdivisions, as rates against the tapped beat (¼× is four beats a unit, 8× an eighth of one). */
@@ -182,12 +185,12 @@ const LIST: ModuleDef[] = [
   },
   {
     type: 'seq', name: 'SEQ', title: 'Step sequencer', family: 'seq', cols: 8,
-    blurb: 'Eight steps of pitch (in semitones) and on/off gates, one step per clock. Feed V/Oct into a quantizer to keep it in key.',
-    params: [
-      ...Array.from({ length: 8 }, (_, i) => knob(`s${i}`, String(i + 1), -12, 12, [0, 3, 7, 10, 12, 7, 5, 3][i], 'int', 'st')),
-      ...Array.from({ length: 8 }, (_, i) => toggle(`g${i}`, String(i + 1), 1)),
-      knob('len', 'Length', 1, 8, 8, 'int'),
-    ],
+    blurb: 'Sixteen steps of pitch (in semitones) and on/off gates, one step per clock; Length plays fewer. Feed V/Oct into a quantizer to keep it in key.',
+    // two banks of eight, each row of lights under its row of knobs
+    params: [0, 8].flatMap((b) => [
+      ...Array.from({ length: 8 }, (_, i) => knob(`s${b + i}`, String(b + i + 1), -12, 12, SEQ_STEPS[b + i], 'int', 'st')),
+      ...Array.from({ length: 8 }, (_, i) => toggle(`g${b + i}`, String(b + i + 1), 1)),
+    ]).concat(knob('len', 'Length', 1, SEQ_LEN, SEQ_LEN, 'int')),
     ins: ports(['clk', 'Clock'], ['reset', 'Reset']),
     outs: ports(['voct', 'V/Oct'], ['gate', 'Gate']),
   },

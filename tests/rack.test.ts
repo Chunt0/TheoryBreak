@@ -57,7 +57,7 @@ describe('guide', () => {
       expect(g.what.length).toBeGreaterThan(40);
       expect(g.tryIt.length).toBeGreaterThan(0);
       // the sequencer's step knobs and lights share one entry each (s0, g0)
-      const params = m.params.map((p) => p.id).filter((id) => !(m.type === 'seq' && /^[sg][1-7]$/.test(id)));
+      const params = m.params.map((p) => p.id).filter((id) => !(m.type === 'seq' && /^[sg]([1-9]|1[0-5])$/.test(id)));
       expect(Object.keys(g.knobs).sort()).toEqual(params.sort());
       expect(Object.keys(g.ins).sort()).toEqual(m.ins.map((p) => p.id).sort());
       expect(Object.keys(g.outs).sort()).toEqual(m.outs.map((p) => p.id).sort());
@@ -185,6 +185,22 @@ describe('modules', () => {
       if (d !== undefined) seen.add(d);
     }
     expect([...seen].sort()).toEqual([0, 1, 2, 3]);
+  });
+
+  test('the sequencer runs sixteen steps, the lower bank in turn', () => {
+    const rack = new Rack(SR);
+    rack.setPatch(patch([['c', 'clock', { bpm: 240 }], ['s', 'seq', { s12: -7 }]], [['c.s', 's.clk']]));
+    const seen = new Set<number>();
+    let low = 0;
+    for (let i = 0; i < 70; i++) {
+      render(rack, 0.02);
+      const d = rack.status().display.s;
+      if (d !== undefined) seen.add(d);
+      // step 13 plays its own pitch
+      if (d === 12) low = Math.min(low, (rack as unknown as { mods: Map<string, { outs: Record<string, { buf: Float32Array }> }> }).mods.get('s')!.outs.voct.buf[0]);
+    }
+    expect([...seen].sort((a, b) => a - b)).toEqual(Array.from({ length: 16 }, (_, i) => i));
+    expect(low).toBeCloseTo(-7 / 12, 6);
   });
 
   test('quantizer snaps to the scale', () => {
@@ -684,6 +700,55 @@ describe('granular looper', () => {
     expect(mid[0]).toBeGreaterThan(0.05);
     expect(mid[2]).toBeLessThan(0.005);
     expect(full[2]).toBeGreaterThan(0.3);
+  });
+
+  test('Warp’s repeats die away: B’s band-pass does not run away, C’s shift does not climb out of hearing', () => {
+    const hf = (b: Float32Array, from: number, to: number) => {
+      // energy above ~8 kHz (two one-pole high-passes) over all of it
+      const a = Math.exp((-2 * Math.PI * 8000) / SR);
+      let e = 0, h = 0, l1 = 0, l2 = 0;
+      for (let i = Math.round(from * SR); i < Math.round(to * SR); i++) {
+        const x = b[i];
+        l1 = l1 * a + x * (1 - a);
+        l2 = l2 * a + (x - l1) * (1 - a);
+        e += x * x;
+        h += (x - l1 - l2) ** 2;
+      }
+      return h / e;
+    };
+    for (const [act, rep] of [[0, 0.9], [0, 0.6], [0.5, 0.9]]) {
+      const rack = cosm({ fx: 10, var: 1, act, rep, time: 120 });
+      const playing = rmsOf(render(rack, 2).L, 1, 2);
+      rack.setParam('u', 'a1', 0);
+      const { L } = render(rack, 14);
+      expect(rmsOf(L, 13, 14)).toBeLessThan(playing * 0.5);
+      expect(rmsOf(L, 13, 14)).toBeLessThan(rmsOf(L, 0, 1));
+    }
+    // C, five taps (the fed-back one two octaves up): the tail keeps the note's own harmonics
+    const rack = cosm({ fx: 10, var: 2, act: 0.6, rep: 0.8, time: 120 }, [['f', 'vcf', { cutoff: 3000, res: 0 }]], [['v.saw', 'f.in'], ['f.lp', 'u.in1']]);
+    render(rack, 3);
+    rack.setParam('u', 'a1', 0);
+    const { L } = render(rack, 6);
+    expect(hf(L, 2, 6)).toBeLessThan(0.005);
+  });
+
+  test('bit-crushing follows the slice’s own level: quiet playing is not crushed to nothing', () => {
+    // a plucked C4 four times a second into Blocks A (clean) and D (crushed), at full level and a tenth of it
+    const level = (gain: number, v = 3) => {
+      const rack = new Rack(SR);
+      rack.setPatch(patch(
+        [['v', 'vco'], ['l', 'lfo', { rate: 4 }], ['e', 'adsr', { a: 0.002, d: 0.15, s: 0.4, r: 0.05 }], ['a', 'vca', { level: gain }], ['c', 'cosm', { fx: 6, var: v, act: 0, rep: 1, mix: 1, space: 0, time: 120 }], ['o', 'out', { level: 0.25 }]],
+        [['v.sin', 'a.in'], ['l.sqr', 'e.gate'], ['e.env', 'a.cv'], ['a.out', 'c.l'], ['c.l', 'o.l']],
+      ));
+      const { L } = render(rack, 6);
+      return rmsOf(L, 1, 6);
+    };
+    const loud = level(1), quiet = level(0.1);
+    expect(loud).toBeGreaterThan(0.01);
+    // every pluck is heard either way, and a crusher with fixed steps would round most of the quiet slices to silence
+    expect(quiet / loud).toBeGreaterThan(0.09);
+    expect(quiet / loud).toBeLessThan(0.11);
+    expect(Math.abs(quiet / level(0.1, 0) - 1)).toBeLessThan(0.1);
   });
 
   test('Hold loops one unit of what was played into the effect, which hears nothing new', () => {

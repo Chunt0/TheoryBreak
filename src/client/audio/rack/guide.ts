@@ -177,15 +177,15 @@ export const GUIDE: Record<ModuleType, ModuleGuide> = {
     tryIt: ['Load DORIAN SEQ and change the clock’s tempo.', 'Move the sequencer’s Clock cable from ♪ to 16th: double time.'],
   },
   seq: {
-    what: 'An 8-step sequencer: each clock pulse moves to the next step, which sends its pitch and (if its light is on) a gate. Pitch is in semitones from the root.',
+    what: 'A 16-step sequencer in two banks of eight (steps 1–8 on top, 9–16 below): each clock pulse moves to the next step, which sends its pitch and (if its light is on) a gate. Pitch is in semitones from the root.',
     knobs: {
       s0: 'Step pitches, in semitones (−12 to +12).',
       g0: 'Step gates: lit = the step plays, dark = a rest.',
-      len: 'How many steps before it loops — 5 or 7 against a 4/4 clock makes shifting, polymetric lines.',
+      len: 'How many steps before it loops: 16 for a two-bar line of sixteenths, 8 for the top bank only, 5 or 7 against a 4/4 clock for shifting, polymetric lines.',
     },
     ins: { clk: 'Advances one step per rising edge — patch a clock.', reset: 'Jumps back to step 1 — patch the clock’s Bar output to keep it locked to the bar.' },
     outs: { voct: 'The current step’s pitch, 1 V/oct.', gate: 'A gate on each step whose light is on.' },
-    tryIt: ['Load DORIAN SEQ. Change the step knobs: the quantizer keeps every note in D Dorian.', 'Turn off a few step lights for rests, and set Length to 7.'],
+    tryIt: ['Load DORIAN SEQ. Change the step knobs: the quantizer keeps every note in D Dorian.', 'Turn off a few step lights for rests, and set Length to 7.', 'Set Length to 16 and write an answer to the phrase on the lower bank, steps 9–16.'],
   },
   quant: {
     what: 'Snaps any voltage to the nearest note of a scale, so random or sweeping voltages play in key. Trig fires whenever the note changes.',

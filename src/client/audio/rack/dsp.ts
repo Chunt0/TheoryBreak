@@ -8,7 +8,7 @@ import { BLOCK, C4, HIGH, Input, MAX_CH, Mod, Port, TAU, blep, ftanh, type RackV
 import { MORE_CLASSES } from './more';
 import { COSM_CLASSES } from './cosm';
 import { VIEW_CLASSES } from './visual';
-import { MODULES, QUANT_SCALES, VOICE_COUNTS, type ModuleType } from './modules';
+import { MODULES, QUANT_SCALES, SEQ_LEN, VOICE_COUNTS, type ModuleType } from './modules';
 import type { RackPatch } from './patch';
 
 export { BLOCK, MAX_CH, Mod, ftanh };
@@ -360,7 +360,12 @@ class ClockMod extends Mod {
   }
 }
 
+const SEQ_PITCH = Array.from({ length: SEQ_LEN }, (_, s) => `s${s}`);
+const SEQ_GATE = Array.from({ length: SEQ_LEN }, (_, s) => `g${s}`);
+
 class SeqMod extends Mod {
+  private pitch = new Float64Array(SEQ_LEN);
+  private on = new Float64Array(SEQ_LEN);
   private step = -1;
   private lastClk = 0;
   private lastReset = 0;
@@ -369,10 +374,13 @@ class SeqMod extends Mod {
     this.setCh(1);
     const { clk, reset } = this.ins;
     const { voct, gate } = this.outs;
-    const len = Math.max(1, Math.min(8, Math.round(this.p.len)));
+    const len = Math.max(1, Math.min(SEQ_LEN, Math.round(this.p.len)));
     const p = this.p;
-    const pitch = [p.s0, p.s1, p.s2, p.s3, p.s4, p.s5, p.s6, p.s7];
-    const on = [p.g0, p.g1, p.g2, p.g3, p.g4, p.g5, p.g6, p.g7];
+    const { pitch, on } = this;
+    for (let s = 0; s < SEQ_LEN; s++) {
+      pitch[s] = p[SEQ_PITCH[s]];
+      on[s] = p[SEQ_GATE[s]];
+    }
     const co = clk.off(0), ro = reset.off(0);
     for (let i = 0; i < n; i++) {
       const k = clk.buf[co + i];

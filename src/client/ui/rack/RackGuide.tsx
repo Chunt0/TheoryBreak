@@ -22,7 +22,7 @@ const PRESET_NAMES = RACK_PRESETS.map((p) => p.patch.name);
 
 /** The sequencer's 8 step knobs and 8 step lights read as one entry each. */
 const paramLabel = (type: ModuleType, id: string, label: string): string =>
-  type === 'seq' && id === 's0' ? 'Steps 1–8' : type === 'seq' && id === 'g0' ? 'Step lights' : label;
+  type === 'seq' && id === 's0' ? 'Steps 1–16' : type === 'seq' && id === 'g0' ? 'Step lights' : label;
 
 export function RackGuide() {
   const { open, topic } = useMini(guide, (g) => g);

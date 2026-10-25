@@ -713,7 +713,7 @@ class CosmMod extends Mod {
     const to = Math.floor(start + len) >> 8;
     const M = this.pk.length - 1;
     let loud = 0;
-    for (let c = Math.max(0, from); c <= to && c << 8 < this.now; c++) if (this.pk[c & M] > 0.02) loud++;
+    for (let c = Math.max(0, from); c <= to && c << 8 < this.now; c++) if (this.pk[c & M] > 0.005) loud++;
     return loud * 4 >= to - from + 1;
   }
 
@@ -780,8 +780,18 @@ class CosmMod extends Mod {
     v.fsh = z === 2 ? 1 : 0;
   }
 
+  /**
+   * Bit-crush a voice: `step` is the quantizing step for a slice peaking at 5 V, scaled to the slice's own peak
+   * (as a crusher after the input's gain would be), so quiet playing comes out as coarse as loud, not crushed to nothing.
+   */
   private crushed(v: Voice, step: number, hold: number): void {
-    v.crush = step;
+    const span = v.len * Math.abs(v.rate);
+    const from = Math.floor(v.rate < 0 ? v.pos - span : v.pos) >> 8;
+    const to = Math.floor(v.rate < 0 ? v.pos : v.pos + span) >> 8;
+    const M = this.pk.length - 1;
+    let peak = 0;
+    for (let c = from; c <= to; c++) if (this.pk[c & M] > peak) peak = this.pk[c & M];
+    v.crush = (step / 5) * Math.max(0.05, peak);
     v.hold = hold;
   }
 
@@ -865,7 +875,8 @@ class CosmMod extends Mod {
       this.refr--;
       return;
     }
-    if (this.ef > 0.08 && this.ef > this.es * 1.8 + 0.03) {
+    // relative to the slow envelope, with floors low enough that playing quietly still counts
+    if (this.ef > 0.02 && this.ef > this.es * 1.8 + 0.004) {
       this.refr = Math.round(0.08 * this.sr);
       this.ons[this.onW++ & 15] = this.now - Math.round(0.004 * this.sr);
       this.quiet = 0;
@@ -974,7 +985,11 @@ class CosmMod extends Mod {
       else if (vr === 3) {
         this.crushed(v, 0.15 + 0.15 * L + 0.15 * Math.random(), 3 + 2 * L + Math.floor(Math.random() * 3));
         // the ratchet: the same slice again in the second half of the step
-        if (L === 1) this.crushed(this.shaped(i + len, v.pos, v.rate, len, 0.8, -pan), v.crush, v.hold);
+        if (L === 1) {
+          const w = this.shaped(i + len, v.pos, v.rate, len, 0.8, -pan);
+          w.crush = v.crush;
+          w.hold = v.hold;
+        }
       }
     }
     if (vr === 1 && act > 0.9 && (j & 3) === 0) {
@@ -1147,7 +1162,7 @@ class CosmMod extends Mod {
   private blocks(i: number): void {
     // a held sound with no attacks still glitches, once in a while
     if (this.crossed(1, 4)) {
-      if (this.quiet >= 2 && this.es > 0.05 && this.act > 0.5) this.burstStart();
+      if (this.quiet >= 2 && this.es > 0.01 && this.act > 0.5) this.burstStart();
       this.quiet++;
     }
     const stepB = this.divB / 4;
@@ -1254,6 +1269,10 @@ class CosmMod extends Mod {
       }
       let s1l = v.s1l, s2l = v.s2l, s1r = v.s1r, s2r = v.s2r;
       const r = v.rate;
+      // faster than 1×, average T reads across each step (a box filter), so the pitched-up grain does not alias into grit
+      const ar = r < 0 ? -r : r;
+      const T = ar > 1.2 ? Math.min(4, Math.ceil(ar)) : 1;
+      const tStep = ar / T, t0 = (-(T - 1) / 2) * tStep, invT = 1 / T;
       const len = v.len, ia = v.ia, ir = v.ir, cv = v.curve, gl = gain * v.gl, gr = gain * v.gr;
       let pos = v.pos, age = v.age;
       for (let i = v.wait; i < n; i++) {
@@ -1267,11 +1286,25 @@ class CosmMod extends Mod {
           q -= Math.floor(q / fl) * fl;
           q += fs;
         }
-        const j = Math.floor(q);
-        const f = q - j;
-        const j0 = j & HM, j1 = (j + 1) & HM;
-        let xl = hl[j0] + (hl[j1] - hl[j0]) * f;
-        let xr = hr[j0] + (hr[j1] - hr[j0]) * f;
+        let xl: number, xr: number;
+        if (T === 1) {
+          const j = Math.floor(q);
+          const f = q - j;
+          const j0 = j & HM, j1 = (j + 1) & HM;
+          xl = hl[j0] + (hl[j1] - hl[j0]) * f;
+          xr = hr[j0] + (hr[j1] - hr[j0]) * f;
+        } else {
+          xl = xr = 0;
+          for (let t = 0, qq = q + t0; t < T; t++, qq += tStep) {
+            const j = Math.floor(qq);
+            const f = qq - j;
+            const j0 = j & HM, j1 = (j + 1) & HM;
+            xl += hl[j0] + (hl[j1] - hl[j0]) * f;
+            xr += hr[j0] + (hr[j1] - hr[j0]) * f;
+          }
+          xl *= invT;
+          xr *= invT;
+        }
         if (fm) {
           let v3 = xl - s2l;
           let v1 = a1 * s1l + a2 * v3;
@@ -1336,10 +1369,19 @@ class CosmMod extends Mod {
     const nT = 1 + Math.round(act * 7);
     const fb = this.rep * 0.97;
     const W = 0.06 * sr;
-    const maxD = M - 2.5 * W - 8;
+    const xf = warp && vr === 3;
     const { tD: D, tG: G, tPL: PL, tPR: PR, tR: R, tW: WS, tC: C } = this;
     for (let k = 0; k < nT; k++) {
-      D[k] = Math.min(times[k] * this.U, maxD);
+      let rate = warp && vr === 2 ? WARP_RATES[k] : 1;
+      if (this.rev) rate = -rate;
+      R[k] = rate;
+      const want = times[k] * this.U;
+      // a reversed plain tap plays back chunks as long as itself (up to 0.4 s); pitch shifts use 60 ms
+      WS[k] = rate === -1 ? Math.max(0.02 * sr, Math.min(want, 0.4 * sr)) : W;
+      // a shifted tap's read heads sweep up to `reach` further back: keep them inside the line
+      const rr = xf ? (this.rev ? -2 : 2) : rate;
+      const reach = rate === 1 && !xf ? 0 : Math.max(Math.abs(1 - rr), xf && this.rev ? 2 : 0) * WS[k];
+      D[k] = Math.min(want, M - reach - 8);
       // Shape: the taps' levels across the pattern — even, building, swelling in the middle, dying away
       const t = nT > 1 ? k / (nT - 1) : 0;
       const c = nT === 1 || z === 0 ? 1 : z === 1 ? 0.2 + 0.8 * t : z === 2 ? 0.2 + 0.8 * (1 - Math.abs(2 * t - 1)) : 1 - 0.8 * t;
@@ -1348,11 +1390,6 @@ class CosmMod extends Mod {
       const a = ((pan + 1) * Math.PI) / 4;
       PL[k] = Math.cos(a) * Math.SQRT2;
       PR[k] = Math.sin(a) * Math.SQRT2;
-      let rate = warp && vr === 2 ? WARP_RATES[k] : 1;
-      if (this.rev) rate = -rate;
-      R[k] = rate;
-      // a reversed plain tap plays back chunks as long as itself (up to 0.4 s); pitch shifts use 60 ms
-      WS[k] = rate === -1 ? Math.max(0.02 * sr, Math.min(D[k], 0.4 * sr)) : W;
       if (warp && (vr === 0 || vr === 1)) {
         // A: a low-pass opened by the input's loudness; B: a resonant band-pass per tap
         const f = vr === 0 ? 150 * Math.pow(2, clamp(this.efol / 3, 0, 1) * (4 + k * 0.5)) : 220 * Math.pow(2, k * 0.7);
@@ -1367,7 +1404,6 @@ class CosmMod extends Mod {
     const damp = onePole(5000, sr);
     const { wl, wr, liveL, liveR, tph, tst } = this;
     const filt = warp && (vr === 0 || vr === 1);
-    const xf = warp && vr === 3;
     let dw = this.dw;
     for (let i = 0; i < n; i++) {
       const x = (liveL[i] + liveR[i]) * 0.5;
@@ -1420,8 +1456,15 @@ class CosmMod extends Mod {
           yr = vr === 0 ? v2 : v1 * kk * 2.5;
         }
         if (k === nT - 1) {
-          lastL = yl;
-          lastR = yr;
+          // Warp feeds back the plain echo: a filter or shift taken round again on every pass
+          // runs away (B's band-pass) or piles octaves up into aliasing (C, D)
+          if (warp) {
+            lastL = rd(dl, M, dw - d);
+            lastR = rd(dr, M, dw - d);
+          } else {
+            lastL = yl;
+            lastR = yr;
+          }
         }
         accL += yl * G[k] * PL[k];
         accR += yr * G[k] * PR[k];

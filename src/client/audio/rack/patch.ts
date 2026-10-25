@@ -128,7 +128,7 @@ export const RACK_PRESETS: { patch: RackPatch; notes: string }[] = [
   {
     notes: 'Clock → sequencer → quantizer in D Dorian. It plays itself; play a key to move the line to it (C4 leaves it home).',
     patch: rack('DORIAN SEQ', [
-      ['clk', 'clock', { bpm: 112 }], ['seq', 'seq', { s0: 2, s1: 5, s2: 9, s3: 12, s4: 9, s5: 7, s6: 5, s7: 0, g3: 0, g6: 0 }],
+      ['clk', 'clock', { bpm: 112 }], ['seq', 'seq', { s0: 2, s1: 5, s2: 9, s3: 12, s4: 9, s5: 7, s6: 5, s7: 0, g3: 0, g6: 0, len: 8 }],
       ['midi', 'midi', { voices: 0 }], ['add', 'mix', { l1: 1, l2: 1, l3: 0, l4: 0 }], ['q', 'quant', { root: 2, scale: 3 }],
       ['vco', 'vco', { oct: -1 }], ['flt', 'vcf', { cutoff: 500, res: 0.55, cv: 0.4 }], ['env', 'adsr', { a: 0.002, d: 0.22, s: 0, r: 0.15 }],
       ['vca', 'vca', { resp: 1 }], ['dly', 'delay', { time: 0.4, fb: 0.5, mix: 0.3 }], ['out', 'out', { level: 0.5 }],
@@ -284,7 +284,7 @@ RACK_PRESETS.push(
   {
     notes: 'A clocked minor-pentatonic line into MICROCOSM’s Blocks B, sharing the clock: every note it hears sets off a burst of chopped, octave-shifted blocks in time. Turn Activity for more chaos, Repeats for longer bursts.',
     patch: rack('GLITCH SEQ', [
-      ['clk', 'clock', { bpm: 104 }], ['seq', 'seq', { s0: 0, s1: 7, s2: 3, s3: 10, s4: 12, s5: 5, s6: 7, s7: 15, g2: 0, g5: 0 }], ['q', 'quant', { root: 9, scale: 10 }],
+      ['clk', 'clock', { bpm: 104 }], ['seq', 'seq', { s0: 0, s1: 7, s2: 3, s3: 10, s4: 12, s5: 5, s6: 7, s7: 15, g2: 0, g5: 0, len: 8 }], ['q', 'quant', { root: 9, scale: 10 }],
       ['vco', 'vco'], ['flt', 'vcf', { cutoff: 900, res: 0.4, cv: 0.45 }], ['env', 'adsr', { a: 0.002, d: 0.18, s: 0, r: 0.12 }], ['vca', 'vca', { resp: 1 }],
       ['mc', 'cosm', { fx: 6, var: 1, act: 0.55, rep: 0.4, shape: 0.1, mix: 0.55, space: 0.3, sub: 2 }], ['out', 'out', { level: 0.5 }],
     ], [
