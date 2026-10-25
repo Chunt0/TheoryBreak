@@ -1178,19 +1178,22 @@ body { overscroll-behavior: none; }
 .rk-cn { font: 800 15px/1 var(--font); color: #f3e9ee; letter-spacing: 0.02em; }
 .rk-cf { flex: 1; min-width: 0; color: #7d917d; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rk-cv { display: flex; gap: 3px; }
-.rk-cv button, .rk-cl button {
+.rk-cv button, .rk-ct button, .rk-cl button {
   height: 18px; min-width: 18px; padding: 0 5px; border: 0; border-radius: 4px; cursor: pointer;
   font: 700 9.5px var(--mono); color: #b9d8b9; background: #182018; box-shadow: inset 0 0 0 1px #2c3d2c;
 }
 .rk-cv button.on { color: #0a0d0a; background: var(--hl); box-shadow: 0 0 6px color-mix(in oklab, var(--hl) 60%, transparent); }
-.rk-cv button:hover, .rk-cl button:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--hl); }
-.rk-cl button:disabled { opacity: 0.35; cursor: default; }
+.rk-co button.on, .rk-cl button.on { color: #0a0d0a; background: #6cf08a; box-shadow: 0 0 5px rgb(108 240 138 / 0.5); }
+.rk-cv button:hover, .rk-ct button:hover:not(:disabled), .rk-cl button:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--hl); }
+.rk-ct button:disabled, .rk-cl button:disabled { opacity: 0.35; cursor: default; }
+.rk-co { display: flex; gap: 3px; margin-left: auto; }
+.rk-co button { padding: 0 4px; font-size: 8.5px; }
 .rk-cb { display: flex; gap: 3px; }
 .rk-cb i { width: 6px; height: 6px; border-radius: 50%; background: #233023; }
 .rk-cb i.on { background: #6cf08a; box-shadow: 0 0 5px #6cf08a; }
 .rk-cb i.on:first-child { background: #f5d142; box-shadow: 0 0 5px #f5d142; }
-.rk-ct b { padding: 0 4px; border-radius: 3px; color: #0a0d0a; background: #b9d8b9; font-weight: 700; }
-.rk-ct b.frz { background: #5ab0ff; }
+.rk-cz b { padding: 0 4px; border-radius: 3px; color: #0a0d0a; background: #b9d8b9; font-weight: 700; }
+.rk-cz b.frz { background: #5ab0ff; }
 .rk-lbar { position: relative; flex: 1; min-width: 30px; height: 6px; border-radius: 3px; background: #182018; overflow: hidden; }
 .rk-lbar i { position: absolute; left: 0; top: 0; bottom: 0; background: #6cf08a; }
 .rk-lbar.s1 i { background: #ff5a4d; animation: rk-rec 0.8s ease-in-out infinite alternate; }

@@ -17,7 +17,7 @@ export type ModuleType =
   | 'cosm';
 
 export type Curve = 'lin' | 'exp' | 'int';
-export type Unit = 'hz' | 's' | 'st' | 'v' | 'bpm' | 'pct' | 'x' | 'oct' | 'table' | 'vowel' | 'db';
+export type Unit = 'hz' | 's' | 'st' | 'v' | 'bpm' | 'pct' | 'x' | 'oct' | 'table' | 'vowel' | 'db' | 'shape' | 'spd';
 
 export interface ParamDef {
   id: string;
@@ -31,6 +31,8 @@ export interface ParamDef {
   /** labels for a choice; its value is the index */
   options?: string[];
   unit?: Unit;
+  /** set from the module's screen, not a panel control (still saved with the patch) */
+  hidden?: boolean;
 }
 
 export interface PortDef {
@@ -82,11 +84,29 @@ export const QUANT_SCALES: { name: string; semis: number[] }[] = [
 /** The granular looper's effects, and the family each belongs to. */
 export const COSM_EFFECTS = ['Mosaic', 'Seq', 'Glide', 'Haze', 'Tunnel', 'Strum', 'Blocks', 'Interrupt', 'Arp', 'Pattern', 'Warp'];
 export const COSM_FAMILIES = ['Micro loop', 'Micro loop', 'Micro loop', 'Granules', 'Granules', 'Granules', 'Glitch', 'Glitch', 'Glitch', 'Multidelay', 'Multidelay'];
-export const COSM_DIVS = ['1/1', '1/2', '1/4.', '1/4', '1/4T', '1/8', '1/8T', '1/16'];
+/** The Time knob's six subdivisions, as rates against the tapped beat (¼× is four beats a unit, 8× an eighth of one). */
+export const COSM_SUBS = ['¼×', '½×', 'Tap', '2×', '4×', '8×'];
+export const SUB_BEATS = [4, 2, 1, 0.5, 0.25, 0.125];
+/** Shift + Space: (A) Bright Room (B) Dark Medium (C) Large Hall (D) Ambient. */
+export const COSM_VERBS = ['Bright', 'Dark', 'Hall', 'Ambient'];
+/** Knobs the EXP jack can be assigned to, as on the pedal. */
+export const COSM_EXP = ['Activity', 'Repeats', 'Shape', 'Filter', 'Mix', 'Space', 'Loop'];
+export const COSM_EXP_IDS = ['act', 'rep', 'shape', 'filter', 'mix', 'space', 'loop'];
+/** Shape's four zones, a quarter of the knob each: ⊓ square, ⩘ ramp up, ∧ triangle, ⊼ ramp down. */
+export const SHAPES = ['Square', 'Ramp up', 'Triangle', 'Ramp down'];
+export const shapeZone = (v: number): number => Math.min(3, Math.max(0, Math.floor(v * 4)));
+/** The looper's stepped speeds; the Speed knob is free between them but catches on each. */
+export const LOOP_STEPS = [0.25, 0.5, 1, 2, 4];
+export function snapSpeed(v: number): number {
+  for (const s of LOOP_STEPS) if (Math.abs(Math.log2(v / s)) < 0.08) return s;
+  return v;
+}
+const SPEED_NAMES = ['¼×', '½×', '1×', '2×', '4×'];
 
 const knob = (id: string, label: string, min: number, max: number, def: number, curve: Curve = 'lin', unit?: Unit): ParamDef => ({ id, label, min, max, def, curve, unit });
 const toggle = (id: string, label: string, def = 0): ParamDef => ({ id, label, min: 0, max: 1, def, kind: 'toggle', curve: 'int' });
 const choice = (id: string, label: string, options: string[], def = 0): ParamDef => ({ id, label, min: 0, max: options.length - 1, def, kind: 'choice', curve: 'int', options });
+const hidden = (p: ParamDef): ParamDef => ({ ...p, hidden: true });
 const ports = (...spec: [string, string][]): PortDef[] => spec.map(([id, label]) => ({ id, label }));
 
 const LIST: ModuleDef[] = [
@@ -375,18 +395,19 @@ const LIST: ModuleDef[] = [
   },
   {
     type: 'cosm', name: 'MICROCOSM', title: 'Granular looper (after the Hologram Microcosm)', family: 'fx', cols: 8,
-    blurb: 'Cuts what you play into loops, grains, glitches and echoes in time with a tempo or clock: eleven effects, four variations each, a resonant filter, a reverb and a 60-second looper.',
+    blurb: 'Cuts what you play into loops, grains, glitches and echoes in time with a tempo, tap or clock: eleven effects, four variations each, pitch modulation, a reverb, a resonant filter, a hold sampler and a 60-second looper.',
     params: [
-      knob('act', 'Activity', 0, 1, 0.5, 'lin', 'pct'), knob('rep', 'Repeats', 0, 1, 0.5, 'lin', 'pct'), knob('shape', 'Shape', 0, 1, 0.5, 'lin', 'pct'),
-      knob('filter', 'Filter', 60, 20000, 20000, 'exp', 'hz'), knob('mix', 'Mix', 0, 1, 0.5, 'lin', 'pct'), knob('space', 'Space', 0, 1, 0.3, 'lin', 'pct'),
+      knob('act', 'Activity', 0, 1, 0.5, 'lin', 'pct'), knob('rep', 'Repeats', 0, 1, 0.5, 'lin', 'pct'), knob('shape', 'Shape', 0, 1, 0.625, 'lin', 'shape'),
+      knob('filter', 'Filter', 20, 20000, 20000, 'exp', 'hz'), knob('mix', 'Mix', 0, 1, 0.5, 'lin', 'pct'), knob('space', 'Space', 0, 1, 0.3, 'lin', 'pct'),
       knob('time', 'Tempo', 40, 240, 100, 'int', 'bpm'), knob('loop', 'Loop', 0, 1, 0.8, 'lin', 'pct'),
-      choice('fx', 'Effect', COSM_EFFECTS, 0), choice('var', 'Var', ['A', 'B', 'C', 'D'], 0), choice('div', 'Subdiv', COSM_DIVS, 3),
-      knob('res', 'Res', 0, 1, 0.1, 'lin', 'pct'), choice('verb', 'Room', ['Small', 'Medium', 'Large', 'Huge'], 1),
-      knob('mdep', 'Wobble', 0, 1, 0, 'lin', 'pct'), knob('mrate', 'W rate', 0.05, 8, 0.6, 'exp', 'hz'),
-      choice('lspd', 'Speed', ['−2×', '−1×', '−½×', '½×', '1×', '2×'], 4), knob('fade', 'Fade', 0.01, 20, 0.05, 'exp', 's'),
-      toggle('rev', 'Reverse'), toggle('freeze', 'Freeze'), toggle('pre', 'Pre-FX'),
+      choice('fx', 'Effect', COSM_EFFECTS, 0), choice('var', 'Var', ['A', 'B', 'C', 'D'], 0), choice('sub', 'Subdiv', COSM_SUBS, 2), knob('res', 'Res', 0, 1, 0.1, 'lin', 'pct'),
+      knob('vol', 'FX vol', 0, 1.5, 1, 'lin', 'pct'), choice('verb', 'Reverb', COSM_VERBS, 1), knob('mdep', 'Mod', 0, 1, 0, 'lin', 'pct'), knob('mrate', 'Mod rate', 0.05, 8, 0.6, 'exp', 'hz'),
+      knob('speed', 'Speed', 0.25, 4, 1, 'exp', 'spd'), knob('fade', 'Fade', 0.01, 20, 0.5, 'exp', 's'), choice('fades', 'Fades', ['In+out', 'In', 'Out'], 0),
+      choice('order', 'Order', ['Rec·Play', 'Rec·Dub'], 0), choice('exp', 'EXP to', COSM_EXP, 0),
+      toggle('rev', 'Reverse'), toggle('freeze', 'Hold'),
+      hidden(toggle('lrev', 'Loop reverse')), hidden(toggle('pre', 'Pre-FX')), hidden(toggle('burst', 'Burst')), hidden(toggle('lonly', 'Looper only')), hidden(toggle('quant', 'Quantize')),
     ],
-    ins: ports(['l', 'In L'], ['r', 'In R'], ['clock', 'Clock'], ['freeze', 'Freeze'], ['loop', 'Loop'], ['act', 'Activity']),
+    ins: ports(['l', 'In L'], ['r', 'In R'], ['clock', 'Clock'], ['freeze', 'Hold'], ['loop', 'Loop'], ['act', 'EXP']),
     outs: ports(['l', 'L'], ['r', 'R']),
   },
   // ---------------------------------------------------------------- more utilities
@@ -511,6 +532,12 @@ export function formatParam(p: ParamDef, v: number): string {
     case 'table': return WT_NAMES[Math.round(v)] ?? '';
     case 'vowel': return VOWELS[Math.round(v)] ?? '';
     case 'db': return `${Math.round(v)}dB`;
+    case 'shape': return SHAPES[shapeZone(v)];
+    case 'spd': {
+      const s = snapSpeed(v);
+      const i = LOOP_STEPS.indexOf(s);
+      return i >= 0 ? SPEED_NAMES[i] : `${s.toFixed(2)}×`;
+    }
     default: return p.curve === 'int' ? String(v) : v.toFixed(2);
   }
 }

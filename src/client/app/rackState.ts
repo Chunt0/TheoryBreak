@@ -198,7 +198,7 @@ export function controllerKnob(index: number, apply: (current127: number) => num
   const { patch, selected } = rack.get();
   const m = patch.modules.find((x) => x.id === selected);
   if (!m) return false;
-  const p = MODULES[m.type].params.filter((q) => q.kind !== 'toggle')[index];
+  const p = MODULES[m.type].params.filter((q) => q.kind !== 'toggle' && !q.hidden)[index];
   if (!p) return true;
   const cur = Math.round(toNorm(p, m.params[p.id]) * 127);
   const v = fromNorm(p, apply(cur) / 127);

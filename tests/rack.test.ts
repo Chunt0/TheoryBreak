@@ -7,6 +7,7 @@ import { buildChord } from '../src/client/audio/rack/chords';
 import { euclid } from '../src/client/audio/rack/more';
 import { SONO_ROWS, SPECTRUM_POINTS, detectPitch, spectrumHz } from '../src/client/audio/rack/visual';
 import type { RackView } from '../src/client/audio/rack/base';
+import { CMD_DOWN, CMD_REC, CMD_STOP, CMD_UNDO, CMD_UP, LOOP_PLAY, LOOP_REC, LOOP_STOP } from '../src/client/audio/rack/cosm';
 
 const SR = 48000;
 
@@ -547,8 +548,8 @@ describe('granular looper', () => {
     expect(view(rack, 'c', 'cosm').loop).toBe(0);
   });
 
-  test('looper rounds to whole beats with a clock in, and the Loop jack steps it', () => {
-    const rack = cosm({ mix: 0 }, [['k', 'clock', { bpm: 120 }]], [['k.q', 'c.clock']]);
+  test('looper Quantize with a clock in rounds to whole beats, and the Loop jack steps it', () => {
+    const rack = cosm({ mix: 0, quant: 1 }, [['k', 'clock', { bpm: 120 }]], [['k.q', 'c.clock']]);
     render(rack, 0.6);
     press(rack, 1);
     render(rack, 0.9);
@@ -598,7 +599,7 @@ describe('granular looper', () => {
 
   test('Space: a bigger room rings longer', () => {
     const tail = (verb: number) => {
-      const rack = cosm({ mix: 0, space: 1, verb });
+      const rack = cosm({ lonly: 1, space: 1, verb });
       render(rack, 0.5);
       rack.setParam('u', 'a1', 0);
       return rmsOf(render(rack, 2).L, 1, 1.5);
@@ -607,6 +608,245 @@ describe('granular looper', () => {
     const huge = tail(3);
     expect(huge).toBeGreaterThan(0.01);
     expect(huge).toBeGreaterThan(small * 20);
+  });
+
+  /** Level of one frequency over a stretch (Goertzel), as an amplitude. */
+  const tone = (b: Float32Array, from: number, to: number, hz: number) => {
+    const a = Math.round(from * SR), z = Math.round(to * SR);
+    const c = 2 * Math.cos((2 * Math.PI * hz) / SR);
+    let s1 = 0, s2 = 0;
+    for (let i = a; i < z; i++) {
+      const s0 = b[i] + c * s1 - s2;
+      s2 = s1;
+      s1 = s0;
+    }
+    return (2 * Math.sqrt(Math.max(0, s1 * s1 + s2 * s2 - c * s1 * s2))) / (z - a);
+  };
+  /** Record `secs` of the input into the looper, close it, and mute the input. */
+  const recorded = (rack: Rack, secs: number) => {
+    render(rack, 0.2);
+    press(rack, CMD_REC);
+    render(rack, secs);
+    press(rack, CMD_REC);
+    rack.setParam('u', 'a1', 0);
+  };
+
+  test('Subdiv: the pedal’s units against the beat, from two beats to a sixteenth of one', () => {
+    // one Pattern tap, no feedback, 120 bpm: its echo of a blip comes one unit on
+    const echo = (sub: number) => {
+      const rack = new Rack(SR);
+      rack.setPatch(patch(
+        [['m', 'midi', { voices: 0 }], ['v', 'vco'], ['e', 'adsr', { a: 0.001, d: 0.02, s: 0, r: 0.005 }], ['a', 'vca'], ['c', 'cosm', { fx: 9, act: 0, rep: 0, mix: 1, space: 0, time: 120, sub }], ['o', 'out', { level: 0.25 }]],
+        [['v.sin', 'a.in'], ['m.gate', 'e.gate'], ['e.env', 'a.cv'], ['a.out', 'c.l'], ['c.l', 'o.l']],
+      ));
+      rack.noteOn(60, 100);
+      const { L } = render(rack, 1.3);
+      rack.noteOff(60);
+      let best = 0, at = 0;
+      for (let t = 0.03; t < 1.25; t += 0.0025) {
+        const v = rmsOf(L, t, t + 0.01);
+        if (v > best) {
+          best = v;
+          at = t;
+        }
+      }
+      return at;
+    };
+    for (const [sub, unit] of [[1, 1], [2, 0.5], [3, 0.25], [4, 0.125], [5, 0.0625]]) expect(Math.abs(echo(sub) - unit)).toBeLessThan(0.015);
+  });
+
+  test('Shape: the pedal’s four zones contour each loop — square, ramp up, triangle, ramp down', () => {
+    // one Mosaic sampler looping a steady tone, a pass a second
+    const contour = (shape: number) => {
+      const { L } = render(cosm({ fx: 0, var: 0, act: 0, rep: 0, time: 60, shape }), 3);
+      return [0.12, 0.5, 0.88].map((f) => rmsOf(L, 2 + f - 0.05, 2 + f + 0.05));
+    };
+    const [sq, up, tri, down] = [0.1, 0.35, 0.6, 0.9].map(contour);
+    expect(sq[0] / sq[2]).toBeGreaterThan(0.9);
+    expect(sq[0] / sq[2]).toBeLessThan(1.1);
+    expect(up[2]).toBeGreaterThan(up[0] * 5);
+    expect(tri[1]).toBeGreaterThan(tri[0] * 2);
+    expect(tri[1]).toBeGreaterThan(tri[2] * 2);
+    expect(down[0]).toBeGreaterThan(down[2] * 5);
+  });
+
+  test('Repeats: how long the effect goes on once you stop playing', () => {
+    const after = (rep: number) => {
+      const rack = cosm({ fx: 0, var: 0, act: 0.4, rep, time: 120 });
+      const playing = rmsOf(render(rack, 2).L, 1, 2);
+      rack.setParam('u', 'a1', 0);
+      const { L } = render(rack, 8);
+      return [0.5, 2, 7].map((t) => rmsOf(L, t, t + 1) / playing);
+    };
+    const low = after(0), mid = after(0.5), full = after(1);
+    // down, it stops with you; at noon it fades over a couple of seconds; fully up it goes on for good
+    expect(low[1]).toBeLessThan(0.01);
+    expect(mid[0]).toBeGreaterThan(0.05);
+    expect(mid[2]).toBeLessThan(0.005);
+    expect(full[2]).toBeGreaterThan(0.3);
+  });
+
+  test('Hold loops one unit of what was played into the effect, which hears nothing new', () => {
+    const rack = cosm({ fx: 0, var: 0, act: 0, rep: 0.5, time: 120 });
+    const before = rmsOf(render(rack, 1.5).L, 1, 1.5);
+    rack.setParam('c', 'freeze', 1);
+    rack.setParam('v', 'tune', 7);
+    const { L } = render(rack, 4);
+    // still C4 from the held loop, not the G4 now coming in, at full level all the while
+    const seen = [0.6, 1.1, 1.6, 2.1, 2.6, 3.1, 3.6].map((t) => pitchAt(L, t)).sort((a, b) => a - b);
+    expect(Math.abs(seen[3] / 261.6256 - 1)).toBeLessThan(0.015);
+    expect(rmsOf(L, 3, 4)).toBeGreaterThan(before * 0.5);
+  });
+
+  test('pitch modulation: from still to a wobble of about a semitone either way', () => {
+    const { L } = render(cosm({ lonly: 1, mdep: 1, mrate: 0.5 }), 4);
+    const seen = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3].map((t) => pitchAt(L, t));
+    expect(Math.max(...seen) / Math.min(...seen)).toBeGreaterThan(1.07);
+    expect(Math.max(...seen) / Math.min(...seen)).toBeLessThan(1.16);
+    const still = render(cosm({ lonly: 1 }), 2).L;
+    expect(Math.abs(pitchAt(still, 1.5) / 261.6256 - 1)).toBeLessThan(0.003);
+  });
+
+  test('Filter closes the effect to nothing; Mix and FX vol set it against the dry sound', () => {
+    const level = (params: Record<string, number>, a1 = 1) => {
+      const rack = cosm({ lonly: 1, ...params });
+      rack.setParam('u', 'a1', a1);
+      return rmsOf(render(rack, 1).L, 0.5, 1);
+    };
+    expect(level({ filter: 20 })).toBeLessThan(level({}) * 0.001);
+    expect(level({ filter: 100 })).toBeLessThan(level({ filter: 2000 }) * 0.3);
+    expect(level({ vol: 0 })).toBeLessThan(1e-6);
+    expect(level({ vol: 1.5 }, 0.1) / level({ vol: 1 }, 0.1)).toBeCloseTo(1.5, 1);
+    // Mosaic C is an octave up: dry only at Mix down, effect only fully up
+    const pitch = (mix: number) => pitchAt(render(cosm({ fx: 0, var: 2, act: 0, rep: 0, mix }), 3).L, 2.5);
+    expect(pitch(0) / 261.6256).toBeCloseTo(1, 2);
+    expect(pitch(1) / C5).toBeCloseTo(1, 2);
+  });
+
+  test('Looper only mutes the effect; the dry sound goes on through the chain', () => {
+    const { L } = render(cosm({ fx: 0, var: 2, act: 0, lonly: 1 }), 3);
+    expect(pitchAt(L, 2.5) / 261.6256).toBeCloseTo(1, 2);
+  });
+
+  test('EXP moves the knob it is assigned to', () => {
+    // +5 V on EXP pointed at Filter lifts it from 100 Hz to halfway up its travel
+    const level = (exp: number) => rmsOf(render(cosm({ lonly: 1, filter: 100, exp }, [['k', 'util', { o2: 5 }]], [['k.out2', 'c.act']]), 1).L, 0.5, 1);
+    expect(level(3)).toBeGreaterThan(level(0) * 3);
+  });
+
+  test('the tempo eases to a new setting', () => {
+    const rack = cosm({ time: 100 });
+    render(rack, 0.5);
+    rack.setParam('c', 'time', 140);
+    render(rack, 0.1);
+    const mid = view(rack, 'c', 'cosm').bpm;
+    expect(mid).toBeGreaterThan(101);
+    expect(mid).toBeLessThan(139);
+    render(rack, 3);
+    expect(view(rack, 'c', 'cosm').bpm).toBeCloseTo(140, 0);
+  });
+
+  test('looper Speed: ½× an octave down, 2× an octave up', () => {
+    const rack = cosm({ mix: 0 });
+    recorded(rack, 1);
+    rack.setParam('c', 'speed', 0.5);
+    expect(pitchAt(render(rack, 0.5).L, 0.3) / C3).toBeCloseTo(1, 2);
+    rack.setParam('c', 'speed', 2);
+    expect(pitchAt(render(rack, 0.5).L, 0.3) / C5).toBeCloseTo(1, 2);
+  });
+
+  test('looper reverse, on while recording: the loop plays back from its end', () => {
+    const rack = cosm({ mix: 0, lrev: 1 });
+    render(rack, 0.2);
+    press(rack, CMD_REC);
+    render(rack, 0.5);
+    rack.setParam('v', 'tune', 4);
+    render(rack, 0.5);
+    press(rack, CMD_REC);
+    rack.setParam('u', 'a1', 0);
+    const { L } = render(rack, 1);
+    expect(pitchAt(L, 0.15) / 329.6276).toBeCloseTo(1, 2);
+    expect(pitchAt(L, 0.65) / 261.6256).toBeCloseTo(1, 2);
+  });
+
+  test('looper: overdubs go on a layer of their own, and undo clears it', () => {
+    const rack = cosm({ mix: 0 });
+    render(rack, 0.2);
+    press(rack, CMD_REC);
+    render(rack, 1);
+    press(rack, CMD_REC);
+    render(rack, 0.01);
+    // an octave up, overdubbed for a pass
+    rack.setParam('v', 'tune', 12);
+    press(rack, CMD_REC);
+    render(rack, 1);
+    press(rack, CMD_REC);
+    rack.setParam('u', 'a1', 0);
+    let { L } = render(rack, 1);
+    expect(view(rack, 'c', 'cosm').dub).toBe(true);
+    expect(tone(L, 0.2, 0.8, C5)).toBeGreaterThan(tone(L, 0.2, 0.8, 261.6256) * 0.5);
+    press(rack, CMD_UNDO);
+    ({ L } = render(rack, 1));
+    expect(view(rack, 'c', 'cosm').dub).toBe(false);
+    expect(tone(L, 0.2, 0.8, C5)).toBeLessThan(tone(L, 0.2, 0.8, 261.6256) * 0.02);
+  });
+
+  test('looper: ■ fades out over Fade, ● fades back in, and Fades picks which', () => {
+    const rack = cosm({ mix: 0, fade: 1 });
+    recorded(rack, 1);
+    const full = rmsOf(render(rack, 1).L, 0, 1);
+    press(rack, CMD_STOP);
+    let { L } = render(rack, 1.5);
+    expect(rmsOf(L, 0.4, 0.6) / full).toBeCloseTo(0.5, 1);
+    expect(rmsOf(L, 1.1, 1.5)).toBeLessThan(full * 0.001);
+    expect(view(rack, 'c', 'cosm').loop).toBe(LOOP_STOP);
+    press(rack, CMD_REC);
+    ({ L } = render(rack, 1.5));
+    expect(rmsOf(L, 0.15, 0.35) / full).toBeCloseTo(0.25, 1);
+    expect(rmsOf(L, 1.1, 1.5) / full).toBeCloseTo(1, 1);
+    // Out only: playing starts at once
+    rack.setParam('c', 'fades', 2);
+    press(rack, CMD_STOP);
+    render(rack, 1.5);
+    press(rack, CMD_REC);
+    ({ L } = render(rack, 0.5));
+    expect(rmsOf(L, 0.05, 0.25) / full).toBeCloseTo(1, 1);
+  });
+
+  test('looper Burst: records while held, plays on release, and the next press records afresh', () => {
+    const rack = cosm({ mix: 0, burst: 1 });
+    render(rack, 0.2);
+    press(rack, CMD_DOWN);
+    render(rack, 0.6);
+    expect(view(rack, 'c', 'cosm').loop).toBe(LOOP_REC);
+    press(rack, CMD_UP);
+    render(rack, 0.1);
+    let v = view(rack, 'c', 'cosm');
+    expect(v.loop).toBe(LOOP_PLAY);
+    expect(v.len).toBeCloseTo(0.6, 1);
+    press(rack, CMD_DOWN);
+    render(rack, 0.3);
+    v = view(rack, 'c', 'cosm');
+    expect(v.loop).toBe(LOOP_REC);
+    expect(v.len).toBeCloseTo(0.3, 1);
+  });
+
+  test('looper Quantize: recording starts the bar, and the loop rounds to the nearest beat', () => {
+    const loopLen = (quant: number, secs: number) => {
+      const rack = cosm({ mix: 0, time: 120, quant });
+      render(rack, 0.83);
+      press(rack, CMD_REC);
+      render(rack, 0.01);
+      expect(view(rack, 'c', 'cosm').beat).toBe(quant ? 0 : 1);
+      render(rack, secs);
+      press(rack, CMD_REC);
+      render(rack, 0.6);
+      return view(rack, 'c', 'cosm').len;
+    };
+    expect(loopLen(0, 1.12)).toBeCloseTo(1.13, 1);
+    // two beats: trimmed back to them, or recorded on to them
+    expect(loopLen(1, 1.12)).toBeCloseTo(1, 2);
+    expect(loopLen(1, 0.88)).toBeCloseTo(1, 2);
   });
 
   test('every effect and variation stays finite, makes sound, and fits in the CPU', () => {

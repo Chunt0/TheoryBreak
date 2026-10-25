@@ -2,11 +2,11 @@
 // XY, tuner, keyboard, piano roll and voltmeter; and the granular looper's panel. Each reads its module's view from
 // the status the worklet sends ~20× a second (see RackView in audio/rack/base.ts).
 
-import { useEffect, useRef, type ReactElement } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactElement } from 'react';
 import type { RackStatus } from '../../audio/rack/dsp';
 import type { RackView } from '../../audio/rack/base';
-import { COSM_DIVS, COSM_EFFECTS, COSM_FAMILIES, NOTE_NAMES } from '../../audio/rack/modules';
-import { CMD_ERASE, CMD_REC, CMD_STOP, LOOP_DUB, LOOP_EMPTY, LOOP_FADE, LOOP_PLAY, LOOP_REC } from '../../audio/rack/cosm';
+import { COSM_EFFECTS, COSM_FAMILIES, COSM_SUBS, NOTE_NAMES } from '../../audio/rack/modules';
+import { CMD_DOWN, CMD_ERASE, CMD_REC, CMD_STOP, CMD_TAP, CMD_UNDO, CMD_UP, LOOP_DUB, LOOP_EMPTY, LOOP_FADE, LOOP_PLAY, LOOP_REC } from '../../audio/rack/cosm';
 import type { RackModule } from '../../audio/rack/patch';
 import { SONO_COLS, SONO_HI, SONO_LO, SONO_ROWS, SPECTRUM_HI, SPECTRUM_LO, SPECTRUM_POINTS } from '../../audio/rack/visual';
 import { createStore, useMini } from '../../app/createStore';
@@ -388,20 +388,77 @@ function VoltsScreen({ id, range }: { id: string; range: number }) {
 
 const LOOP_WORD = ['Empty', 'Rec', 'Play', 'Dub', 'Stopped', 'Fading'];
 /** what the ● button does next, by looper state (like the pedal's left footswitch) */
-const NEXT_WORD = ['Rec', 'Play', 'Dub', 'Play', 'Play', 'Play'];
+const NEXT_PLAY = ['Rec', 'Play', 'Dub', 'Play', 'Play', 'Play'];
+/** …with Order on Rec · Dub, where closing the loop goes straight into an overdub */
+const NEXT_DUB = ['Rec', 'Dub', 'Dub', 'Play', 'Play', 'Play'];
+/** The pedal's looper settings: switched here, saved with the patch. */
+const LOOP_OPTS: [id: string, label: string, title: string][] = [
+  ['pre', 'Pre-FX', 'Pre-FX: the looper before the effects, so the loop plays through them'],
+  ['burst', 'Burst', 'Burst: hold ● to record, let go to play; the next press records afresh (no overdubs)'],
+  ['lonly', 'Loop only', 'Looper only: the effects muted; modulation, reverb and filter stay on'],
+  ['quant', 'Quantize', 'Quantize: recording starts the effect’s bar, and the loop rounds to whole beats'],
+];
 
 function CosmScreen({ m }: { m: RackModule }) {
   const v = useView(m.id, 'cosm');
   const fx = Math.round(m.params.fx ?? 0);
   const vr = Math.round(m.params.var ?? 0);
   const st = v?.loop ?? LOOP_EMPTY;
+  const on = (id: string) => (m.params[id] ?? 0) >= 0.5;
+  const flip = (id: string) => setRackParam(m.id, id, on(id) ? 0 : 1);
   const press = (cmd: number) => rackCommand(m.id, 'lcmd', cmd);
   const live = st === LOOP_PLAY || st === LOOP_DUB || st === LOOP_FADE;
+  const burst = on('burst');
+  const taps = useRef<number[]>([]);
+  const held = useRef(false);
+  const tap = () => {
+    // quarter notes: the tempo from the last few gaps (a long pause starts over), the beat on the tap
+    const t = performance.now();
+    const last = taps.current[taps.current.length - 1];
+    const list = last !== undefined && t - last < 2000 ? [...taps.current.slice(-4), t] : [t];
+    taps.current = list;
+    if (list.length >= 2) setRackParam(m.id, 'time', Math.round(Math.min(240, Math.max(40, (60000 * (list.length - 1)) / (t - list[0])))));
+    press(CMD_TAP);
+  };
+  // Burst: ● records while held
+  const down = () => {
+    if (held.current) return;
+    held.current = true;
+    press(CMD_DOWN);
+  };
+  const up = () => {
+    if (!held.current) return;
+    held.current = false;
+    press(CMD_UP);
+  };
+  const isKey = (e: KeyboardEvent<HTMLButtonElement>) => e.key === ' ' || e.key === 'Enter';
+  const rec = burst
+    ? {
+        onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          down();
+        },
+        onPointerUp: up,
+        onPointerCancel: up,
+        onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => {
+          if (!isKey(e)) return;
+          e.preventDefault();
+          if (!e.repeat) down();
+        },
+        onKeyUp: (e: KeyboardEvent<HTMLButtonElement>) => {
+          if (isKey(e)) up();
+        },
+        title: 'Burst: hold to record, let go to play',
+      }
+    : { onClick: () => press(CMD_REC), title: 'Record, play, overdub' };
+  const next = burst ? 'Rec' : ((m.params.order ?? 0) >= 0.5 ? NEXT_DUB : NEXT_PLAY)[st];
   return (
     <div className={`rk-screen rk-cosm ${v?.frozen ? 'frz' : ''}`}>
       <div className="rk-cz">
         <span className="rk-cn">{COSM_EFFECTS[fx]}</span>
         <span className="rk-cf">{COSM_FAMILIES[fx]}</span>
+        {v?.frozen ? <b className="frz">Hold</b> : null}
+        {on('rev') ? <b>Rev</b> : null}
         <span className="rk-cv" role="radiogroup" aria-label="Variation">
           {['A', 'B', 'C', 'D'].map((x, i) => (
             <button key={x} type="button" role="radio" className={i === vr ? 'on' : ''} aria-checked={i === vr} onClick={() => setRackParam(m.id, 'var', i)}>{x}</button>
@@ -410,16 +467,22 @@ function CosmScreen({ m }: { m: RackModule }) {
       </div>
       <div className="rk-ct">
         <span className="rk-cb" aria-hidden="true">{[0, 1, 2, 3].map((b) => <i key={b} className={v && b === v.beat ? 'on' : ''} />)}</span>
-        <span>{v ? Math.round(v.bpm) : Math.round(m.params.time)} bpm · {COSM_DIVS[Math.round(m.params.div ?? 3)]}</span>
-        {v?.frozen ? <b className="frz">Freeze</b> : null}
-        {(m.params.rev ?? 0) >= 0.5 ? <b>Rev</b> : null}
+        <span>{v ? Math.round(v.bpm) : Math.round(m.params.time)} bpm · {COSM_SUBS[Math.round(m.params.sub ?? 2)]}</span>
+        <button type="button" onClick={tap} disabled={v?.clk} title={v?.clk ? 'The tempo follows the Clock jack' : 'Tap quarter notes to set the tempo'}>Tap</button>
+        <span className="rk-co">
+          {LOOP_OPTS.map(([id, label, title]) => (
+            <button key={id} type="button" className={on(id) ? 'on' : ''} aria-pressed={on(id)} onClick={() => flip(id)} title={title}>{label}</button>
+          ))}
+        </span>
       </div>
       <div className="rk-cl">
         <span className={`rk-lbar s${st}`} aria-hidden="true">
           <i style={{ width: `${(live ? v!.pos : st === LOOP_REC ? 1 : 0) * 100}%` }} />
         </span>
         <span className="rk-ls">{LOOP_WORD[st]}{st !== LOOP_EMPTY && v ? ` ${v.len.toFixed(1)}s` : ''}</span>
-        <button type="button" className={`rec s${st}`} onClick={() => press(CMD_REC)} title="Record, play, overdub">● {NEXT_WORD[st]}</button>
+        <button type="button" className={`rec s${st}`} {...rec}>● {next}</button>
+        <button type="button" className={on('lrev') ? 'on' : ''} aria-pressed={on('lrev')} onClick={() => flip('lrev')} aria-label="Play the loop backwards" title="Loop reverse">⇄</button>
+        <button type="button" onClick={() => press(CMD_UNDO)} disabled={!v?.dub} aria-label="Undo the overdubs" title="Undo: clear the overdubs, back to the first phrase">↶</button>
         <button type="button" onClick={() => press(CMD_STOP)} disabled={!(live || st === LOOP_REC)} aria-label="Stop the loop" title="Stop">■</button>
         <button type="button" onClick={() => press(CMD_ERASE)} disabled={st === LOOP_EMPTY} aria-label="Erase the loop" title="Erase">✕</button>
       </div>

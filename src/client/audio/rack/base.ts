@@ -30,8 +30,9 @@ export type RackView =
   | { k: 'roll'; span: number; notes: number[] }
   /** per input: the latest voltage and the lowest and highest since the last view */
   | { k: 'volts'; v: number[]; lo: number[]; hi: number[]; on: boolean[] }
-  /** the granular looper: tempo, beat of the bar, looper state (see LOOP_* in cosm.ts), play position 0–1, loop length s */
-  | { k: 'cosm'; bpm: number; beat: number; loop: number; pos: number; len: number; frozen: boolean };
+  /** the granular looper: tempo, beat of the bar, looper state (see LOOP_* in cosm.ts), play position 0–1, loop length s,
+   *  Hold on, an overdub layer to undo, tempo from the Clock jack */
+  | { k: 'cosm'; bpm: number; beat: number; loop: number; pos: number; len: number; frozen: boolean; dub: boolean; clk: boolean };
 
 export class Port {
   readonly buf = new Float32Array(MAX_CH * BLOCK);

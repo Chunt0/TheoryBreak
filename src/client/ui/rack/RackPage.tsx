@@ -428,7 +428,7 @@ const ModulePanel = memo(function ModulePanel({ m, index, row, autoRow, selected
           </span>
         ) : null}
       </header>
-      <div className="rk-params">{def.params.map(param)}</div>
+      <div className="rk-params">{def.params.filter((q) => !q.hidden).map(param)}</div>
       {m.type === 'out' ? <OutMeter id={m.id} /> : null}
       {m.type === 'clock' ? <span className="rk-beats">{[0, 1, 2, 3].map((b) => <i key={b} className={b === shown ? 'on' : ''} />)}</span> : null}
       {m.type === 'euclid' ? <EuclidRing steps={m.params.steps} fills={m.params.fills} rotate={m.params.rotate} now={shown} /> : null}
