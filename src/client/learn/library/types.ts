@@ -2,9 +2,10 @@ import { PART } from '../../audio/engine';
 import { INTERVALS, noteName, parseNote, pc } from '../../theory/core';
 import { keyFromName } from '../../theory/keys';
 import type { NoteEvent, StaffChord } from '../types';
+import type { SynthDemo } from '../synth/demo';
 import { chordEvents, chordMidis, ev, intervalEvents, melodyEvents, parseChordSymbol, parsePitch, progressionEvents, scaleEvents, type CompStyle } from '../music';
 
-export type Tag = 'core' | 'jazz' | 'funk' | 'soul' | 'bach' | 'rhythm';
+export type Tag = 'core' | 'jazz' | 'funk' | 'soul' | 'bach' | 'rhythm' | 'modular' | 'seq' | 'fm';
 
 export const TAG_NAMES: Record<Tag, string> = {
   core: 'Core harmony',
@@ -13,6 +14,9 @@ export const TAG_NAMES: Record<Tag, string> = {
   soul: 'R&B / Gospel',
   bach: 'Bach & counterpoint',
   rhythm: 'Rhythm',
+  modular: 'Modular synthesis',
+  seq: 'Sequencing',
+  fm: 'FM synthesis',
 };
 
 export type Music =
@@ -33,6 +37,8 @@ export type Block =
   | { t: 'table'; head: string[]; rows: string[][] }
   | { t: 'rhythm'; cells?: string[]; per?: number; onsets?: number[]; caption?: string; bpm?: number }
   | { t: 'drill'; skill: string; count?: number; label?: string }
+  /** a synth patch to hear in variants, see and open in the instrument */
+  | { t: 'synth'; demo: SynthDemo }
   /** a step-by-step worked example, optionally with sound */
   | { t: 'example'; title: string; steps: string[]; music?: Music };
 

@@ -663,6 +663,27 @@ table.t th { color: var(--text-dim); font-weight: 650; font-size: 12.5px; text-t
 .s-lesson-where { margin: 0 0 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
 .s-lesson-next { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 18px 0 6px; padding-top: 12px; border-top: 1px solid var(--line); }
 .s-lesson-next .btn { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-synthdemo .listen-row { margin-top: 2px; }
+.s-synthdemo .listen-row .btn.on { border-color: var(--accent); }
+.s-sd-pics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.s-sd-pics svg { width: 100%; height: 84px; border-radius: 8px; background: var(--bg-elev2); }
+.s-sd-pics text { font: 600 9px var(--font); fill: var(--text-faint); }
+.s-sd-pics .axis { stroke: var(--line); stroke-width: 1; }
+.s-sd-pics .tick { stroke: var(--text-faint); stroke-width: 1; }
+.s-sd-wave polyline { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+.s-sd-spec polygon { fill: color-mix(in srgb, var(--accent) 45%, transparent); stroke: var(--accent); stroke-width: 0.8; }
+.s-sd-patch { margin-top: 8px; font-size: 13px; }
+.s-sd-patch summary { cursor: pointer; color: var(--text-dim); font-weight: 600; }
+.s-sd-cables { list-style: none; margin: 6px 0 0 !important; padding: 0 !important; columns: 2; column-gap: 16px; font-size: 12.5px; }
+.s-sd-cables li { break-inside: avoid; padding: 1px 0; }
+.s-sd-cables b { color: var(--fam, var(--text)); font-weight: 650; }
+.s-sd-fm { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; margin-top: 6px; }
+.s-sd-fm .algo { padding: 6px; border-radius: 10px; background: #1d1b18; }
+.s-sd-fm .algo-svg { width: 150px; height: auto; }
+.s-sd-fm .algo .opbox { cursor: default; }
+.s-sd-fm .t { font-size: 12px; }
+.s-sd-open { margin-top: 8px; gap: 10px; }
+@media (max-width: 520px) { .s-sd-pics { grid-template-columns: 1fr; } .s-sd-cables { columns: 1; } .s-sd-fm { grid-template-columns: 1fr; } }
 
 .s-stepper { display: inline-flex; align-items: center; height: 34px; gap: 2px; padding: 0 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-elev); font: 600 13.5px var(--font); }
 .s-stepper span { min-width: 62px; text-align: center; font-variant-numeric: tabular-nums; }

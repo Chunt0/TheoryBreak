@@ -72,7 +72,7 @@ them away completely).
 
 Every drill remembers each answer per item and leans new questions toward what you miss. Tap the ✓/✗ score for
 the drill's weak spots, a **Weak spots** switch (ask mostly what you miss, everywhere) and, once a level is down,
-an ↑ to the next one (or a step back when most recent answers are misses). The **?** opens the lessons for the drill, and from there all 61: six categories (core harmony, jazz, funk, R&B/gospel, Bach & counterpoint, rhythm), each a path from basics to advanced, with playable demos and a Next button to follow the path.
+an ↑ to the next one (or a step back when most recent answers are misses). The **?** opens the lessons for the drill, and from there all 84: six theory categories (core harmony, jazz, funk, R&B/gospel, Bach & counterpoint, rhythm) and three synth ones (modular synthesis, sequencing, FM synthesis), each a path from basics to advanced, with playable demos and a Next button to follow the path. The Synth tab stays a plain instrument until you press its **?**: the synth lessons' demos are rendered offline with the real rack and DX7 engines, so each one plays its variants and draws their waveform and spectrum without touching your patch, and **Open in rack / DX7** loads the one you heard (undo brings yours back).
 
 The **Sound** menu in the header switches between modular racks, factory DX7 voices and your saved patches; ⚙
 chooses whether exercises play back with your sound or a plain practice piano, and sets volume, reverb and

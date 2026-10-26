@@ -45,6 +45,7 @@ class AudioEngine {
   private master: GainNode | null = null;
   private wet: GainNode | null = null;
   private clickBus: GainNode | null = null;
+  private comp: DynamicsCompressorNode | null = null;
   private noise: AudioBuffer | null = null;
   private starting: Promise<void> | null = null;
   /** live notes played while the worklet is still loading (the very first key press) */
@@ -135,6 +136,7 @@ class AudioEngine {
     this.wet = wet;
     this.analyser = analyser;
     this.clickBus = clickBus;
+    this.comp = comp;
     this.noise = this.makeNoise(ctx);
     this.patches.forEach((patch, part) => this.post({ t: 'patch', part, patch }));
     this.configs.forEach((config, part) => this.post({ t: 'config', part, config }));
@@ -335,6 +337,30 @@ class AudioEngine {
   }
 
   // ----------------------------------------------------- clicks and drums
+
+  /**
+   * Play a prerendered stereo buffer (a lesson demo) into the main mix. Stops with
+   * stop() like scheduled clicks. Returns its start and end times.
+   */
+  playBuffer(l: Float32Array, r: Float32Array, sampleRate: number, at?: number): { start: number; end: number } | null {
+    const ctx = this.ctx;
+    const comp = this.comp;
+    if (!ctx || !comp) return null;
+    const buf = ctx.createBuffer(2, l.length, sampleRate);
+    buf.copyToChannel(l as Float32Array<ArrayBuffer>, 0);
+    buf.copyToChannel(r as Float32Array<ArrayBuffer>, 1);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(comp);
+    const t = Math.max(at ?? 0, ctx.currentTime + 0.03);
+    this.scheduledNodes.add(src);
+    src.onended = () => {
+      this.scheduledNodes.delete(src);
+      src.disconnect();
+    };
+    src.start(t);
+    return { start: t, end: t + buf.duration };
+  }
 
   drum(kind: DrumKind, at?: number, gain = 1): void {
     const ctx = this.ctx;

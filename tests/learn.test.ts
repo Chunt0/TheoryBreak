@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { SKILLS, SKILL_BY_ID } from '../src/client/learn/skills';
-import { ALL_TOPICS, PATHS, TAG_ORDER, TOPICS, TOPIC_BY_ID, pathOf, renderMusic } from '../src/client/learn/library';
+import { ALL_TOPICS, PATHS, SYNTH_TAGS, TAG_ORDER, TOPICS, TOPIC_BY_ID, pathOf, renderMusic } from '../src/client/learn/library';
 import { CONCEPTS, CONCEPT_HELP } from '../src/client/learn/gen/concepts';
 import { CHALLENGES } from '../src/client/learn/challenges';
 import { planSession, rankSkills } from '../src/client/learn/session';
@@ -83,7 +83,9 @@ describe('library', () => {
     for (const t of TOPICS) {
       expect(t.blocks.some((b) => b.t === 'example')).toBe(true);
       expect(t.blocks.some((b) => b.t === 'p' || b.t === 'table')).toBe(true);
-      expect(t.drills.length).toBeGreaterThan(0);
+      // synth lessons teach with demos you hear and open, theory lessons with drills
+      if (SYNTH_TAGS.includes(t.tags[0])) expect(t.blocks.some((b) => b.t === 'synth')).toBe(true);
+      else expect(t.drills.length).toBeGreaterThan(0);
     }
   });
 

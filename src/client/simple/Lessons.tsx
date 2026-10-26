@@ -14,6 +14,7 @@ import { PlayButton } from '../ui/PlayButton';
 import { ProgressionStrip } from '../ui/ProgressionStrip';
 import { playRhythm, RhythmGrid } from '../ui/Rhythm';
 import { Staff } from '../ui/Staff';
+import { SynthDemoCard } from './SynthDemoCard';
 
 export interface Help {
   /** library topics that teach the drill, most relevant first */
@@ -104,7 +105,7 @@ export function Lessons() {
             <h2>{t.title}</h2>
             <p className="rk-g-what">{t.summary}</p>
             {help.method?.length && help.topics.includes(t.id) ? <Method steps={help.method} /> : null}
-            {t.blocks.map((b, i) => (b.t === 'drill' ? null : <div className="block" key={i}><BlockView b={b} /></div>))}
+            {t.blocks.map((b, i) => (b.t === 'drill' ? null : <div className="block" key={`${t.id}.${i}`}><BlockView b={b} /></div>))}
             {where ? (
               // along the category's path, basics to advanced
               <nav className="s-lesson-next" aria-label={`More ${TAG_NAMES[where.tag]}`}>
@@ -154,7 +155,8 @@ function Index({ help }: { help: Help }) {
           <ul className="s-lesson-list">{help.topics.map(link)}</ul>
         </section>
       ) : null}
-      {TAG_ORDER.map((tag) => {
+      {/* the categories this drill's lessons belong to come first */}
+      {[...new Set([...help.topics.map((id) => TOPIC_BY_ID[id]?.tags[0]).filter((t) => t !== undefined), ...TAG_ORDER])].map((tag) => {
         // each topic sits under its first tag, in path order
         const list = TOPICS.filter((t) => t.tags[0] === tag);
         return list.length ? (
@@ -251,6 +253,8 @@ function BlockView({ b }: { b: Block }) {
           <ol>{b.steps.map((st, i) => <li key={i}><Markdown md={st} inlineOnly /></li>)}</ol>
         </div>
       );
+    case 'synth':
+      return <SynthDemoCard demo={b.demo} />;
     case 'drill':
       return null;
   }

@@ -2,12 +2,17 @@ import { FOUNDATION_TOPICS } from './topics-foundations';
 import { CORE_JAZZ_TOPICS } from './topics-core-jazz';
 import { SOUL_BACH_TOPICS } from './topics-soul-bach';
 import { MORE_TOPICS } from './topics-more';
+import { MODULAR_TOPICS } from './topics-modular';
+import { SEQ_TOPICS } from './topics-seq';
+import { FM_TOPICS } from './topics-fm';
 import type { Tag, Topic } from './types';
 
-const ALL: Topic[] = [...FOUNDATION_TOPICS, ...CORE_JAZZ_TOPICS, ...SOUL_BACH_TOPICS, ...MORE_TOPICS];
+const ALL: Topic[] = [...FOUNDATION_TOPICS, ...CORE_JAZZ_TOPICS, ...SOUL_BACH_TOPICS, ...MORE_TOPICS, ...MODULAR_TOPICS, ...SEQ_TOPICS, ...FM_TOPICS];
 const BY_ID: Record<string, Topic> = Object.fromEntries(ALL.map((t) => [t.id, t]));
 
-export const TAG_ORDER: Tag[] = ['core', 'jazz', 'funk', 'soul', 'bach', 'rhythm'];
+export const TAG_ORDER: Tag[] = ['core', 'jazz', 'funk', 'soul', 'bach', 'rhythm', 'modular', 'seq', 'fm'];
+/** The synth categories: taught on the Synth tab, with demos instead of drills. */
+export const SYNTH_TAGS: Tag[] = ['modular', 'seq', 'fm'];
 
 /**
  * Each category's lessons in reading order, from first steps to advanced. A lesson
@@ -32,6 +37,13 @@ export const PATHS: Record<Tag, string[]> = {
     'bach.chromatic', 'bach.fugue',
   ],
   rhythm: ['rhythm.subdivision', 'rhythm.syncopation', 'rhythm.swing', 'rhythm.clave', 'rhythm.odd', 'rhythm.cross'],
+  modular: [
+    'modular.voltage', 'modular.osc', 'modular.filter', 'modular.env',
+    'modular.mod', 'modular.classic', 'modular.poly',
+    'modular.westcoast', 'modular.audiorate',
+  ],
+  seq: ['seq.clock', 'seq.step', 'seq.quant', 'seq.drums', 'seq.polymeter', 'seq.generative', 'seq.arp'],
+  fm: ['fm.basics', 'fm.ratios', 'fm.envelopes', 'fm.algorithms', 'fm.scaling', 'fm.recipes', 'fm.motion'],
 };
 
 /** Every lesson, category by category in path order. */
