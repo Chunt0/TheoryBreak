@@ -36,11 +36,16 @@ export type Block =
   /** a step-by-step worked example, optionally with sound */
   | { t: 'example'; title: string; steps: string[]; music?: Music };
 
+/** 1 = first steps, 2 = building on those, 3 = advanced. */
+export type Level = 1 | 2 | 3;
+export const LEVEL_NAMES: Record<Level, string> = { 1: 'basics', 2: 'intermediate', 3: 'advanced' };
+
 export interface Topic {
   id: string;
   title: string;
   tags: Tag[];
   minutes: number;
+  level: Level;
   summary: string;
   blocks: Block[];
   /** skills drilled from this topic */

@@ -1,0 +1,640 @@
+import type { Topic } from './types';
+
+/** Lessons that fill out each category's path, from first steps to deep water. */
+export const MORE_TOPICS: Topic[] = [
+  // ---------------------------------------------------------------- core
+  {
+    id: 'core.triads', title: 'Triads & inversions', tags: ['core'], minutes: 4, level: 1,
+    summary: 'Four qualities, three positions, and how the bass note changes the sound.',
+    blocks: [
+      { t: 'p', md: 'A **triad** is two stacked 3rds. Which 3rds decides the quality: **major** = M3 + m3 (R 3 5), **minor** = m3 + M3 (R ♭3 5), **diminished** = m3 + m3 (R ♭3 ♭5), **augmented** = M3 + M3 (R 3 ♯5). Major and minor have a perfect 5th and sound stable; diminished and augmented do not, and want to move.' },
+      { t: 'table', head: ['Quality', 'Stack', 'On C', 'Where it lives'], rows: [
+        ['Major', 'M3 + m3', 'C E G', 'I, IV, V of a major key'],
+        ['Minor', 'm3 + M3', 'C E♭ G', 'ii, iii, vi'],
+        ['Diminished', 'm3 + m3', 'C E♭ G♭', 'vii° (and ii° in minor)'],
+        ['Augmented', 'M3 + M3', 'C E G♯', 'III+ of harmonic minor'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'Major', music: { chord: 'C', arp: true } },
+        { label: 'Minor', music: { chord: 'Cm', arp: true } },
+        { label: 'Diminished', music: { chord: 'Cdim', arp: true } },
+        { label: 'Augmented', music: { chord: 'Caug', arp: true } },
+      ] },
+      { t: 'p', md: '**Inversions** put a different chord tone in the bass. **Root position**: the root. **1st inversion**: the 3rd (figured 6, for the 3rd and 6th above the bass). **2nd inversion**: the 5th (6/4, a 4th and a 6th above it). The upper notes can come in any order; only the **bass** decides the inversion.' },
+      { t: 'staff', chords: [{ notes: ['C4', 'E4', 'G4'], label: 'root' }, { notes: ['E4', 'G4', 'C5'], label: '6' }, { notes: ['G4', 'C5', 'E5'], label: '6/4' }], caption: 'C major in root position, 1st and 2nd inversion.' },
+      { t: 'note', kind: 'ear', md: 'Root position sounds grounded; 1st inversion lighter and on the move (bass lines that step love it); 2nd inversion unstable: outside cadences and passing figures it sounds like it is waiting for something.' },
+      { t: 'example', title: 'Name E G C from the bass up', steps: [
+        'Rearrange it in 3rds to find the root: C E G, so this is a C major triad.',
+        'The bass is E, the 3rd: **1st inversion**, figured 6.',
+        'On a lead sheet it is C/E; in Roman numerals in C major, I6.',
+      ], music: { notes: ['E3', 'G3', 'C4'], mode: 'chord' } },
+      { t: 'drill', skill: 'ear.chord.inv', count: 3 },
+    ],
+    drills: ['ear.chord.inv', 'gym.name'],
+  },
+  {
+    id: 'core.keys', title: 'Key signatures & the circle of fifths', tags: ['core'], minutes: 4, level: 1,
+    summary: 'Why sharps and flats come in a fixed order, relative minors, and the circle as a map of closeness.',
+    blocks: [
+      { t: 'p', md: 'Each key a **5th up** adds a sharp; each key a **5th down** adds a flat. The order never changes: sharps **F C G D A E B**, flats **B E A D G C F**. Each list is the other reversed, and each accidental is a 5th from the last.' },
+      { t: 'p', md: '- **Sharp keys**: the tonic is a half step above the last sharp (F♯ C♯ → D major).\n- **Flat keys**: the tonic is the next-to-last flat (B♭ E♭ A♭ → E♭ major). F, with one flat, you learn by heart.\n- **Relative minor**: same signature, tonic a minor 3rd lower (E♭ major ↔ C minor).' },
+      { t: 'table', head: ['Signature', 'Major', 'Minor'], rows: [
+        ['none', 'C', 'A'], ['1♯', 'G', 'E'], ['2♯', 'D', 'B'], ['3♯', 'A', 'F♯'], ['4♯', 'E', 'C♯'], ['5♯', 'B', 'G♯'],
+        ['1♭', 'F', 'D'], ['2♭', 'B♭', 'G'], ['3♭', 'E♭', 'C'], ['4♭', 'A♭', 'F'], ['5♭', 'D♭', 'B♭'], ['6♭ / 6♯', 'G♭ / F♯', 'E♭ / D♯'],
+      ] },
+      { t: 'p', md: 'Neighbours on the circle share six of their seven notes: they are the **closely related keys**. From C, those are G and F (one accidental away) and the relative minors A, E and D, the usual first places a piece modulates to. Roots moving **down** the circle (C → F → B♭…) move like V → I, which is why ii–Vs, turnarounds and Baroque sequences travel that way.' },
+      { t: 'prog', key: 'C', tokens: ['Am7', 'Dm7', 'G7', 'Cmaj7', 'Fmaj7', 'Bm7b5', 'E7', 'Am7'], beats: 4, bpm: 120, style: 'swing', caption: 'Round the circle inside one key: every root falls a diatonic 5th (the Autumn Leaves cycle).' },
+      { t: 'example', title: 'Name the key with four flats', steps: [
+        'Flats in order: B♭ E♭ A♭ D♭.',
+        'The next-to-last is A♭: **A♭ major**, or its relative a minor 3rd down, **F minor**.',
+        'To tell which, look in the music for E♮, the raised 7th of F minor. Accidentals on the leading tone give minor keys away.',
+      ], music: { scale: 'major', from: 'Ab3', dir: 'up' } },
+      { t: 'drill', skill: 'gym.keys7', count: 3 },
+    ],
+    drills: ['gym.keys7'],
+  },
+  {
+    id: 'core.minorkeys', title: 'The three minor scales', tags: ['core', 'jazz'], minutes: 4, level: 2,
+    summary: 'Natural, harmonic and melodic minor: why the 7th gets raised, and the chords each one gives.',
+    blocks: [
+      { t: 'p', md: 'Natural minor (Aeolian) has a ♭7, a whole step under the tonic: no leading tone, so v is minor and its cadence is weak. Raise the 7th and V becomes major: **harmonic minor**, with an augmented 2nd (♭6 to 7) that sounds exotic in a melody. Raise the 6th as well and the gap closes: **melodic minor**. Classical melodic minor goes up melodic and down natural; jazz uses it both ways.' },
+      { t: 'table', head: ['Scale', 'Degrees', 'On A', 'Seventh chords'], rows: [
+        ['Natural', '1 2 ♭3 4 5 ♭6 ♭7', 'A B C D E F G', 'i7 iiø7 ♭IIImaj7 iv7 v7 ♭VImaj7 ♭VII7'],
+        ['Harmonic', '1 2 ♭3 4 5 ♭6 7', 'A B C D E F G♯', 'i(maj7) iiø7 ♭III+maj7 iv7 V7 ♭VImaj7 vii°7'],
+        ['Melodic', '1 2 ♭3 4 5 6 7', 'A B C D E F♯ G♯', 'i(maj7) ii7 ♭III+maj7 IV7 V7 viø7 viiø7'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'Natural', music: { scale: 'minor', from: 'A3' } },
+        { label: 'Harmonic', music: { scale: 'harmonic_minor', from: 'A3' } },
+        { label: 'Melodic', music: { scale: 'melodic_minor', from: 'A3' } },
+        { label: 'iv – v – i', note: 'natural', music: { prog: ['Dm7', 'Em7', 'Am7'], key: 'Am', beats: 2 } },
+        { label: 'iv – V7 – i', note: 'harmonic', music: { prog: ['Dm7', 'E7', 'Am7'], key: 'Am', beats: 2 } },
+      ] },
+      { t: 'p', md: 'A real minor key **mixes** the three: the harmony takes V7 and vii°7 from harmonic minor, the melody uses natural minor coming down and melodic going up, and jazz soloists choose per chord: Dorian on i7, Locrian ♮2 on iiø7, altered or Phrygian dominant on V7.' },
+      { t: 'example', title: 'Why V7 in minor needs the raised 7th', steps: [
+        'In A natural minor, v is E G B D. G sits a whole step under A, so nothing pulls hard to the tonic.',
+        'Raise G to G♯: E G♯ B D, a dominant 7th whose tritone (G♯–D) resolves inward to A–C.',
+        'That G♯ is not in the key signature, so it is written as an accidental every time: the fingerprint of a minor key.',
+      ], music: { prog: ['Am7', 'Em7', 'Am7', 'E7', 'Am7'], key: 'Am', beats: 2 } },
+      { t: 'drill', skill: 'gym.keys7.harm', count: 3 },
+    ],
+    drills: ['gym.keys7.harm', 'gym.keys7.mel', 'ear.degree.minor'],
+  },
+  {
+    id: 'core.function', title: 'Harmonic function: tonic, predominant, dominant', tags: ['core', 'jazz', 'bach'], minutes: 4, level: 2,
+    summary: 'Why chords group into three jobs, how substitutes share notes, and what a deceptive cadence deceives.',
+    blocks: [
+      { t: 'p', md: 'Tonal harmony cycles through three functions: **tonic** (rest), **predominant** (moving away) and **dominant** (tension that wants home). T → PD → D → T is the basic phrase; ii–V–I is its jazz shorthand.' },
+      { t: 'table', head: ['Function', 'Chords (major key)', 'Why they belong together', 'Feel'], rows: [
+        ['Tonic', 'I, vi, iii', 'vi is I with 6 for 5; iii is I with 7 for 1', 'home, or home in shadow'],
+        ['Predominant', 'IV, ii', 'ii7 contains all of IV', 'lift, motion'],
+        ['Dominant', 'V, vii°', 'vii° is V7 without its root', 'leading tone + tritone'],
+      ] },
+      { t: 'p', md: 'A chord takes the function of the chord it shares most notes with. That is why ii can replace IV, why vi can stand in for I in a **deceptive cadence** (V → vi: the leading tone still rises to 1, but the bass steps up instead of falling to the root), and why iii is a weak tonic: it contains the leading tone.' },
+      { t: 'listen', items: [
+        { label: 'V – I', note: 'authentic', music: { prog: ['G7', 'C'], key: 'C', beats: 2 } },
+        { label: 'V – vi', note: 'deceptive', music: { prog: ['G7', 'Am'], key: 'C', beats: 2 } },
+        { label: 'IV – I', note: 'plagal', music: { prog: ['F', 'C'], key: 'C', beats: 2 } },
+        { label: 'IV – V', note: 'half cadence', music: { prog: ['C', 'F', 'G'], key: 'C', beats: 2 } },
+      ] },
+      { t: 'prog', key: 'C', tokens: ['Cmaj7', 'Am7', 'Fmaj7', 'Dm7', 'G7', 'Am7', 'Dm7', 'G7', 'Cmaj7'], beats: 2, style: 'ballad', caption: 'T T PD PD D, a deceptive vi, then PD D T for real.' },
+      { t: 'example', title: 'Label a line of changes by function', steps: [
+        'Em7 – A7 – Dm7 – G7 – Cmaj7 in C.',
+        'Em7 = iii (tonic family). A7 = V7/ii, a dominant aimed at ii, not at I. Dm7 = ii (predominant). G7 = V (dominant). Cmaj7 = I.',
+        'A secondary dominant borrows the D function for a moment: T – (D) – PD – D – T.',
+      ], music: { prog: ['Em7', 'A7', 'Dm7', 'G7', 'Cmaj7'], key: 'C', beats: 2, style: 'swing' } },
+      { t: 'drill', skill: 'ear.cadence', count: 3 },
+    ],
+    drills: ['ear.cadence', 'jazz.analysis'],
+  },
+  {
+    id: 'core.modulation', title: 'Modulation & tonicisation', tags: ['core', 'jazz', 'bach'], minutes: 5, level: 3,
+    summary: 'Visiting a key versus moving there: pivot chords, ii–V pivots, common tones and direct shifts.',
+    blocks: [
+      { t: 'p', md: '**Tonicisation** is a short visit: a secondary dominant or a ii–V points at a chord without changing key. **Modulation** stays: a new tonic is confirmed by a cadence, and the music carries on there.' },
+      { t: 'table', head: ['Method', 'How', 'Sound'], rows: [
+        ['Pivot chord', 'a chord in both keys changes meaning (Am = vi in C = ii in G)', 'seamless'],
+        ['ii–V', 'a ii–V of the new key, no shared chord needed', 'the jazz way: Dm7 G7 C → Fm7 B♭7 E♭'],
+        ['Common tone', 'one held note belongs to both tonic chords (C major → A♭ major on C)', 'sudden but bound'],
+        ['Direct', 'start in the new key after a cadence', 'a gear change'],
+        ['Chromatic', 'a voice moves by half step into the new dominant', 'smooth, Romantic'],
+      ] },
+      { t: 'prog', key: 'C', tokens: ['Cmaj7', 'Am7', 'D7', 'Gmaj7', 'Gmaj7'], beats: 4, style: 'ballad', caption: 'Pivot: Am7 is vi in C and ii in G; D7 confirms G.' },
+      { t: 'prog', key: 'C', tokens: ['Dm7', 'G7', 'Cmaj7', 'Cmaj7', 'Fm7', 'Bb7', 'Ebmaj7', 'Ebmaj7'], beats: 4, style: 'swing', caption: 'A ii–V up a minor 3rd: no shared chord, the ii–V does all the work.' },
+      { t: 'listen', items: [
+        { label: 'Common tone C → A♭', note: 'C held on top', music: { voicings: [['C3', 'E4', 'G4', 'C5'], ['Ab2', 'Eb4', 'Ab4', 'C5']], beat: 1.4 } },
+        { label: 'Up a half step', note: 'the last-chorus lift', music: { prog: ['C', 'G7', 'C', 'Ab7', 'Db'], key: 'C', beats: 2 } },
+      ] },
+      { t: 'note', kind: 'jazz', md: 'Standards change key every few bars with ii–Vs: the bridge of "Have You Met Miss Jones" moves through keys a major 3rd apart (B♭, G♭, D), "Tune Up" falls by whole steps. Hear each ii–V as a signpost and the key of the moment is never in doubt.' },
+      { t: 'example', title: 'Pivot from C major to E minor', steps: [
+        'List the chords both keys share: C, Em, G and Am.',
+        'Pick the pivot just before the move: Am, which is vi in C and iv in E minor.',
+        'Follow it with B7, V7 of E minor (D♯ is the new leading tone), and land on Em: C – Am – B7 – Em.',
+      ], music: { prog: ['C', 'Am', 'B7', 'Em'], key: 'C', beats: 2 } },
+      { t: 'drill', skill: 'jazz.keycenter', count: 3 },
+    ],
+    drills: ['jazz.keycenter', 'jazz.analysis'],
+  },
+  {
+    id: 'core.negative', title: 'Negative harmony', tags: ['core', 'jazz'], minutes: 4, level: 3,
+    summary: 'Mirror a key between its tonic and dominant: V7 becomes iv6, major turns minor, and new cadences appear.',
+    blocks: [
+      { t: 'p', md: 'Put an axis halfway between the 3rds of the tonic chord (between E♭ and E in C) and mirror every note across it: C ↔ G, D ↔ F, E ↔ E♭, B ↔ A♭, A ↔ B♭, F♯ ↔ C♯. Tonic and dominant trade places, the leading tone B becomes A♭ (which falls to G the way B rose to C), and every major chord turns minor.' },
+      { t: 'table', head: ['Chord in C', 'Notes', 'Mirrored', 'Becomes'], rows: [
+        ['C', 'C E G', 'G E♭ C', 'Cm'],
+        ['G7', 'G B D F', 'C A♭ F D', 'Fm6 (= Dm7♭5)'],
+        ['G9', 'G B D F A', 'C A♭ F D B♭', 'B♭9, the backdoor dominant'],
+        ['Dm7', 'D F A C', 'F D B♭ G', 'Gm7'],
+        ['Fmaj7', 'F A C E', 'D B♭ G E♭', 'E♭maj7'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'G7 → C', music: { prog: ['G7', 'C'], key: 'C', beats: 2 } },
+        { label: 'Fm6 → C', note: 'the mirrored V7', music: { prog: ['Fm6', 'C'], key: 'C', beats: 2 } },
+        { label: 'B♭9 → C', note: 'the mirrored V9', music: { prog: ['Bb9', 'C'], key: 'C', beats: 2 } },
+      ] },
+      { t: 'p', md: 'Use it as a source of borrowed chords that still **cadence**: the mirrored dominant resolves with the same voice leading in reverse, A♭ falling to G where B rose to C. That is why iv6 and ♭VII7 work as dominants in minor-plagal and backdoor cadences: they are V in the mirror.' },
+      { t: 'prog', key: 'C', tokens: ['Dm7', 'G7', 'Cmaj7', 'Cmaj7', 'Gm7', 'Fm6', 'Cmaj7', 'Cmaj7'], beats: 4, style: 'ballad', caption: 'ii–V–I, then its mirror image resolving to C major: Gm7 – Fm6 – C.' },
+      { t: 'example', title: 'Mirror a ii–V–I', steps: [
+        'Dm7 G7 Cmaj7 in C; each pitch class n becomes 7 − n (C = 0).',
+        'Dm7 → G B♭ D F = Gm7. G7 → C A♭ F D = Fm6. Cmaj7 → G E♭ C A♭ = A♭maj7.',
+        'So ii–V–I mirrors to v–iv–♭VI. Land on C major instead and the iv6 does the dominant\'s job: the negative cadence.',
+      ], music: { prog: ['Gm7', 'Fm6', 'Cmaj7'], key: 'C', beats: 4, style: 'ballad' } },
+      { t: 'drill', skill: 'gym.interchange', count: 3 },
+    ],
+    drills: ['gym.interchange', 'jazz.concepts'],
+  },
+
+  // ---------------------------------------------------------------- jazz
+  {
+    id: 'jazz.forms', title: 'Song forms: AABA, ABAC, the blues', tags: ['jazz'], minutes: 3, level: 1,
+    summary: 'How standards are built from 8-bar sections, and how to keep your place in a chorus.',
+    blocks: [
+      { t: 'p', md: 'Most standards are 32 bars in four 8-bar sections. One trip through the form is a **chorus**, and solos are more choruses over the same changes. Knowing the form is how you keep your place without counting every bar.' },
+      { t: 'table', head: ['Form', 'Shape', 'Examples'], rows: [
+        ['AABA', 'A twice, a contrasting bridge (B), A again', 'rhythm changes, "Satin Doll", "Take the A Train"'],
+        ['ABAC', 'two halves that start alike and end differently', '"All of Me", "Fly Me to the Moon"'],
+        ['12-bar blues', 'three 4-bar phrases: I, IV–I, V–IV–I (or ii–V–I)', '"Billie\'s Bounce", "Blue Monk"'],
+        ['Other lengths', 'forms of their own', '"Blue Bossa" (16 bars), "Maiden Voyage" (AABA of 8s)'],
+      ] },
+      { t: 'p', md: 'The **bridge** usually leaves the key: rhythm changes go round the circle on III7–VI7–II7–V7, many tunes go to IV. Its last bars set up the return, and the last two bars of every chorus hold a **turnaround** back to bar 1.' },
+      { t: 'prog', key: 'Bb', tokens: ['D7', 'D7', 'G7', 'G7', 'C7', 'C7', 'F7', 'F7'], beats: 4, bpm: 160, style: 'swing', caption: 'The rhythm-changes bridge: dominants round the circle, then back to the A.' },
+      { t: 'note', kind: 'ear', md: 'Hear the form in the band: drum fills and cymbal crashes mark section boundaries, and the bass often walks up into the bridge. Hum the melody under a solo and you always know where you are.' },
+      { t: 'example', title: 'Keep your place in an AABA chorus', steps: [
+        'Count sections, not bars: A1, A2, B, A3, four 8-bar blocks.',
+        'Listen for the turnaround in bars 7–8 of each A: it signals "A again" or "bridge next".',
+        'After the bridge, the last A is your cue to finish your chorus or hand over to the next soloist.',
+      ], music: { prog: ['Bbmaj7', 'G7', 'Cm7', 'F7'], key: 'Bb', beats: 2, style: 'swing' } },
+      { t: 'drill', skill: 'ear.prog.jazz', count: 3 },
+    ],
+    drills: ['ear.prog.jazz', 'jazz.analysis'],
+  },
+  {
+    id: 'jazz.alt', title: 'The altered dominant', tags: ['jazz', 'core'], minutes: 4, level: 3,
+    summary: 'All four alterations on one V7 (♭9 ♯9 ♯11 ♭13), the altered scale, and where each tension resolves.',
+    blocks: [
+      { t: 'p', md: 'A V7 resolving to I can carry every **altered tension**: ♭9, ♯9, ♯11 (♭5) and ♭13 (♯5). Keep the 3rd and ♭7, which make it a dominant, and the alterations only strengthen the pull home: each sits a half step from a note of the next chord.' },
+      { t: 'table', head: ['Tension on G7', 'Note', 'Resolves (in C)'], rows: [
+        ['♭9', 'A♭', 'down to G, the 5th'],
+        ['♯9', 'A♯ (B♭)', 'up to B, the maj7, or down to A'],
+        ['♯11 / ♭5', 'C♯ (D♭)', 'down to C, the root, or up to D'],
+        ['♭13 / ♯5', 'E♭', 'up to E, the 3rd, or down to D'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'G7', music: { chord: 'G7' } },
+        { label: 'G7♭9', music: { chord: 'G7b9' } },
+        { label: 'G7♯9', music: { chord: 'G7#9' } },
+        { label: 'G7alt', music: { chord: 'G7alt' } },
+        { label: 'Altered scale', music: { scale: 'altered', from: 'G3' } },
+      ] },
+      { t: 'p', md: 'The **altered scale**, 7th mode of melodic minor, holds them all: G A♭ B♭ B C♯ E♭ F = R ♭9 ♯9 3 ♯11 ♭13 ♭7. It is A♭ melodic minor from G, so "melodic minor a half step above the root" works over any V7alt. Its tritone partner D♭7♯11 (Lydian dominant) comes from the same A♭ melodic minor: G7alt and D♭7♯11 are one sound.' },
+      { t: 'keys', notes: ['G2', 'F3', 'B3', 'Eb4', 'Ab4'], labels: ['R', '♭7', '3', '♭13', '♭9'], caption: 'G7(♭9 ♭13): the shell (♭7 3) with both flat tensions on top.' },
+      { t: 'example', title: 'Resolve G7alt to Cmaj9 by half steps', steps: [
+        'Voice G7alt as F B E♭ A♭ (♭7 3 ♭13 ♭9) over G.',
+        'Move each note the shortest way: F → E, B stays, E♭ → D, A♭ → G.',
+        'You land on E B D G over C: Cmaj9. Every tension found a home a half step away.',
+      ], music: { voicings: [['G2', 'F3', 'B3', 'Eb4', 'Ab4'], ['C3', 'E3', 'B3', 'D4', 'G4']], beat: 1.4 } },
+      { t: 'drill', skill: 'ear.chord.alt', count: 3 },
+    ],
+    drills: ['ear.chord.alt', 'jazz.mm', 'jazz.chordscale'],
+  },
+  {
+    id: 'jazz.hybrid', title: 'Slash chords & hybrid voicings', tags: ['jazz', 'soul'], minutes: 4, level: 3,
+    summary: 'A triad over a foreign bass: how B♭/C, D/C, D♭/C and E/C spell sus, Lydian, Phrygian and augmented sounds.',
+    blocks: [
+      { t: 'p', md: 'A **slash chord** is a chord over a bass note. When the bass is a chord tone it is an inversion (C/E). When it is not, the result is a **hybrid**: the triad becomes the upper extensions of a chord on the bass, usually with no 3rd.' },
+      { t: 'table', head: ['Hybrid', 'Triad', 'Against the bass', 'Sound'], rows: [
+        ['B♭/C', 'B♭ D F', '♭7 9 11', 'C9sus4: the soft dominant'],
+        ['D/C', 'D F♯ A', '9 ♯11 13', 'C Lydian'],
+        ['D♭/C', 'D♭ F A♭', '♭9 11 ♭13', 'C Phrygian, sus♭9'],
+        ['E/C', 'E G♯ B', '3 ♯5 7', 'Cmaj7♯5, Lydian augmented'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'B♭/C', music: { voicings: [['C3', 'Bb3', 'D4', 'F4']], beat: 1.6 } },
+        { label: 'D/C', music: { voicings: [['C3', 'D4', 'F#4', 'A4']], beat: 1.6 } },
+        { label: 'D♭/C', music: { voicings: [['C3', 'Db4', 'F4', 'Ab4']], beat: 1.6 } },
+        { label: 'E/C', music: { voicings: [['C3', 'E4', 'G#4', 'B4']], beat: 1.6 } },
+      ] },
+      { t: 'p', md: 'One easy triad in the right hand plus one bass note gives an exact, modern colour without spelling out 11ths and 13ths. "Maiden Voyage" is built from sus hybrids; gospel and R&B use IV/V (F/G) as the everyday dominant.' },
+      { t: 'prog', key: 'C', tokens: ['Cmaj7', 'Bb/C', 'Fmaj7', 'F/G', 'Cmaj7'], beats: 4, style: 'ballad', caption: 'Hybrids as dominants: B♭/C (C9sus) leads to F, F/G (G9sus) back to C.' },
+      { t: 'example', title: 'Spell D♭/C and resolve it', steps: [
+        'Triad D♭ F A♭ over a C bass.',
+        'Against C: D♭ = ♭9, F = 11 (the sus 4th), A♭ = ♭13. No 3rd, so it is a Phrygian or sus♭9 sound.',
+        'Treat it as a dominant (C is V of F): D♭ falls to C, A♭ rises to A and F stays. C7sus♭9 → F.',
+      ], music: { voicings: [['C3', 'Db4', 'F4', 'Ab4'], ['F2', 'C4', 'F4', 'A4']], beat: 1.4 } },
+      { t: 'drill', skill: 'jazz.ust', count: 3 },
+    ],
+    drills: ['jazz.ust', 'ear.chord.ext'],
+  },
+
+  // ---------------------------------------------------------------- funk
+  {
+    id: 'funk.ninth', title: 'The funk dominant: 9, 13 and 7♯9', tags: ['funk'], minutes: 3, level: 1,
+    summary: 'One chord for the whole tune: voicing E9, E13 and E7♯9 so they cut through.',
+    blocks: [
+      { t: 'p', md: 'In funk the dominant 7th is the **tonic**: it never has to resolve. Its colours: the **9** (smooth, the James Brown chord), the **13** (brighter, with the 6th), and the **7♯9** (raw, a major 3rd with a minor 3rd on top: the blues in one chord).' },
+      { t: 'table', head: ['Chord', 'On E', 'Voicing'], rows: [
+        ['E7', 'E G♯ B D', 'the plain blues chord'],
+        ['E9', '+ F♯', 'G♯ D F♯: 3 ♭7 9'],
+        ['E13', '+ F♯ C♯', 'D G♯ C♯: ♭7 3 13'],
+        ['E7♯9', '+ G (F𝄪)', 'G♯ D G: 3 ♭7 ♯9'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'E9', music: { voicings: [['E2', 'G#3', 'D4', 'F#4']], beat: 1.6 } },
+        { label: 'E13', music: { voicings: [['E2', 'D3', 'G#3', 'C#4']], beat: 1.6 } },
+        { label: 'E7♯9', music: { voicings: [['E2', 'G#3', 'D4', 'G4']], beat: 1.6 } },
+      ] },
+      { t: 'p', md: 'Small voicings win: three notes above the bass, mid-register, played short. Leave the 5th, and often the root, to the bass player. Between the stabs the guitar or clav keeps a muted 16th scratch going.' },
+      { t: 'prog', key: 'E', tokens: ['E7#9', 'E7#9', 'A9', 'E7#9'], beats: 4, bpm: 100, style: 'funk', caption: 'One-chord funk: E7♯9 with a IV9 answer.' },
+      { t: 'example', title: 'Build E7♯9 from a shell', steps: [
+        'Shell: G♯ (3rd) and D (♭7), a tritone, the dominant sound.',
+        'Add G on top: the ♯9, strictly F𝄪 but always written G. Against the G♯ below it you hear a major and a minor 3rd at once.',
+        'Keep the root in the bass and play it short on the "&" and the "a": the Hendrix chord, and the funk tonic.',
+      ], music: { voicings: [['E2', 'G#3', 'D4'], ['E2', 'G#3', 'D4', 'G4']], beat: 1.2 } },
+      { t: 'drill', skill: 'ear.chord.ext', count: 3 },
+    ],
+    drills: ['ear.chord.ext', 'gym.spell.ext'],
+  },
+  {
+    id: 'funk.bass', title: 'Funk bass lines', tags: ['funk', 'rhythm'], minutes: 4, level: 2,
+    summary: 'The One, octaves, the ♭7 and chromatic pickups: a line that locks with the drums.',
+    blocks: [
+      { t: 'p', md: 'A funk bass line is mostly **rhythm**: it lands hard on **the One**, leaves space, and fills with syncopated pickups that lead back to the next One. The notes are few: root, octave, ♭7, 5th and chromatic approaches.' },
+      { t: 'rhythm', cells: ['1001', '0010', '1010', '0011'], bpm: 96, caption: 'The One, the "a" of 1, the "&" of 2, beat 3 and its "&", then two pickups into the next bar.' },
+      { t: 'table', head: ['Note', 'Job'], rows: [
+        ['Root', 'the One, always'],
+        ['Octave', 'bounce; pops on an off-beat'],
+        ['♭7', 'the dominant colour, and a pickup back to the root'],
+        ['5th', 'support; the 5th below the root works too'],
+        ['Chromatic approach', 'a half step under (or over) the next root, on the last 16th'],
+      ] },
+      { t: 'prog', key: 'E', tokens: ['E7', 'E7', 'A7', 'A7'], beats: 4, bpm: 98, style: 'funk', caption: 'The band\'s bass: root on the One, octave on the "&" of 2, the ♭7 as a pickup.' },
+      { t: 'p', md: '**Ghost notes** (muted, pitchless thumps) fill the 16ths between real notes so the grid stays audible. The space matters as much as the notes: leave beat 3 empty and the One hits harder.' },
+      { t: 'example', title: 'Write a one-bar line over E7', steps: [
+        'Beat 1: low E, held long enough to feel the One.',
+        '"&" of 2: the octave E. "&" of 3: D, the ♭7.',
+        '"a" of 4: D♯, a half step under the root, leading up into the next E on the One.',
+      ], music: { notes: ['E2', 'E3', 'D3', 'D#2', 'E2'], beat: 0.3 } },
+      { t: 'drill', skill: 'rhythm.tap.funk', count: 2 },
+    ],
+    drills: ['rhythm.tap.funk', 'rhythm.tap.sync'],
+  },
+  {
+    id: 'funk.pentatonic', title: 'Pentatonics over a vamp', tags: ['funk', 'jazz'], minutes: 4, level: 2,
+    summary: 'One minor-pentatonic shape on different roots brings out the 9th, 11th and 13th of one chord.',
+    blocks: [
+      { t: 'p', md: 'Over a long vamp one scale wears out fast. **Superimpose** a minor pentatonic on another root and each choice lights up different chord tones and tensions, while your fingers play shapes they already know.' },
+      { t: 'table', head: ['Over Em7 (Dorian)', 'Notes', 'Against E'], rows: [
+        ['E minor pent.', 'E G A B D', 'R ♭3 11 5 ♭7: the blues, inside'],
+        ['B minor pent.', 'B D E F♯ A', '5 ♭7 R 9 11: brighter, no 3rd'],
+        ['F♯ minor pent.', 'F♯ A B C♯ E', '9 11 5 13 R: the Dorian 6th, modern'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'E minor pent. over E', music: { voicings: [['E2', 'E4'], ['E2', 'G4'], ['E2', 'A4'], ['E2', 'B4'], ['E2', 'D5']], beat: 0.4 } },
+        { label: 'B minor pent. over E', music: { voicings: [['E2', 'B3'], ['E2', 'D4'], ['E2', 'E4'], ['E2', 'F#4'], ['E2', 'A4']], beat: 0.4 } },
+        { label: 'F♯ minor pent. over E', music: { voicings: [['E2', 'F#4'], ['E2', 'A4'], ['E2', 'B4'], ['E2', 'C#5'], ['E2', 'E5']], beat: 0.4 } },
+      ] },
+      { t: 'p', md: 'On a m7 vamp, minor pentatonics on the **root**, the **5th** and the **9th** all stay inside Dorian. On a dominant vamp (E7): minor pentatonic on the root gives the blues (♭3 against the 3rd), on the 5th (B) the 9 and 11, and **major pentatonic** on the root (E F♯ G♯ B C♯) the clean, sweet 9 and 13.' },
+      { t: 'prog', key: 'Em', tokens: ['Em7', 'A7', 'Em7', 'A7'], beats: 4, bpm: 98, style: 'funk', caption: 'An E Dorian vamp to try them on: E, B and F♯ minor pentatonic all fit.' },
+      { t: 'example', title: 'Choose a pentatonic for colour', steps: [
+        'Vamp: Em7 – A7 (E Dorian). You want the 9th and 13th to sing.',
+        'Find the minor pentatonic holding F♯ (9) and C♯ (13): F♯ minor pentatonic, F♯ A B C♯ E.',
+        'Play the licks you know in E minor pentatonic a whole step higher: instant modern Dorian.',
+      ], music: { voicings: [['E2', 'F#4'], ['E2', 'A4'], ['E2', 'B4'], ['E2', 'C#5'], ['E2', 'B4'], ['E2', 'A4'], ['E2', 'F#4']], beat: 0.3 } },
+      { t: 'drill', skill: 'ear.modes', count: 3 },
+    ],
+    drills: ['ear.modes', 'jazz.chordscale'],
+  },
+  {
+    id: 'funk.sideslip', title: 'Side-slipping & going outside', tags: ['funk', 'jazz'], minutes: 4, level: 3,
+    summary: 'Leave the key by a half step for a beat and come back: tension on purpose over a static vamp.',
+    blocks: [
+      { t: 'p', md: 'Over a one-chord vamp nothing harmonic happens, so players **make** motion: slide the whole line or voicing a half step **up or down** (a side-slip), stay there briefly, and resolve back. The return is what makes it sound intended.' },
+      { t: 'table', head: ['Move', 'Over Dm7', 'Effect'], rows: [
+        ['Slip up a half step', 'E♭ minor ideas for a beat or a bar', 'tense, then home'],
+        ['Slip down a half step', 'C♯ minor ideas', 'pulls back up like a leading tone'],
+        ['Planing', 'one voicing moved in parallel', 'the McCoy Tyner and Herbie Hancock comping sound'],
+        ['Approach chord', 'E♭m7 or E♭7 into Dm7 on the One', 'a chromatic push into the downbeat'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'In → out → in', note: 'D, then E♭, then D minor pent.', music: { notes: ['D4', 'F4', 'G4', 'A4', 'C5', 'Eb4', 'Gb4', 'Ab4', 'Bb4', 'Db5', 'D4', 'F4', 'A4'], beat: 0.2 } },
+        { label: 'Quartal planing', note: 'stacked 4ths up and down D Dorian', music: { voicings: [['D3', 'E4', 'A4', 'D5'], ['D3', 'F4', 'B4', 'E5'], ['D3', 'G4', 'C5', 'F5'], ['D3', 'F4', 'B4', 'E5'], ['D3', 'E4', 'A4', 'D5']], beat: 0.8 } },
+      ] },
+      { t: 'prog', key: 'Dm', tokens: ['Dm7', 'Dm7', 'Ebm7', 'Dm7'], beats: 4, bpm: 100, style: 'funk', caption: 'The whole band slips: two bars of Dm7, one a half step up, home on the One.' },
+      { t: 'note', kind: 'keys', md: 'Slip on weak beats or for a whole bar, but resolve on a strong beat, ideally the One. Rhythm sells it: play the outside idea with the same conviction and phrasing as the inside one.' },
+      { t: 'example', title: 'Side-slip a Dm7 vamp', steps: [
+        'Play a D minor pentatonic idea for a bar.',
+        'Repeat the same shape a half step up, E♭ minor pentatonic, on beats 3 and 4: every note rubs against the vamp.',
+        'Drop it back down onto the One of the next bar. The ear hears tension and release, not a wrong note.',
+      ], music: { notes: ['A4', 'G4', 'F4', 'D4', 'Bb4', 'Ab4', 'Gb4', 'Eb4', 'A4', 'F4', 'D4'], beat: 0.25 } },
+      { t: 'drill', skill: 'jazz.concepts', count: 3 },
+    ],
+    drills: ['jazz.concepts', 'soul.analysis'],
+  },
+
+  // ---------------------------------------------------------------- soul
+  {
+    id: 'soul.colours', title: 'R&B chord colours', tags: ['soul'], minutes: 3, level: 1,
+    summary: 'add9, maj9, m9, 6/9, 9sus4 and m11: the everyday chords of R&B and how they sound.',
+    blocks: [
+      { t: 'p', md: 'R&B rarely plays a plain triad. The everyday palette adds **one colour note**, usually the 9th, to make a chord sound soft and open.' },
+      { t: 'table', head: ['Chord', 'On C', 'Sound'], rows: [
+        ['add9', 'C E G D', 'pop and gospel sweetness, no 7th'],
+        ['maj9', 'C E G B D', 'lush: the neo-soul I or IV'],
+        ['m9', 'C E♭ G B♭ D', 'dark but warm, the default minor'],
+        ['6/9', 'C E G A D', 'stable and final, no leading tone'],
+        ['9sus4', 'C F G B♭ D', 'a dominant without the 3rd: the gospel V'],
+        ['m11', 'C E♭ G B♭ D F', 'open 4ths, very Rhodes'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'Cadd9', music: { chord: 'Cadd9' } },
+        { label: 'Cmaj9', music: { chord: 'Cmaj9' } },
+        { label: 'Cm9', music: { chord: 'Cm9' } },
+        { label: 'C6/9', music: { chord: 'C69' } },
+        { label: 'C9sus4', music: { chord: 'C9sus4' } },
+        { label: 'Cm11', music: { chord: 'Cm11' } },
+      ] },
+      { t: 'p', md: 'Voice them with the **9th next to the 3rd**: a whole step rubbing inside the voicing is the R&B sound. Root (and maybe the 5th) low in the left hand, the colour cluster in the right.' },
+      { t: 'keys', notes: ['C3', 'G3', 'D4', 'E4', 'G4', 'B4'], labels: ['R', '5', '9', '3', '5', '7'], caption: 'Cmaj9 with the 9th tucked a whole step under the 3rd.' },
+      { t: 'example', title: 'Turn C – Am – F – G into R&B', steps: [
+        'Add the 9th to each chord: Cmaj9, Am9, Fmaj9.',
+        'Swap the plain V for G9sus4 (= F/G), so no leading tone makes it sound like a hymn.',
+        'Keep G on top through all four: it is the 5th, then the ♭7, the 9th and the root. One note, four colours.',
+      ], music: { prog: ['Cmaj9', 'Am9', 'Fmaj9', 'G9sus4'], key: 'C', beats: 4, style: 'ballad' } },
+      { t: 'drill', skill: 'ear.chord.ext', count: 3 },
+    ],
+    drills: ['ear.chord.ext', 'gym.spell.ext', 'soul.concepts'],
+  },
+  {
+    id: 'soul.voicings', title: 'Neo-soul voicings', tags: ['soul', 'jazz'], minutes: 4, level: 2,
+    summary: 'Seconds inside the chord, stacked 4ths and triads over shells: how Rhodes players voice.',
+    blocks: [
+      { t: 'p', md: 'Neo-soul keyboard voicings are built for **closeness**: whole and half steps rubbing inside the chord, open 4ths on top, a shell (root and 7th, or a 10th) in the left hand.' },
+      { t: 'table', head: ['Voicing', 'Example', 'Recipe'], rows: [
+        ['Mu major', 'C D E G', 'a triad with the 9th next to the 3rd (the Steely Dan chord)'],
+        ['Quartal', 'E A D G B over E', 'three 4ths and a 3rd on top: Em11, the So What chord'],
+        ['Triad over shell', 'D F♯ A over C E B♭', 'the triad adds 9 ♯11 13: C13♯11'],
+        ['Minor cluster', 'E♭ F G over C B♭', '♭3 11 5 bunched over root and ♭7: Cm11'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'Mu major', music: { voicings: [['C3', 'C4', 'D4', 'E4', 'G4']], beat: 1.6 } },
+        { label: 'Quartal Em11', music: { voicings: [['E2', 'E4', 'A4', 'D5', 'G5', 'B5']], beat: 1.6 } },
+        { label: 'C13♯11', music: { voicings: [['C2', 'E3', 'Bb3', 'D4', 'F#4', 'A4']], beat: 1.6 } },
+        { label: 'Cm11 cluster', music: { voicings: [['C2', 'Bb3', 'Eb4', 'F4', 'G4']], beat: 1.6 } },
+      ] },
+      { t: 'p', md: 'Move them **by step and in parallel**: drag one cluster shape down the scale (planing), or slide the right hand a half step while the left holds. The ear follows the top voice, so make it a melody.' },
+      { t: 'prog', key: 'C', tokens: ['Ebmaj9', 'Dm9', 'Dbmaj9', 'Cmaj9'], beats: 4, style: 'ballad', caption: 'Chromatic planing into I: maj9, m9, maj9, maj9, each a half step lower. Colour, not function.' },
+      { t: 'example', title: 'Voice Dm9 – G13 – Cmaj9 neo-soul style', steps: [
+        'Left hand: root and 7th, D–C, G–F, C–B, while the roots fall in 5ths.',
+        'Right hand: a three-note cluster with a 2nd inside: E F A (9 ♭3 5), then E A B (13 9 3), then D E G (9 3 5).',
+        'E holds across the first two chords: a common tone that ties the colours together.',
+      ], music: { voicings: [['D2', 'C3', 'E4', 'F4', 'A4'], ['G2', 'F3', 'E4', 'A4', 'B4'], ['C2', 'B2', 'D4', 'E4', 'G4']], beat: 1.4 } },
+      { t: 'drill', skill: 'gym.play.ext', count: 3 },
+    ],
+    drills: ['gym.play.ext', 'ear.chord.ext', 'jazz.ust'],
+  },
+  {
+    id: 'soul.backcycle', title: 'Gospel 7–3–6 & chained dominants', tags: ['soul', 'jazz'], minutes: 4, level: 3,
+    summary: 'Walking back from vii to I through secondary dominants and tritone subs: the gospel turnaround.',
+    blocks: [
+      { t: 'p', md: 'Gospel players count chords by scale degree: **7–3–6–2–5–1** is a chain of roots, each a 5th above the next, starting on the 7th degree. Make any link a dominant 7th and it becomes the V of the chord after it.' },
+      { t: 'table', head: ['Degree', 'Diatonic (C)', 'All dominants', 'Alternate tritone subs'], rows: [
+        ['7', 'Bø7', 'B7', 'B7'],
+        ['3', 'Em7', 'E7', 'B♭7'],
+        ['6', 'Am7', 'A7', 'A7'],
+        ['2', 'Dm7', 'D7', 'A♭7'],
+        ['5', 'G7', 'G7', 'G7'],
+        ['1', 'Cmaj7', 'C', 'C'],
+      ] },
+      { t: 'prog', key: 'C', tokens: ['Bm7b5', 'E7', 'Am7', 'D7', 'G7', 'Cmaj7'], beats: [2, 2, 2, 2, 4, 4], style: 'ballad', caption: '7–3–6–2–5–1 with secondary dominants on 3 and 2.' },
+      { t: 'prog', key: 'C', tokens: ['B7', 'Bb7', 'A7', 'Ab7', 'G7', 'Cmaj7'], beats: [2, 2, 2, 2, 4, 4], style: 'ballad', caption: 'Every other link tritone-subbed: dominants sliding down by half steps.' },
+      { t: 'p', md: 'Each link takes colour by where it goes: ♭9 and ♭13 on a dominant resolving to a minor chord (E7♭13 → Am), 9 and 13 on one resolving to a major or dominant chord (D13 → G13). The bass can walk chromatically between roots for an even busier line.' },
+      { t: 'listen', items: [{ label: 'With colour', note: 'Bø7 E7♭13 Am9 D13 G13 Cmaj9', music: { prog: ['Bm7b5', 'E7b13', 'Am9', 'D13', 'G13', 'Cmaj9'], key: 'C', beats: [2, 2, 2, 2, 4, 4], style: 'ballad' } }] },
+      { t: 'example', title: 'Back-cycle into any chord', steps: [
+        'Target: Am7 (vi in C). Its V is E7, the V of that is B7, and the V of that F♯7.',
+        'Play them in reverse on the beats before the target: F♯7 – B7 – E7 – Am7, two beats each.',
+        'Swap any link for its tritone sub (B7 → F7) and the bass turns chromatic: F♯7 – F7 – E7 – Am7.',
+      ], music: { prog: ['F#7', 'F7', 'E7', 'Am7'], key: 'C', beats: 2, style: 'ballad' } },
+      { t: 'drill', skill: 'gym.secondary', count: 3 },
+    ],
+    drills: ['gym.secondary', 'jazz.tritone', 'ear.prog.soul'],
+  },
+  {
+    id: 'soul.reharm', title: 'Reharmonising a melody, R&B style', tags: ['soul', 'jazz'], minutes: 5, level: 3,
+    summary: 'Keep the tune, change what is under it: one melody note over six chords, planing, approaches and the minor iv.',
+    blocks: [
+      { t: 'p', md: 'Reharmonising keeps the melody and changes the chords under it, the arranger\'s move for a second verse or a last chorus. The one rule: each melody note has to be a chord tone or a usable tension of the new chord.' },
+      { t: 'table', head: ['Chord under a melody E (key of C)', 'E is its…', 'Colour'], rows: [
+        ['C', '3rd', 'the original, plain'],
+        ['Am7', '5th', 'softer, minor'],
+        ['Fmaj7', 'maj 7th', 'lush'],
+        ['Em7', 'root', 'plain, a little sad'],
+        ['D9', '9th', 'bright, wants to go to G'],
+        ['B♭7♯11', '♯11', 'dark: the backdoor colour'],
+      ] },
+      { t: 'listen', items: [{ label: 'One E, six chords', music: { voicings: [['C3', 'G3', 'E4'], ['A2', 'G3', 'C4', 'E4'], ['F2', 'A3', 'C4', 'E4'], ['E2', 'D3', 'G3', 'E4'], ['D2', 'C3', 'F#3', 'E4'], ['Bb1', 'Ab3', 'D4', 'E4']], beat: 1.3 } }] },
+      { t: 'p', md: 'Three moves that sound instantly R&B:\n- **Plane**: harmonise a stepwise melody with one chord type (all m9 or all maj9) moving with it.\n- **Approach** any target from a half step above, with a dominant (D♭7 → C) or the same chord type (D♭maj9 → Cmaj9).\n- **Darken the IV**: IV → iv (Fmaj7 → Fm6) under a held melody note.' },
+      { t: 'prog', key: 'C', tokens: ['Cmaj7', 'Am7', 'Fmaj7', 'G7'], beats: 4, style: 'ballad', caption: 'Plain: I – vi – IV – V.' },
+      { t: 'prog', key: 'C', tokens: ['Cmaj9', 'Am9', 'Fmaj9', 'Fm6', 'Em7', 'A7b13', 'Dm9', 'Db9'], beats: [4, 4, 2, 2, 2, 2, 2, 2], style: 'ballad', caption: 'Reharmonised: ninths, IV → iv, iii–VI7, and D♭9 (tritone sub) back to I.' },
+      { t: 'example', title: 'Reharmonise a held E in C', steps: [
+        'The melody holds E for four bars. Chords that carry it: C, Am7, Fmaj7, Em7, D9, B♭7♯11.',
+        'Choose a path that still goes somewhere: Cmaj7 → B♭7♯11 → Am7 → D9. The bass falls C – B♭ – A, then rises a 4th to D.',
+        'Every chord changes what the same E means; the melody seems to glow differently on each.',
+      ], music: { voicings: [['C3', 'B3', 'E4'], ['Bb2', 'Ab3', 'D4', 'E4'], ['A2', 'G3', 'C4', 'E4'], ['D3', 'F#3', 'C4', 'E4']], beat: 1.4 } },
+      { t: 'drill', skill: 'soul.analysis', count: 3 },
+    ],
+    drills: ['soul.analysis', 'jazz.analysis', 'ear.prog.soul'],
+  },
+
+  // ---------------------------------------------------------------- bach
+  {
+    id: 'bach.species', title: 'Two voices: note against note', tags: ['bach'], minutes: 4, level: 1,
+    summary: 'First-species counterpoint: consonances only, the four kinds of motion, and why contrary motion rules.',
+    blocks: [
+      { t: 'p', md: 'Counterpoint starts with two lines, one note against one. Every vertical interval must be a **consonance**: unison, 3rd, 5th, 6th or octave (or a compound of one). Perfect consonances (1 5 8) are hollow and final; imperfect ones (3 6) are full and keep the music moving.' },
+      { t: 'table', head: ['Motion', 'The two voices', 'Rule of thumb'], rows: [
+        ['Contrary', 'move in opposite directions', 'best: the lines stay independent'],
+        ['Oblique', 'one holds, one moves', 'good'],
+        ['Similar', 'same direction, different intervals', 'fine, but not into a 5th or octave in the outer voices'],
+        ['Parallel', 'same direction, same interval', '3rds and 6ths: a few in a row; 5ths and octaves: never'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'Parallel 5ths', note: 'hollow, the lines fuse', music: { voicings: [['C3', 'G3'], ['D3', 'A3'], ['E3', 'B3'], ['F3', 'C4']], beat: 0.7 } },
+        { label: 'Parallel 6ths', note: 'sweet', music: { voicings: [['C3', 'A3'], ['D3', 'B3'], ['E3', 'C4'], ['F3', 'D4']], beat: 0.7 } },
+        { label: 'Mostly contrary', music: { voicings: [['C3', 'C4'], ['D3', 'B3'], ['E3', 'G3'], ['F3', 'A3'], ['E3', 'C4'], ['D3', 'B3'], ['C3', 'C4']], beat: 0.7 } },
+      ] },
+      { t: 'staff', chords: [
+        { notes: ['C3', 'C4'], label: '8' }, { notes: ['D3', 'B3'], label: '6' }, { notes: ['E3', 'G3'], label: '3' }, { notes: ['F3', 'A3'], label: '3' },
+        { notes: ['E3', 'C4'], label: '6' }, { notes: ['D3', 'B3'], label: '6' }, { notes: ['C3', 'C4'], label: '8' },
+      ], caption: 'Note against note: perfect consonances at the ends, imperfect ones in between.' },
+      { t: 'p', md: 'The classic rules: begin and end on a unison, 5th or octave; approach the final octave by step from both sides (6 → 8, the leading tone rising); keep each line mostly stepwise, answering a leap with a step back the other way; and give the line one high point.' },
+      { t: 'example', title: 'Check a two-voice phrase', steps: [
+        'Name every vertical interval: 8 6 3 3 6 6 8.',
+        'Check each neighbouring pair: two perfect intervals in a row with both voices moving the same way? None, so no parallels.',
+        'The ending 6 → 8 has the upper voice B → C and the lower D → C: contrary motion into the final octave.',
+      ], music: { voicings: [['C3', 'C4'], ['D3', 'B3'], ['E3', 'G3'], ['F3', 'A3'], ['E3', 'C4'], ['D3', 'B3'], ['C3', 'C4']], beat: 0.75 } },
+      { t: 'drill', skill: 'ear.motion', count: 3 },
+    ],
+    drills: ['ear.motion', 'bach.vl', 'bach.concepts'],
+  },
+  {
+    id: 'bach.chorale', title: 'Harmonising a chorale melody', tags: ['bach'], minutes: 5, level: 2,
+    summary: 'Melody first, cadences next, then the bass, inner voices last: the order Bach\'s students worked in.',
+    blocks: [
+      { t: 'p', md: 'Given a hymn tune, a chorale harmonisation adds alto, tenor and bass beneath it. Work **from the outside in**: phrase endings first, then a bass line against the melody, then the inner voices.' },
+      { t: 'table', head: ['Step', 'What to do'], rows: [
+        ['1. Cadences', 'each fermata gets a cadence: authentic (V–I), half (→ V) or deceptive (V–vi)'],
+        ['2. Bass', 'write it against the melody in mostly contrary motion; check the outer voices for 5ths and octaves'],
+        ['3. Chords', 'name the chord each soprano–bass pair implies; a 3rd or 6th apart leaves a choice'],
+        ['4. Inner voices', 'hold common tones, move the rest by step, upper voices within an octave of each other'],
+        ['5. Check', 'leading tone up, 7ths down, no parallels, no doubled leading tone'],
+      ] },
+      { t: 'staff', chords: [
+        { notes: ['C3', 'C4', 'E4', 'G4'], label: 'I' }, { notes: ['F2', 'C4', 'F4', 'A4'], label: 'IV' },
+        { notes: ['G2', 'B3', 'D4', 'G4'], label: 'V' }, { notes: ['C3', 'C4', 'E4', 'G4'], label: 'I' },
+      ], caption: 'I – IV – V – I in four parts: the tenor\'s B rises to C, the bass moves against the soprano.' },
+      { t: 'note', kind: 'writing', md: 'One soprano note can be harmonised several ways: E is the 3rd of C, the 5th of Am, the root of Em. Choose by where the phrase is going: tonic early, predominant just before the cadence, dominant at it.' },
+      { t: 'example', title: 'Harmonise the melody G – A – G – G', steps: [
+        'The last two notes sit at the fermata, so plan V – I there: G is the root of V and the 5th of I.',
+        'The A before them is the 3rd of IV: I – IV – V – I, a textbook phrase.',
+        'Bass C – F – G – C moves against the melody (the bass falls to F as the soprano rises to A). The tenor holds C from I to IV, steps down to B, the leading tone, and rises back to C at the cadence.',
+      ], music: { voicings: [['C3', 'C4', 'E4', 'G4'], ['F2', 'C4', 'F4', 'A4'], ['G2', 'B3', 'D4', 'G4'], ['C3', 'C4', 'E4', 'G4']], beat: 1.2 } },
+      { t: 'drill', skill: 'bach.vl', count: 4 },
+    ],
+    drills: ['bach.vl', 'bach.figured', 'bach.analysis'],
+  },
+  {
+    id: 'bach.invention', title: 'The two-part invention', tags: ['bach'], minutes: 4, level: 2,
+    summary: 'One motive, two hands: imitation, sequence and a trip to the dominant on a single page.',
+    blocks: [
+      { t: 'p', md: 'Bach\'s Inventions teach composing from a **single motive**: state it, imitate it in the other hand, develop it through sequences, visit related keys and come home.' },
+      { t: 'table', head: ['Section', 'What happens'], rows: [
+        ['Exposition', 'the motive in one hand, imitated an octave lower in the other'],
+        ['Episode', 'sequences of the motive (fragmented, inverted) that modulate'],
+        ['Middle entries', 'the motive in related keys: V, then vi in Invention No. 1'],
+        ['Return', 'the motive back in the tonic and a final cadence'],
+      ] },
+      { t: 'listen', items: [
+        { label: 'Motive', note: 'Invention No. 1', music: { notes: ['C4', 'D4', 'E4', 'F4', 'D4', 'E4', 'C4', 'G4'], beat: 0.2 } },
+        { label: 'Inverted', note: 'every step turned upside down', music: { notes: ['G4', 'F4', 'E4', 'D4', 'F4', 'E4', 'G4', 'C4'], beat: 0.2 } },
+      ] },
+      { t: 'p', md: 'The **sequence** is the engine: repeat a fragment a step lower (or higher) each time over a bass moving in 5ths and you reach a new key in a few beats. Bach marks each arrival with a cadence and a fresh entry of the motive.' },
+      { t: 'example', title: 'Spin a sequence from the motive', steps: [
+        'Take its first four notes, C D E F.',
+        'Start them again a step lower each time: C D E F, B C D E, A B C D, G A B C, over a bass falling in 5ths.',
+        'Stop on the group that sits in the new key, cadence there, and enter the whole motive in that key.',
+      ], music: { notes: ['C4', 'D4', 'E4', 'F4', 'B3', 'C4', 'D4', 'E4', 'A3', 'B3', 'C4', 'D4', 'G3', 'A3', 'B3', 'C4'], beat: 0.2 } },
+      { t: 'drill', skill: 'bach.concepts', count: 3 },
+    ],
+    drills: ['bach.concepts', 'bach.analysis', 'ear.prog.bach'],
+  },
+
+  // ---------------------------------------------------------------- rhythm
+  {
+    id: 'rhythm.syncopation', title: 'Syncopation, ties & anticipations', tags: ['rhythm', 'funk'], minutes: 3, level: 1,
+    summary: 'Accents off the beat: pushes, ties over the bar line, and how to count them.',
+    blocks: [
+      { t: 'p', md: '**Syncopation** puts the accent where the beat is not: on an "&", an "e" or an "a", or by tying an off-beat note over the next beat so the beat itself is silent. The pulse keeps going in your body while the music leans against it.' },
+      { t: 'rhythm', cells: ['1000', '1000', '1000', '1000'], bpm: 90, caption: 'On the beat: 1 2 3 4.' },
+      { t: 'rhythm', cells: ['1010', '0010', '1010', '0010'], bpm: 90, caption: 'Off-beat 8ths: 2 and 4 are left silent and their "&"s carry the accent.' },
+      { t: 'rhythm', cells: ['1000', '0010', '0000', '1000'], bpm: 90, caption: 'The push: the "&" of 2 held through beat 3. Beat 3 is felt, not played.' },
+      { t: 'table', head: ['Device', 'Where', 'Count it'], rows: [
+        ['Off-beat', 'on the "&"', '"1 & 2 &…", accent the &s'],
+        ['Anticipation', 'an off-beat note tied into a strong beat', 'the change arrives an 8th early, on the "&" of 4'],
+        ['Push', 'a hit on the "&" before a beat', 'big-band kicks, funk hits'],
+        ['Displacement', 'a figure shifted by an 8th or a 16th', 'same notes, new accents'],
+      ] },
+      { t: 'example', title: 'Count a push over the bar line', steps: [
+        'Count 8ths: "1 & 2 & 3 & 4 &".',
+        'Play on 1, then on the "&" of 4, and hold it through the next 1.',
+        'The next bar\'s chord now arrives an 8th early: an anticipation, the usual way jazz and pop phrase a chord change.',
+      ] },
+      { t: 'drill', skill: 'rhythm.tap.sync', count: 3 },
+    ],
+    drills: ['rhythm.tap.sync', 'rhythm.tap.16'],
+  },
+  {
+    id: 'rhythm.swing', title: 'Swing feel', tags: ['rhythm', 'jazz'], minutes: 3, level: 2,
+    summary: 'Long–short 8ths from the triplet, the weight on 2 and 4, and where in the beat to sit.',
+    blocks: [
+      { t: 'p', md: 'Swing 8ths are not even. Each beat is felt as a **triplet**, and the two 8ths take the first two-thirds and the last third: **long–short**. At slow and medium tempos the ratio is near 2:1; as the tempo rises it straightens toward even 8ths.' },
+      { t: 'rhythm', cells: ['111', '111', '111', '111'], per: 3, bpm: 100, caption: 'The triplet grid that swing sits on.' },
+      { t: 'rhythm', cells: ['101', '101', '101', '101'], per: 3, bpm: 100, caption: 'Swung 8ths: the 1st and 3rd note of each triplet.' },
+      { t: 'rhythm', cells: ['100', '101', '100', '101'], per: 3, bpm: 100, caption: 'The ride-cymbal pattern: "ding, ding-a ding, ding-a".' },
+      { t: 'table', head: ['Element', 'What it is'], rows: [
+        ['Ratio', 'about 2:1 at medium tempo, straighter when fast'],
+        ['Accent', 'beats 2 and 4 (hi-hat, finger snaps); in lines, the off-beat 8ths'],
+        ['Placement', 'the bass on top of the beat, the ride a hair behind or with it: the pocket'],
+        ['Shuffle', 'the same triplet long–short, played heavier: blues and R&B'],
+      ] },
+      { t: 'example', title: 'Swing a scale', steps: [
+        'Set a slow click and feel it as 2 and 4.',
+        'Play a scale in 8ths, long on the beat and short on the "&": DAH-da DAH-da.',
+        'Accent the short "&"s lightly and connect the notes: the bebop phrasing that makes a line swing.',
+      ] },
+      { t: 'drill', skill: 'rhythm.tap.shuffle', count: 2 },
+    ],
+    drills: ['rhythm.tap.shuffle'],
+  },
+  {
+    id: 'rhythm.odd', title: 'Odd meters: 5, 7 and grouping', tags: ['rhythm', 'jazz'], minutes: 4, level: 3,
+    summary: 'Counting 5/4 and 7/8 as groups of 2s and 3s, and how each grouping feels.',
+    blocks: [
+      { t: 'p', md: 'Odd meters are counted as **mixtures of 2s and 3s**. 5/4 is 3+2 ("Take Five") or 2+3; 7/8 is usually 2+2+3 or 3+2+2. The longer group gives a lilt, and the accent at the start of each group gives the bar its shape.' },
+      { t: 'rhythm', cells: ['1', '0', '0', '1', '0'], per: 1, bpm: 160, caption: '5/4 as 3+2: accents on 1 and 4.' },
+      { t: 'rhythm', cells: ['1', '0', '1', '0', '1', '0', '0'], per: 1, bpm: 240, caption: '7/8 as 2+2+3; each click is an 8th.' },
+      { t: 'rhythm', cells: ['1', '0', '0', '1', '0', '1', '0'], per: 1, bpm: 240, caption: '7/8 as 3+2+2.' },
+      { t: 'table', head: ['Meter', 'Groupings', 'Heard in'], rows: [
+        ['5/4', '3+2 or 2+3', '"Take Five", the Mission: Impossible theme'],
+        ['7/8 and 7/4', '2+2+3, 3+2+2, 4+3', 'Balkan folk, "Money" (7/4)'],
+        ['9/8', '2+2+2+3, against 3+3+3', '"Blue Rondo à la Turk"'],
+        ['11/8, 13/8…', 'longer chains of 2s and 3s', 'Balkan dance, prog and fusion'],
+      ] },
+      { t: 'example', title: 'Feel 7/8 as 2+2+3', steps: [
+        'Count the groups, not the 8ths: "1-2, 1-2, 1-2-3".',
+        'Tap your foot on each group\'s first note: short, short, long.',
+        'Place chord hits on the group starts. Once short-short-long is in your body, the bar line takes care of itself.',
+      ] },
+      { t: 'drill', skill: 'rhythm.tap.sync', count: 2 },
+    ],
+    drills: ['rhythm.tap.sync', 'rhythm.tap.16'],
+  },
+  {
+    id: 'rhythm.cross', title: 'Cross-rhythm, hemiola & polyrhythm', tags: ['rhythm', 'bach', 'funk'], minutes: 4, level: 3,
+    summary: 'Three against two, three against four, and the hemiola that Bach and Afro-Cuban music share.',
+    blocks: [
+      { t: 'p', md: 'A **cross-rhythm** sets a second pulse against the beat. **3:2**, three even notes in the time of two beats, underlies 6/8 bell patterns, the hemiola at Baroque cadences and countless piano grooves.' },
+      { t: 'rhythm', cells: ['101', '010'], per: 3, bpm: 70, caption: '3 against 2: three even notes across two clicks ("nice cup of tea").' },
+      { t: 'rhythm', cells: ['100', '010', '001', '000'], per: 3, bpm: 90, caption: '3 against 4: three even notes across a bar of four (half-note triplets).' },
+      { t: 'rhythm', cells: ['1001', '0010', '0100', '1010'], bpm: 96, caption: 'Groups of three 16ths (3+3+3+3+2+2): a funk and drum-and-bass figure that cuts across the beat.' },
+      { t: 'p', md: 'The **hemiola** regroups two bars of 3/4 as three bars of 2/4: | 1 2 3 | 1 2 3 | becomes | 1 2 | 1 2 | 1 2 |. Baroque composers use it to broaden the approach to a cadence. It is the same 3:2 tension, stretched over two bars.' },
+      { t: 'rhythm', cells: ['1', '0', '1', '0', '1', '0'], per: 1, bpm: 132, caption: 'Hemiola: six beats grouped 2+2+2 against two bars of 3.' },
+      { t: 'example', title: 'Play 3 against 2 with two hands', steps: [
+        'Count a triplet grid, "1 2 3 4 5 6", across two beats.',
+        'Left hand on 1 and 4 (the two beats), right hand on 1, 3 and 5 (the three).',
+        'Together: both, right, left, right: "nice cup of tea". Speed it up until the two pulses feel independent.',
+      ] },
+      { t: 'drill', skill: 'rhythm.clave', count: 2 },
+    ],
+    drills: ['rhythm.clave', 'rhythm.tap.sync'],
+  },
+];

@@ -72,7 +72,7 @@ them away completely).
 
 Every drill remembers each answer per item and leans new questions toward what you miss. Tap the ✓/✗ score for
 the drill's weak spots, a **Weak spots** switch (ask mostly what you miss, everywhere) and, once a level is down,
-an ↑ to the next one (or a step back when most recent answers are misses). The **?** opens the lessons for the drill.
+an ↑ to the next one (or a step back when most recent answers are misses). The **?** opens the lessons for the drill, and from there all 61: six categories (core harmony, jazz, funk, R&B/gospel, Bach & counterpoint, rhythm), each a path from basics to advanced, with playable demos and a Next button to follow the path.
 
 The **Sound** menu in the header switches between modular racks, factory DX7 voices and your saved patches; ⚙
 chooses whether exercises play back with your sound or a plain practice piano, and sets volume, reverb and

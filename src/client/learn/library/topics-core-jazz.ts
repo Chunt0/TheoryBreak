@@ -2,7 +2,7 @@ import type { Topic } from './types';
 
 export const CORE_JAZZ_TOPICS: Topic[] = [
   {
-    id: 'core.tensions', title: 'Extensions, tensions & avoid notes', tags: ['core', 'jazz'], minutes: 4,
+    id: 'core.tensions', title: 'Extensions, tensions & avoid notes', tags: ['core', 'jazz'], minutes: 4, level: 2,
     summary: 'Which tensions each chord family takes, and why some notes are "avoid" notes.',
     blocks: [
       { t: 'p', md: 'Tensions are the notes above the 7th: **9, 11, 13** and their alterations. A tension is *available* when it sits a whole step (or more) above a chord tone. A note a **minor 9th above a chord tone** is an *avoid note* — except on dominants, where the ♭9 rub is the point.' },
@@ -31,7 +31,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['gym.spell.ext', 'ear.chord.ext', 'ear.chord.alt'],
   },
   {
-    id: 'core.chordscale', title: 'Chord–scale theory', tags: ['core', 'jazz'], minutes: 4,
+    id: 'core.chordscale', title: 'Chord–scale theory', tags: ['core', 'jazz'], minutes: 4, level: 2,
     summary: 'Pick the scale from the chord\'s quality and its function.',
     blocks: [
       { t: 'p', md: 'Every chord implies a scale: chord tones + available tensions + passing notes. Choose by **quality and function**, not by root alone — Dm7 as ii is Dorian, Em7 as iii is Phrygian, Am7 as vi is Aeolian.' },
@@ -58,7 +58,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.chordscale', 'ear.modes', 'gym.scales.play'],
   },
   {
-    id: 'core.melodic', title: 'Melodic-minor harmony', tags: ['core', 'jazz'], minutes: 5,
+    id: 'core.melodic', title: 'Melodic-minor harmony', tags: ['core', 'jazz'], minutes: 5, level: 3,
     summary: 'One scale, seven essential jazz colours.',
     blocks: [
       { t: 'p', md: 'Melodic minor (1 2 ♭3 4 5 6 7) has no avoid notes on its tonic, and its modes supply the most-used colour scales in jazz. Learn **one scale with seven homes**:' },
@@ -88,7 +88,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.mm', 'gym.keys7.mel', 'ear.scales.jazz'],
   },
   {
-    id: 'core.symmetric', title: 'Diminished & whole-tone systems', tags: ['core', 'jazz', 'bach'], minutes: 4,
+    id: 'core.symmetric', title: 'Diminished & whole-tone systems', tags: ['core', 'jazz', 'bach'], minutes: 4, level: 3,
     summary: 'Three diminished chords, two whole-tone scales — and why they connect to every dominant.',
     blocks: [
       { t: 'p', md: 'The **diminished scale** alternates half and whole steps and repeats every minor 3rd: only **three** distinct diminished scales (and three dim7 chords) exist. Half-whole from a dominant root fits **13♭9** (♭9 ♯9 3 ♯11 5 13 ♭7); whole-half from a dim7 root fits the dim7.' },
@@ -114,7 +114,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.dim', 'ear.chord.alt', 'ear.scales.jazz'],
   },
   {
-    id: 'jazz.iivi', title: 'ii–V–I & guide tones', tags: ['jazz'], minutes: 4,
+    id: 'jazz.iivi', title: 'ii–V–I & guide tones', tags: ['jazz'], minutes: 4, level: 1,
     summary: 'The cadence of tonal jazz and the half-step guide-tone line inside it.',
     blocks: [
       { t: 'p', md: 'Predominant → dominant → tonic with roots in 4ths. The **guide tones** (3rds and 7ths) move by half step or not at all: the **7th** of each chord falls to the **3rd** of the next; the **3rd** holds and becomes the next **7th**.' },
@@ -136,7 +136,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.guide', 'gym.shells', 'ear.prog.jazz'],
   },
   {
-    id: 'jazz.minor', title: 'The minor ii–V–i', tags: ['jazz'], minutes: 3,
+    id: 'jazz.minor', title: 'The minor ii–V–i', tags: ['jazz'], minutes: 3, level: 1,
     summary: 'Half-diminished ii, V7♭9, minor-6 tonic.',
     blocks: [
       { t: 'p', md: 'Minor cadences come from **harmonic minor**: iiø7 – V7♭9 – i. The tonic is usually **m6** or **m(maj7)** (melodic minor): an m7 tonic\'s ♭7 undercuts the leading tone you just heard in V.' },
@@ -157,7 +157,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.relatedii', 'gym.keys7.harm', 'ear.prog.jazz'],
   },
   {
-    id: 'jazz.tritone', title: 'Tritone substitution', tags: ['jazz', 'core'], minutes: 4,
+    id: 'jazz.tritone', title: 'Tritone substitution', tags: ['jazz', 'core'], minutes: 4, level: 2,
     summary: 'subV7: same tritone, chromatic bass, altered colour.',
     blocks: [
       { t: 'p', md: 'Replace any dominant with the dominant a tritone away: **D♭7 for G7**. Both contain F and B (C♭) — each one\'s 3rd is the other\'s 7th. The sub\'s root is the original\'s ♭5 and its 5th is the original\'s ♭9, so it *is* an altered G7 with a chromatic bass (D–D♭–C).' },
@@ -177,7 +177,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.tritone', 'ear.motion', 'ear.prog.subs'],
   },
   {
-    id: 'jazz.secondary', title: 'Secondary dominants & backcycling', tags: ['jazz', 'core'], minutes: 4,
+    id: 'jazz.secondary', title: 'Secondary dominants & backcycling', tags: ['jazz', 'core'], minutes: 4, level: 2,
     summary: 'Tonicise any chord; chain dominants backwards round the cycle.',
     blocks: [
       { t: 'p', md: 'Any diatonic major or minor chord can be **tonicised** by its own V7 (plus its related ii). In C: A7→Dm, B7→Em, C7→F, D7→G, E7→Am.' },
@@ -195,7 +195,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['gym.secondary', 'jazz.relatedii', 'jazz.keycenter'],
   },
   {
-    id: 'jazz.turnarounds', title: 'Turnarounds', tags: ['jazz'], minutes: 3,
+    id: 'jazz.turnarounds', title: 'Turnarounds', tags: ['jazz'], minutes: 3, level: 1,
     summary: 'Five ways back to the top.',
     blocks: [
       { t: 'p', md: 'A turnaround fills the last two bars of a form (or of an A section) and leads back to I. Every version decorates **I – vi – ii – V**: substitute a chord with one that shares notes (iii for I), make chords dominant to point harder at the next one (VI7 = V7/ii), swap dominants for their tritone subs, or pass through a diminished chord.' },
@@ -220,7 +220,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['ear.prog.jazz', 'jazz.dim', 'jazz.analysis'],
   },
   {
-    id: 'jazz.backdoor', title: 'Backdoor & modal interchange', tags: ['jazz', 'soul', 'core'], minutes: 4,
+    id: 'jazz.backdoor', title: 'Backdoor & modal interchange', tags: ['jazz', 'soul', 'core'], minutes: 4, level: 2,
     summary: 'Borrowing from the parallel minor: iv7–♭VII7, ♭VI, ♭III, ♭II.',
     blocks: [
       { t: 'p', md: 'Modal interchange borrows chords from modes on the **same tonic**. The essential pair is **iv7 – ♭VII7 → I**, the **backdoor ii–V**: B♭7\'s A♭ falls to G, its F falls to E, the bass rises a whole step into C.' },
@@ -244,7 +244,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['gym.interchange', 'ear.prog.subs', 'ear.prog.soul'],
   },
   {
-    id: 'jazz.rhythm', title: 'Rhythm changes', tags: ['jazz'], minutes: 3,
+    id: 'jazz.rhythm', title: 'Rhythm changes', tags: ['jazz'], minutes: 3, level: 2,
     summary: 'AABA in B♭: turnarounds in the A, extended dominants in the bridge.',
     blocks: [
       { t: 'p', md: 'Gershwin\'s "I Got Rhythm" gave bebop its second form after the blues: **32 bars, AABA, B♭**. A sections cycle I–VI–ii–V turnarounds (endlessly substituted); bars 5–8 typically run B♭7 – E♭7 – E°7 – B♭/F – G7 – Cm7 F7 – B♭. The bridge is extended dominants, two bars each.' },
@@ -261,7 +261,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.analysis', 'ear.prog.jazz'],
   },
   {
-    id: 'jazz.blues', title: 'Jazz blues & Bird blues', tags: ['jazz'], minutes: 4,
+    id: 'jazz.blues', title: 'Jazz blues & Bird blues', tags: ['jazz'], minutes: 4, level: 2,
     summary: 'From I–IV–V to chains of ii–Vs.',
     blocks: [
       { t: 'p', md: 'The jazz blues keeps the 12-bar I–IV–I–V shape but adds ii–Vs and a passing diminished:' },
@@ -281,7 +281,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.keycenter', 'jazz.analysis', 'jazz.relatedii'],
   },
   {
-    id: 'jazz.coltrane', title: 'Coltrane changes', tags: ['jazz'], minutes: 4,
+    id: 'jazz.coltrane', title: 'Coltrane changes', tags: ['jazz'], minutes: 4, level: 3,
     summary: 'Three key centres a major third apart.',
     blocks: [
       { t: 'p', md: '"Giant Steps" moves between **B, G and E♭** — an augmented triad of keys — each reached by its own V7. Dividing the octave symmetrically breaks the gravity of a single tonic.' },
@@ -298,7 +298,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['ear.prog.subs', 'ear.motion'],
   },
   {
-    id: 'jazz.modal', title: 'Modal jazz & quartal harmony', tags: ['jazz', 'funk'], minutes: 3,
+    id: 'jazz.modal', title: 'Modal jazz & quartal harmony', tags: ['jazz', 'funk'], minutes: 3, level: 2,
     summary: 'Static modes, characteristic notes, stacked fourths.',
     blocks: [
       { t: 'p', md: 'Modal jazz replaced fast changes with long stretches of a mode — "So What" and "Impressions": 16 bars D Dorian, 8 bars E♭ Dorian, 8 bars D Dorian. Without cadences, colour comes from the **characteristic note** and **quartal voicings**.' },
@@ -318,7 +318,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['ear.modes', 'jazz.bebop'],
   },
   {
-    id: 'jazz.ust', title: 'Upper-structure triads', tags: ['jazz'], minutes: 4,
+    id: 'jazz.ust', title: 'Upper-structure triads', tags: ['jazz'], minutes: 4, level: 3,
     summary: 'Triads over a 3–♭7 shell: the fastest way to voice and hear tensions.',
     blocks: [
       { t: 'p', md: 'Guide tones (3–♭7) in the left hand, a **major triad** in the right. Triads are easy to grab and easy to *hear*, so they are the quickest route to specific dominant colours.' },
@@ -346,7 +346,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.ust', 'ear.chord.alt'],
   },
   {
-    id: 'jazz.voicings', title: 'Voicings: shells, rootless, drop 2', tags: ['jazz', 'soul'], minutes: 4,
+    id: 'jazz.voicings', title: 'Voicings: shells, rootless, drop 2', tags: ['jazz', 'soul'], minutes: 4, level: 1,
     summary: 'How chord tones are distributed — and why register matters.',
     blocks: [
       { t: 'p', md: '**Shells** (R–3–7 / R–7–3) define a chord in three notes. **Rootless A/B voicings** leave the root to the bass and stack 3–5–7–9 or 7–9–3–5, alternating so ii–V–I moves by step. **Drop 2**: take a close 4-note voicing and drop the second voice from the top an octave — open and orchestral.' },
@@ -363,7 +363,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['gym.shells', 'gym.name', 'gym.play.ext'],
   },
   {
-    id: 'jazz.bebop', title: 'Bebop language', tags: ['jazz'], minutes: 4,
+    id: 'jazz.bebop', title: 'Bebop language', tags: ['jazz'], minutes: 4, level: 2,
     summary: 'Targets, approach notes, enclosures, bebop scales.',
     blocks: [
       { t: 'p', md: 'Bebop lines are **targets** (chord tones, especially 3rds and 7ths on strong beats) plus the **approach notes** that lead to them.' },
@@ -383,7 +383,7 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['ear.melody.bebop', 'jazz.bebop', 'jazz.guide'],
   },
   {
-    id: 'jazz.reharm', title: 'Reharmonisation toolkit', tags: ['jazz', 'soul'], minutes: 5,
+    id: 'jazz.reharm', title: 'Reharmonisation toolkit', tags: ['jazz', 'soul'], minutes: 5, level: 3,
     summary: 'Eight moves to recolour a tune without breaking it.',
     blocks: [
       { t: 'table', head: ['Technique', 'Example', 'Why it works'], rows: [

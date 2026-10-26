@@ -4,7 +4,7 @@ import type { Topic } from './types';
 // diatonic harmony, modes, scale degrees, root motion and subdivision.
 export const FOUNDATION_TOPICS: Topic[] = [
   {
-    id: 'core.intervals', title: 'Intervals: size, quality, job', tags: ['core'], minutes: 5,
+    id: 'core.intervals', title: 'Intervals: size, quality, job', tags: ['core'], minutes: 5, level: 1,
     summary: 'Count letters for the size, semitones for the quality — then hear each interval by the job it does in a chord.',
     blocks: [
       { t: 'p', md: 'An interval has a **size** and a **quality**. The size counts letter names, both ends included: C→E is a 3rd (C D E), C→A a 6th. The quality counts semitones: unisons, 4ths, 5ths and octaves are *perfect*; 2nds, 3rds, 6ths and 7ths are *major* or *minor*. One semitone wider than major or perfect is *augmented*, one narrower than minor or perfect is *diminished*.' },
@@ -46,7 +46,7 @@ export const FOUNDATION_TOPICS: Topic[] = [
     drills: ['ear.int', 'ear.int.desc', 'ear.int.harm', 'ear.int.compound', 'gym.int.spell'],
   },
   {
-    id: 'core.sevenths', title: 'Seventh chords: build, spell, hear', tags: ['core'], minutes: 5,
+    id: 'core.sevenths', title: 'Seventh chords: build, spell, hear', tags: ['core'], minutes: 5, level: 1,
     summary: 'Every 7th chord is three choices — the 3rd, the 5th and the 7th — stacked one letter apart.',
     blocks: [
       { t: 'p', md: 'A 7th chord is a triad plus a 7th, stacked in 3rds, with **one letter per chord tone**: C E G B, never C E G C♭. Its quality comes from three choices: the **3rd** (major or minor), the **5th** (perfect, diminished or augmented) and the **7th** (major, minor or diminished).' },
@@ -79,7 +79,7 @@ export const FOUNDATION_TOPICS: Topic[] = [
     drills: ['ear.chord.7', 'gym.spell.7', 'gym.play.7', 'ear.chord.inv'],
   },
   {
-    id: 'core.diatonic', title: 'The 7th chords of a key', tags: ['core', 'jazz'], minutes: 5,
+    id: 'core.diatonic', title: 'The 7th chords of a key', tags: ['core', 'jazz'], minutes: 5, level: 1,
     summary: 'Stack 3rds on every scale degree: what each chord is, what it does, and the minor-key versions.',
     blocks: [
       { t: 'p', md: 'Harmonise a scale in 3rds and you get one 7th chord per degree. In major the pattern never changes: **Imaj7 ii7 iii7 IVmaj7 V7 vi7 viiø7**. Group them by **function**: *tonic* chords (I, iii, vi) share notes with I and feel at rest; *predominants* (ii, IV) lead away; *dominants* (V, vii) hold the tritone that resolves into I.' },
@@ -103,7 +103,7 @@ export const FOUNDATION_TOPICS: Topic[] = [
     drills: ['gym.keys7', 'gym.keys7.harm', 'gym.keys7.mel'],
   },
   {
-    id: 'core.modes', title: 'The modes of major', tags: ['core', 'jazz'], minutes: 5,
+    id: 'core.modes', title: 'The modes of major', tags: ['core', 'jazz'], minutes: 5, level: 2,
     summary: 'Seven scales from one set of notes — each with a single characteristic note that gives it away.',
     blocks: [
       { t: 'p', md: 'Start the major scale on each of its degrees and you get the seven modes. Don\'t think of them as "C major from D": treat each as its own scale on a fixed root and compare it with plain major or natural minor — one note gives it away.' },
@@ -134,7 +134,7 @@ export const FOUNDATION_TOPICS: Topic[] = [
     drills: ['ear.modes', 'gym.scales.play', 'jazz.chordscale'],
   },
   {
-    id: 'core.degrees', title: 'Scale degrees: hearing function', tags: ['core'], minutes: 4,
+    id: 'core.degrees', title: 'Scale degrees: hearing function', tags: ['core'], minutes: 4, level: 1,
     summary: 'Hear notes as positions in a key — 1 at rest, 7 pulling up, 4 leaning down — instead of as letter names.',
     blocks: [
       { t: 'p', md: 'Once a cadence fixes the key, every note has a **position** and a **tendency**. Name the position — the scale degree — not the letter: the same skill lets you hear melodies, bass lines and solos in any key, and it is how you take a line off a record.' },
@@ -161,7 +161,7 @@ export const FOUNDATION_TOPICS: Topic[] = [
     drills: ['ear.degree', 'ear.degree.chrom', 'ear.degree.minor', 'ear.melody'],
   },
   {
-    id: 'core.rootmotion', title: 'Root motion', tags: ['core', 'jazz', 'bach'], minutes: 4,
+    id: 'core.rootmotion', title: 'Root motion', tags: ['core', 'jazz', 'bach'], minutes: 4, level: 2,
     summary: 'Why some changes sound inevitable and others gentle: the distance between roots predicts the feel.',
     blocks: [
       { t: 'p', md: 'Harmony moves by its roots. Before you know a single chord quality, the distance between two roots tells you how strong the move feels — and it is the first thing to listen for in any progression.' },
@@ -188,7 +188,7 @@ export const FOUNDATION_TOPICS: Topic[] = [
     drills: ['ear.motion', 'ear.prog.jazz', 'jazz.analysis'],
   },
   {
-    id: 'rhythm.subdivision', title: 'Subdivision: counting the grid', tags: ['rhythm', 'funk'], minutes: 4,
+    id: 'rhythm.subdivision', title: 'Subdivision: counting the grid', tags: ['rhythm', 'funk'], minutes: 4, level: 1,
     summary: 'Count every 16th (or triplet) out loud and syncopation stops being guesswork.',
     blocks: [
       { t: 'p', md: 'Every beat divides into a **grid**: two 8ths ("1 &"), four 16ths ("1 e & a") or three triplets ("1 trip let"). A syncopation is just a note on a weak slot — the "e", the "a", or the "&" — usually with nothing on the strong slot that follows, so the accent seems to arrive early.' },

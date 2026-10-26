@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { SKILLS, SKILL_BY_ID } from '../src/client/learn/skills';
-import { TOPICS, TOPIC_BY_ID, renderMusic } from '../src/client/learn/library';
+import { ALL_TOPICS, PATHS, TAG_ORDER, TOPICS, TOPIC_BY_ID, pathOf, renderMusic } from '../src/client/learn/library';
 import { CONCEPTS, CONCEPT_HELP } from '../src/client/learn/gen/concepts';
 import { CHALLENGES } from '../src/client/learn/challenges';
 import { planSession, rankSkills } from '../src/client/learn/session';
 import { emptyProgress, recordAnswer, scheduleSkill, weightedPick } from '../src/client/learn/srs';
 import { keyFromName } from '../src/client/theory/keys';
 import { N, pc } from '../src/client/theory/core';
-import { progressionEvents, resolveChord } from '../src/client/learn/music';
+import { parsePitch, progressionEvents, resolveChord } from '../src/client/learn/music';
 import { PROGRESSIONS } from '../src/client/theory/progressions';
 import type { GenContext } from '../src/client/learn/types';
 
@@ -45,6 +45,38 @@ describe('library', () => {
       }
     }
     expect(TOPICS.length).toBeGreaterThanOrEqual(25);
+  });
+
+  test('each category is a path from basics to advanced, and every lesson is on its own', () => {
+    const onPath = TAG_ORDER.flatMap((tag) => PATHS[tag]);
+    expect(new Set(onPath).size).toBe(onPath.length);
+    expect(TOPICS.length).toBe(ALL_TOPICS.length);
+    for (const t of ALL_TOPICS) expect(PATHS[t.tags[0]]).toContain(t.id);
+    for (const tag of TAG_ORDER) {
+      const levels = PATHS[tag].map((id) => TOPIC_BY_ID[id].level);
+      expect(levels).toEqual([...levels].sort());
+      expect(new Set(levels)).toEqual(new Set([1, 2, 3]));
+      expect(levels.length).toBeGreaterThanOrEqual(6);
+    }
+    const w = pathOf('jazz.tritone')!;
+    expect(w.tag).toBe('jazz');
+    expect(w.prev!.id).toBe('jazz.secondary');
+    expect(w.next!.id).toBe('jazz.backdoor');
+    expect(pathOf('core.intervals')!.prev).toBeNull();
+  });
+
+  test('every written pitch in a lesson parses', () => {
+    const pitches = (m: any): string[] => ('notes' in m ? m.notes : 'voicings' in m ? m.voicings.flat() : 'from' in m ? [m.from] : []);
+    for (const t of TOPICS) {
+      for (const b of t.blocks) {
+        const all = b.t === 'keys' ? b.notes
+          : b.t === 'staff' ? b.chords.flatMap((c) => c.notes)
+          : b.t === 'listen' ? b.items.flatMap((it) => pitches(it.music))
+          : b.t === 'example' && b.music ? pitches(b.music) : [];
+        for (const p of all) expect(parsePitch(p), `${t.id}: ${p}`).not.toBeNull();
+        if (b.t === 'keys' && b.labels) expect(b.labels).toHaveLength(b.notes.length);
+      }
+    }
   });
 
   test('every topic reads as a lesson: explanation, a worked example, and drills', () => {

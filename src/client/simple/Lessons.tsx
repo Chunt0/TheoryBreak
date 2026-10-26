@@ -5,7 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { createStore, useMini } from '../app/createStore';
 import { store } from '../app/store';
-import { renderMusic, staffFromStrings, TAG_NAMES, TOPIC_BY_ID, TOPICS, type Block, type Tag } from '../learn/library';
+import { LEVEL_NAMES, pathOf, renderMusic, staffFromStrings, TAG_NAMES, TAG_ORDER, TOPIC_BY_ID, TOPICS, type Block } from '../learn/library';
 import { chordEvents, parsePitch } from '../learn/music';
 import { patternFromCells, type RhythmPattern } from '../theory/rhythm';
 import { Keyboard } from '../ui/Keyboard';
@@ -29,7 +29,6 @@ export const openLessons = (help: Help): void => lessons.set({ open: true, topic
 const closeLessons = (): void => lessons.set((l) => ({ ...l, open: false }));
 const showTopic = (topic: string | null): void => lessons.set((l) => ({ ...l, topic }));
 
-const TAG_ORDER: Tag[] = ['core', 'jazz', 'funk', 'soul', 'bach', 'rhythm'];
 /** "Intervals: size, quality, job" → "Intervals" for the strip of chips. */
 const short = (title: string) => title.split(/[:—]/)[0].trim();
 
@@ -73,6 +72,7 @@ export function Lessons() {
   // the drill's topics, then whatever lesson you wandered off to
   const strip = topic && !help.topics.includes(topic) ? [...help.topics, topic] : help.topics;
   const t = topic ? TOPIC_BY_ID[topic] : null;
+  const where = topic ? pathOf(topic) : null;
 
   return (
     <div
@@ -100,10 +100,20 @@ export function Lessons() {
       <div className="rk-g-body" ref={body}>
         {t ? (
           <>
+            {where ? <p className="s-lesson-where">{TAG_NAMES[where.tag]} · {where.n} of {where.of} · {LEVEL_NAMES[t.level]} · {t.minutes} min</p> : null}
             <h2>{t.title}</h2>
             <p className="rk-g-what">{t.summary}</p>
             {help.method?.length && help.topics.includes(t.id) ? <Method steps={help.method} /> : null}
             {t.blocks.map((b, i) => (b.t === 'drill' ? null : <div className="block" key={i}><BlockView b={b} /></div>))}
+            {where ? (
+              // along the category's path, basics to advanced
+              <nav className="s-lesson-next" aria-label={`More ${TAG_NAMES[where.tag]}`}>
+                {where.prev ? <button type="button" className="btn small ghost" onClick={() => showTopic(where.prev!.id)}>‹ {where.prev.title}</button> : <span />}
+                {where.next
+                  ? <button type="button" className="btn small" onClick={() => showTopic(where.next!.id)}>Next: {where.next.title} ›</button>
+                  : <button type="button" className="btn small" onClick={() => showTopic(null)}>All lessons</button>}
+              </nav>
+            ) : null}
           </>
         ) : (
           <Index help={help} />
@@ -129,14 +139,14 @@ function Index({ help }: { help: Help }) {
     return (
       <li key={id}>
         <button type="button" className="rk-help-link" onClick={() => showTopic(id)}>{t.title}</button>
-        <span className="faint"> · {t.minutes} min{seen[id] ? ' · read' : ''}</span>
+        <span className="faint"> · {LEVEL_NAMES[t.level]} · {t.minutes} min{seen[id] ? ' · read' : ''}</span>
       </li>
     );
   };
   return (
     <>
       <h2>Lessons</h2>
-      <p className="rk-g-what">Short, dense reads with examples you can hear. Jump in anywhere.</p>
+      <p className="rk-g-what">Short, dense reads with examples you can hear. Each category runs from basics to advanced; jump in anywhere, or follow one through.</p>
       {help.method?.length ? <Method steps={help.method} /> : null}
       {help.topics.length ? (
         <section>
@@ -145,7 +155,7 @@ function Index({ help }: { help: Help }) {
         </section>
       ) : null}
       {TAG_ORDER.map((tag) => {
-        // each topic sits under its first tag
+        // each topic sits under its first tag, in path order
         const list = TOPICS.filter((t) => t.tags[0] === tag);
         return list.length ? (
           <section key={tag}>

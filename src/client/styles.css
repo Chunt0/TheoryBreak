@@ -660,6 +660,9 @@ table.t th { color: var(--text-dim); font-weight: 650; font-size: 12.5px; text-t
 .s-method { padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); }
 .s-method ol { margin: 0; padding-left: 1.2em; color: var(--text); }
 .s-lesson-list { list-style: none; padding: 0 !important; display: flex; flex-direction: column; gap: 4px; }
+.s-lesson-where { margin: 0 0 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.s-lesson-next { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 18px 0 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.s-lesson-next .btn { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .s-stepper { display: inline-flex; align-items: center; height: 34px; gap: 2px; padding: 0 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-elev); font: 600 13.5px var(--font); }
 .s-stepper span { min-width: 62px; text-align: center; font-variant-numeric: tabular-nums; }

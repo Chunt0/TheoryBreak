@@ -2,7 +2,7 @@ import type { Topic } from './types';
 
 export const SOUL_BACH_TOPICS: Topic[] = [
   {
-    id: 'funk.harmony', title: 'Funk harmony', tags: ['funk'], minutes: 4,
+    id: 'funk.harmony', title: 'Funk harmony', tags: ['funk'], minutes: 4, level: 2,
     summary: 'Static vamps, dominant colour, Dorian minor, side-slips.',
     blocks: [
       { t: 'p', md: 'Funk treats harmony as **colour over a groove** — one or two chords for minutes at a time.' },
@@ -20,7 +20,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['soul.analysis', 'soul.concepts', 'ear.chord.ext'],
   },
   {
-    id: 'funk.groove', title: 'The 16th-note groove', tags: ['funk', 'rhythm'], minutes: 4,
+    id: 'funk.groove', title: 'The 16th-note groove', tags: ['funk', 'rhythm'], minutes: 4, level: 1,
     summary: 'The One, the e and the a: syncopation over a continuous grid.',
     blocks: [
       { t: 'p', md: 'Funk lives on a **continuous 16th grid**. Accents on the **e** and **a** (2nd and 4th 16ths of a beat) create push; beat 1 — **the One** — anchors everything.' },
@@ -42,7 +42,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['rhythm.tap.funk', 'rhythm.ear.funk', 'rhythm.tap.sync'],
   },
   {
-    id: 'soul.neo', title: 'Neo-soul & R&B harmony', tags: ['soul'], minutes: 4,
+    id: 'soul.neo', title: 'Neo-soul & R&B harmony', tags: ['soul'], minutes: 4, level: 2,
     summary: 'Extended chords used for colour, soft dominants, stepwise planing.',
     blocks: [
       { t: 'p', md: 'Neo-soul uses jazz extensions **non-functionally**: maj9, m9, m11 and 13sus4 chords moving by step or in parallel, cadences that avoid plain V7.' },
@@ -60,7 +60,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['ear.prog.soul', 'soul.analysis', 'ear.chord.ext'],
   },
   {
-    id: 'soul.gospel', title: 'Gospel harmony', tags: ['soul'], minutes: 4,
+    id: 'soul.gospel', title: 'Gospel harmony', tags: ['soul'], minutes: 4, level: 2,
     summary: 'Passing diminished, walk-ups, I7–IV–iv–I, chained ii–Vs.',
     blocks: [
       { t: 'p', md: 'Gospel piano is the root of much R&B harmony: rich **passing chords**, **walk-ups** in the bass, plagal "Amen" cadences coloured with the minor iv, and chained **2–5–1s**.' },
@@ -77,7 +77,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['ear.prog.soul', 'soul.concepts', 'jazz.dim'],
   },
   {
-    id: 'bach.voiceleading', title: 'Four-part voice leading', tags: ['bach'], minutes: 4,
+    id: 'bach.voiceleading', title: 'Four-part voice leading', tags: ['bach'], minutes: 4, level: 1,
     summary: 'Chorale-style rules — and their jazz equivalents.',
     blocks: [
       { t: 'p', md: 'Chorale texture = four independent lines (S A T B) that also form good chords.' },
@@ -102,7 +102,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['bach.vl', 'bach.figured'],
   },
   {
-    id: 'bach.counterpoint', title: 'Counterpoint & suspensions', tags: ['bach'], minutes: 4,
+    id: 'bach.counterpoint', title: 'Counterpoint & suspensions', tags: ['bach'], minutes: 4, level: 2,
     summary: 'Consonance, dissonance and the suspension.',
     blocks: [
       { t: 'p', md: 'Intervals are **perfect consonances** (P1 P5 P8), **imperfect consonances** (3rds, 6ths) or **dissonances** (2nds, 7ths, tritone, and the 4th against the bass). Dissonance appears on weak beats as **passing/neighbour tones**, and on strong beats only as a **suspension**: prepared (consonant), held over (dissonant), resolved **down by step**.' },
@@ -126,7 +126,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['bach.concepts', 'bach.vl'],
   },
   {
-    id: 'bach.figured', title: 'Figured bass', tags: ['bach'], minutes: 3,
+    id: 'bach.figured', title: 'Figured bass', tags: ['bach'], minutes: 3, level: 1,
     summary: 'Numbers above the bass: inversion shorthand.',
     blocks: [
       { t: 'table', head: ['Figure', 'Meaning', 'G / G7 in C'], rows: [
@@ -156,7 +156,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['bach.figured', 'bach.analysis'],
   },
   {
-    id: 'bach.chromatic', title: 'Chromatic harmony: N6, +6, applied °7', tags: ['bach', 'core'], minutes: 4,
+    id: 'bach.chromatic', title: 'Chromatic harmony: N6, +6, applied °7', tags: ['bach', 'core'], minutes: 4, level: 3,
     summary: 'Applied leading-tone chords, the Neapolitan, augmented sixths.',
     blocks: [
       { t: 'table', head: ['Chord', 'Built on', 'Goes to', 'In A minor'], rows: [
@@ -181,7 +181,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['bach.chromatic', 'ear.prog.bach'],
   },
   {
-    id: 'bach.sequences', title: 'Sequences', tags: ['bach', 'jazz'], minutes: 4,
+    id: 'bach.sequences', title: 'Sequences', tags: ['bach', 'jazz'], minutes: 4, level: 2,
     summary: 'Patterns repeated at new pitch levels — Baroque and jazz engine.',
     blocks: [
       { t: 'table', head: ['Sequence', 'Root motion', 'Chords (C)', 'Also in'], rows: [
@@ -203,7 +203,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['bach.analysis', 'ear.prog.bach', 'ear.motion'],
   },
   {
-    id: 'bach.fugue', title: 'Fugue anatomy', tags: ['bach'], minutes: 3,
+    id: 'bach.fugue', title: 'Fugue anatomy', tags: ['bach'], minutes: 3, level: 3,
     summary: 'Subject, answer, countersubject, episode, stretto.',
     blocks: [
       { t: 'table', head: ['Term', 'Meaning'], rows: [
@@ -231,7 +231,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['bach.concepts'],
   },
   {
-    id: 'bach.cadences', title: 'Cadences: Bach vs. jazz', tags: ['bach', 'jazz', 'soul'], minutes: 3,
+    id: 'bach.cadences', title: 'Cadences: Bach vs. jazz', tags: ['bach', 'jazz', 'soul'], minutes: 3, level: 1,
     summary: 'The same punctuation in three dialects.',
     blocks: [
       { t: 'table', head: ['Cadence', 'Common practice', 'Jazz / soul'], rows: [
@@ -259,7 +259,7 @@ export const SOUL_BACH_TOPICS: Topic[] = [
     drills: ['ear.cadence', 'ear.prog.bach'],
   },
   {
-    id: 'rhythm.clave', title: 'Clave & timelines', tags: ['rhythm', 'funk'], minutes: 3,
+    id: 'rhythm.clave', title: 'Clave & timelines', tags: ['rhythm', 'funk'], minutes: 3, level: 2,
     summary: 'Son, rumba, bossa and the tresillo behind funk syncopation.',
     blocks: [
       { t: 'p', md: 'A **timeline** is a fixed rhythmic key everything relates to. Afro-Cuban **clave** (3-2 or 2-3) underlies salsa and Latin jazz; its first half, the **tresillo** (3+3+2), runs through New Orleans R&B, funk bass lines and modern pop.' },
