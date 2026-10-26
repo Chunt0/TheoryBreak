@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { noteName, N, mod, pc } from '../src/client/theory/core';
 import { keyFromName, type Key } from '../src/client/theory/keys';
-import { progressionInKey, resolveChord } from '../src/client/learn/music';
+import { progressionEvents, progressionInKey, resolveChord } from '../src/client/learn/music';
+import { PART } from '../src/client/audio/engine';
 import { BASS_LINES, CADENCES, degreeSet, echoLine, resolvePath, spellDegree } from '../src/client/simple/earLogic';
-import { chordTones, FORMS, guideTones, judge, nearestGuide, roundsFor, slotOf, type Slot } from '../src/client/simple/changesLogic';
+import { chordTones, FORM_GROUPS, FORMS, guideTones, judge, nearestGuide, roundsFor, slotOf, type Slot } from '../src/client/simple/changesLogic';
 import { cellLabel, cellResults, cellsOf, repeatBar, scoreTaps } from '../src/client/simple/rhythmLogic';
 import { notePool, noteId, sameChord, sigKeyName, stackChord } from '../src/client/simple/readLogic';
 import { NUMERAL_SETS, randomProgression, RESOLVES } from '../src/client/simple/logic';
@@ -77,6 +78,25 @@ describe('Changes: playing over a loop', () => {
         for (const sym of progressionInKey(f.chords, f.key, target)) expect(resolveChord(sym, target)).not.toBeNull();
       }
     }
+  });
+  test('every form has a unique id, a listed group and a note on what to hear', () => {
+    expect(new Set(FORMS.map((f) => f.id)).size).toBe(FORMS.length);
+    for (const g of FORM_GROUPS) expect(FORMS.some((f) => f.group === g)).toBe(true);
+    for (const f of FORMS) expect(f.about.length).toBeGreaterThan(30);
+  });
+  test('a long chord keeps the bass going every bar, walking or bossa', () => {
+    for (const style of ['swing', 'bossa', 'ballad'] as const) {
+      const p = progressionEvents('Dm', ['Dm7', 'Ebm7'], { bpm: 60, beats: [16, 16], style });
+      const bass = p.events.filter((e) => e.part === PART.bass);
+      for (let bar = 0; bar < 8; bar++) expect(bass.some((e) => Math.abs(e.start - bar * 4) < 1e-6)).toBe(true);
+    }
+    // walking into the next chord only from the last bar: the inner bars approach their own root again
+    const walk = progressionEvents('Dm', ['Dm7', 'Ebm7'], { bpm: 60, beats: [16, 16], style: 'swing' }).events.filter((e) => e.part === PART.bass);
+    const at = (t: number) => walk.find((e) => Math.abs(e.start - t) < 1e-6)!.note;
+    expect(mod(at(3) - at(0), 12)).not.toBe(0);
+    expect(Math.abs(at(3) - at(4))).toBe(1);
+    expect(Math.abs(at(15) - at(16))).toBe(1);
+    expect(mod(at(16), 12)).toBe(3); // E♭
   });
   // ii–V–I in C at one second per beat, four beats each
   const slots: Slot[] = [

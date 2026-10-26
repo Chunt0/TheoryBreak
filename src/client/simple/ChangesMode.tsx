@@ -5,8 +5,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { audio } from '../audio/engine';
 import { getChord } from '../theory/chords';
-import { mod, pc } from '../theory/core';
-import { JAZZ_MAJOR_TONICS, JAZZ_MINOR_TONICS, keyFromName, keyName, type Key } from '../theory/keys';
+import { mod, N, pc } from '../theory/core';
+import { JAZZ_MAJOR_TONICS, JAZZ_MINOR_TONICS, keyFromName, keyName, keyShort, type Key } from '../theory/keys';
 import { progressionEvents, progressionInKey, resolveChord } from '../learn/music';
 import { input } from '../midi/input';
 import type { KeyMark } from '../ui/Keyboard';
@@ -14,7 +14,7 @@ import { analyseTokens, scheduleDrums } from '../ui/ProgressionStrip';
 import type { Help } from './Lessons';
 import { ladder, useTally } from './stats';
 import { Bar, Chips, K, Pick, pickOther, playEvents, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
-import { FORM_BY_ID, FORMS, judge, nearestGuide, roundsFor, slotOf, targetsFor, toneLabels, type ChangesTask, type Played, type Slot } from './changesLogic';
+import { FORM_BY_ID, FORM_GROUPS, FORMS, judge, nearestGuide, roundsFor, slotOf, targetsFor, toneLabels, type ChangesTask, type Form, type Played, type Slot } from './changesLogic';
 
 type Tempo = '70' | '90' | '110' | '130' | '160';
 type Show = 'show' | 'hide';
@@ -25,11 +25,23 @@ const TASKS: Choice<ChangesTask>[] = [
   { id: 'line', label: 'Guide-tone line', title: 'Connect 3rds and 7ths by step or common tone' },
 ];
 const TEMPOS: Choice<Tempo>[] = (['70', '90', '110', '130', '160'] as Tempo[]).map((t) => ({ id: t, label: `♩ = ${t}` }));
-const SHOWS: Choice<Show>[] = [
-  { id: 'show', label: 'Show targets', title: 'Mark the notes to aim for on the keys' },
-  { id: 'hide', label: 'Hide targets', title: 'Find them by ear and theory' },
+const FORM_CHOICES = FORM_GROUPS.map((g) => ({ title: g, options: FORMS.filter((f) => f.group === g).map((f) => ({ id: f.id, label: f.name })) }));
+
+/** 'any' for a random key each time, else the tonic's pitch class */
+type KeyPick = string;
+// lead-sheet spellings by pitch class: flat major keys, minor keys as written in jazz
+const MAJOR_SPELL = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const MINOR_SPELL = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
+const modeOf = (form: Form) => keyFromName(form.key).mode;
+const pickedKey = (form: Form, p: KeyPick): Key | null => {
+  if (p === 'any') return null;
+  const mode = modeOf(form);
+  return { tonic: N((mode === 'minor' ? MINOR_SPELL : MAJOR_SPELL)[Number(p)]), mode };
+};
+const keyChoices = (form: Form): Choice<KeyPick>[] => [
+  { id: 'any', label: 'Any key', title: 'A random key every time' },
+  ...MAJOR_SPELL.map((_, i) => ({ id: String(i), label: keyShort(pickedKey(form, String(i))!) })),
 ];
-const FORM_GROUPS = (['Jazz', 'Soul & funk'] as const).map((g) => ({ title: g, options: FORMS.filter((f) => f.group === g).map((f) => ({ id: f.id, label: f.name })) }));
 
 const HELP: Record<ChangesTask, Help> = {
   guide: {
@@ -57,12 +69,13 @@ const HELP: Record<ChangesTask, Help> = {
       'So a guide-tone line barely moves: Dm7–G7–Cmaj7 is C–B–B (7→3→7) or F–F–E (3→7→3).',
       'Each chord: play a 3rd or 7th no more than a whole step from the last one you played.',
       'This is how horn backgrounds and shell voicings move. Play the line in the left hand later as comping.',
+      'A note a little before a change counts for the next chord, so you can lead into it.',
     ],
   },
 };
 
-function randomKey(form: { key: string }, prev: Key | null): Key {
-  const mode = keyFromName(form.key).mode;
+function randomKey(form: Form, prev: Key | null): Key {
+  const mode = modeOf(form);
   const tonics = mode === 'minor' ? JAZZ_MINOR_TONICS : JAZZ_MAJOR_TONICS;
   return { tonic: pickOther(tonics.filter((t) => !prev || pc(t) !== pc(prev.tonic)), null), mode };
 }
@@ -86,8 +99,10 @@ export function ChangesMode() {
   const [formId, setFormId] = usePref<string>('changes.form', 'iivi');
   const [tempo, setTempo] = usePref<Tempo>('changes.tempo', '90');
   const [show, setShow] = usePref<Show>('changes.show', 'show');
+  const [keyPick, setKeyPick] = usePref<KeyPick>('changes.key', 'any');
   const form = FORM_BY_ID[formId] ?? FORMS[0];
-  const [key, setKey] = useState<Key>(() => randomKey(form, null));
+  const keyFor = (f: Form, p: KeyPick, prev: Key | null) => pickedKey(f, p) ?? randomKey(f, prev);
+  const [key, setKey] = useState<Key>(() => keyFor(form, keyPick, null));
   const [run, setRun] = useState<Run>(IDLE);
   const [now, setNow] = useState(0);
   const [wrong, flash] = useFlash(300);
@@ -153,10 +168,16 @@ export function ChangesMode() {
     run.slots.forEach((s, i) => tally.record(s.typeId, results[i].ok));
   }, [run.state]);
 
+  // a random key, or with a key picked, round the cycle: up a 4th each time
+  const fixed = keyPick !== 'any';
   const newKey = () => {
     stop();
-    setKey((k) => randomKey(form, k));
+    if (!fixed) return setKey((k) => randomKey(form, k));
+    const next = String(mod(Number(keyPick) + 5, 12));
+    setKeyPick(next);
+    setKey(pickedKey(form, next)!);
   };
+  const keyLabel = fixed ? 'Up a 4th' : 'New key';
   useEffect(() => {
     input.placeRoot(60 + pc(key.tonic));
   }, [key]);
@@ -230,14 +251,21 @@ export function ChangesMode() {
   // beat counts under the chords only when they differ
   const mixed = new Set(form.beats).size > 1;
   const round = cur >= 0 ? Math.floor(cur / chords.length) + 1 : 1;
+  // the marks on the keys, on or off at any point, even mid-run
+  const targets = (
+    <button type="button" className="btn ghost small" aria-pressed={show === 'show'} onClick={() => setShow(show === 'show' ? 'hide' : 'show')}
+      title={show === 'show' ? 'Find the notes by ear and theory' : 'Mark the notes to aim for on the keys'}>
+      {show === 'show' ? 'Hide targets' : 'Show targets'}
+    </button>
+  );
 
   return (
     <div className="s-mode">
-      <Bar tally={tally} help={HELP[task]}>
+      <Bar tally={tally} help={{ ...HELP[task], method: [`${form.name}: ${form.about}`, ...(HELP[task].method ?? [])] }}>
         <Chips label="Task" value={task} options={TASKS} onChange={(t) => change(() => setTask(t))} />
-        <Pick label="Changes" value={form.id} groups={FORM_GROUPS} onChange={(f) => change(() => { setFormId(f); setKey(randomKey(FORM_BY_ID[f], null)); })} />
+        <Pick label="Changes" value={form.id} groups={FORM_CHOICES} onChange={(f) => change(() => { setFormId(f); setKey(keyFor(FORM_BY_ID[f], keyPick, null)); })} />
+        <Pick label="Key" value={keyPick} options={keyChoices(form)} onChange={(p) => change(() => { setKeyPick(p); setKey(keyFor(form, p, key)); })} />
         <Pick label="Tempo" value={tempo} options={TEMPOS} onChange={(t) => change(() => setTempo(t))} />
-        <Pick label="Targets" value={show} options={SHOWS} onChange={setShow} />
       </Bar>
 
       <section className="s-stage">
@@ -260,18 +288,21 @@ export function ChangesMode() {
                 {okCount === results.length ? '✓ ' : ''}{okCount}/{results.length} chords{notes ? ` · ${Math.round((100 * hits) / notes)}% of notes on target` : ''}{why ? ` · missed: ${why}` : ''}
               </strong>
               <button type="button" className="btn primary" onClick={start}>Again <K>Space</K></button>
-              <button type="button" className="btn" onClick={newKey}>New key <K>Enter</K></button>
+              <button type="button" className="btn" onClick={newKey}>{keyLabel} <K>Enter</K></button>
+              {targets}
             </>
           ) : running ? (
             <>
               <span>{run.state === 'count' ? 'Count-in…' : `Round ${round} of ${rounds}`}</span>
               <button type="button" className="btn" onClick={stop}>■ Stop <K>Space</K></button>
+              {targets}
             </>
           ) : (
             <>
-              <span className="s-hint">One bar of clicks, then the band plays. A note slightly early counts for the next chord.</span>
-              <button type="button" className="btn primary" onClick={start}>▶ Play <K>Space</K></button>
-              <button type="button" className="btn ghost small" onClick={newKey}>New key <K>Enter</K></button>
+              <span className="s-hint s-about">{form.about}</span>
+              <button type="button" className="btn primary" onClick={start} title="One bar of clicks, then the band plays">▶ Play <K>Space</K></button>
+              <button type="button" className="btn ghost small" onClick={newKey}>{keyLabel} <K>Enter</K></button>
+              {targets}
             </>
           )}
         </div>

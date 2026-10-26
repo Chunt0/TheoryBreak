@@ -148,7 +148,8 @@ describe('planner', () => {
     const gym = plan.blocks.find((b) => b.kind === 'gym')!;
     expect(gym.skills[0]).toBe('jazz.tritone');
     const bachOnly = planSession(emptyProgress(), 15, ['bach'], now);
-    expect(bachOnly.blocks.find((b) => b.kind === 'topic')!.topicId!.startsWith('bach') || bachOnly.blocks.find((b) => b.kind === 'topic')!.topicId === 'core.symmetric').toBe(true);
+    // the topic rotates by day; whichever it is, it carries the focus tag
+    expect(TOPIC_BY_ID[bachOnly.blocks.find((b) => b.kind === 'topic')!.topicId!].tags).toContain('bach');
   });
 
   test('cramming a skill early does not stretch its review interval', () => {

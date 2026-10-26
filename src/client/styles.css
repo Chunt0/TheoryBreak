@@ -731,6 +731,7 @@ table.t th { color: var(--text-dim); font-weight: 650; font-size: 12.5px; text-t
 .s-status b { color: var(--text); }
 .s-status .good { color: var(--good); }
 .s-status .bad { color: var(--bad); }
+.s-status .s-about { flex: 1 0 100%; padding: 0 6%; text-align: center; font-size: 14px; line-height: 1.45; text-wrap: balance; }
 .s-result { display: inline-flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px 12px; }
 .s-actions { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .tnum { font-variant-numeric: tabular-nums; }

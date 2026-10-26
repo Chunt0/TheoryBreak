@@ -131,7 +131,7 @@ export function symbolMidis(sym: string): number[] {
   return chordMidis(pc(p.root), p.typeId, p.bass ? pc(p.bass) : undefined);
 }
 
-export type CompStyle = 'block' | 'swing' | 'funk' | 'ballad' | 'pulse';
+export type CompStyle = 'block' | 'swing' | 'funk' | 'ballad' | 'pulse' | 'bossa';
 
 export interface ProgressionPlay {
   events: NoteEvent[];
@@ -189,9 +189,17 @@ function pushComp(out: NoteEvent[], upper: number[], t: number, beats: number, b
     return;
   }
   if (style === 'ballad') {
+    // an arpeggio up and back per bar
     const pattern = [...upper, ...upper.slice(1, -1).reverse()];
-    const step = beats / Math.max(4, pattern.length);
-    pattern.forEach((n, j) => out.push(ev(n, t + j * step * beat, step * beat * 1.8, 78)));
+    for (let b = 0; b < beats; b += 4) {
+      const step = Math.min(4, beats - b) / Math.max(4, pattern.length);
+      pattern.forEach((n, j) => out.push(ev(n, t + (b + j * step) * beat, step * beat * 1.8, 78)));
+    }
+    return;
+  }
+  if (style === 'bossa') {
+    // straight eighths: 1, the "and" of 2, then 4 (anticipating the next bar)
+    for (let b = 0; b < beats; b += 4) for (const s of [0, 1.5, 3]) if (b + s < beats) hit(b + s, s === 1.5 ? 1.2 : 0.8, s === 0 ? 84 : 76);
     return;
   }
   if (style === 'swing') {
@@ -211,14 +219,28 @@ function pushComp(out: NoteEvent[], upper: number[], t: number, beats: number, b
 function pushBass(out: NoteEvent[], bass: number, c: ResolvedChord, t: number, beats: number, beat: number, style: CompStyle, next: ResolvedChord | null): void {
   const b = (n: number, at: number, dur: number, vel = 100) => out.push(ev(n, t + at * beat, dur * beat, vel, PART.bass));
   if (style === 'swing' && beats >= 2) {
-    // walking: root, chord tones, chromatic approach to the next root
+    // walking: root, chord tones, chromatic approach to the next root (to this root again on a long chord's inner bars)
     const pcs = chordPcs(c.rootPc, c.typeId);
     const third = midiAtOrAbove(pcs[1] ?? c.rootPc, bass);
     const fifth = midiAtOrAbove(pcs[2] ?? pcs[1] ?? c.rootPc, bass);
-    const target = next ? midiAtOrAbove(next.bassPc, bass - 5) : bass;
-    const approach = target + (target > fifth ? -1 : 1);
-    const line = beats >= 4 ? [bass, third, fifth, approach] : [bass, approach];
-    line.slice(0, beats).forEach((n, i) => b(n, i, 0.9, i === 0 ? 100 : 86));
+    for (let k = 0; k < beats; k += 4) {
+      const left = Math.min(4, beats - k);
+      const target = k + 4 >= beats && next ? midiAtOrAbove(next.bassPc, bass - 5) : bass;
+      const approach = target + (target > fifth ? -1 : 1);
+      const line = left >= 4 ? [bass, third, fifth, approach] : [bass, approach];
+      line.slice(0, left).forEach((n, i) => b(n, k + i, 0.9, i === 0 ? 100 : 86));
+    }
+    return;
+  }
+  if (style === 'bossa') {
+    // root on 1, fifth on 3, each picked up an eighth before
+    const fifth = midiAtOrAbove(mod(c.rootPc + 7, 12), bass);
+    for (let k = 0; k < beats; k += 4) {
+      b(bass, k, 1.4, 100);
+      if (k + 1.5 < beats) b(bass, k + 1.5, 0.4, 80);
+      if (k + 2 < beats) b(fifth, k + 2, 1.4, 92);
+      if (k + 3.5 < beats) b(fifth, k + 3.5, 0.4, 80);
+    }
     return;
   }
   if (style === 'funk') {
@@ -230,7 +252,7 @@ function pushBass(out: NoteEvent[], bass: number, c: ResolvedChord, t: number, b
     }
     return;
   }
-  b(bass, 0, beats * 0.9);
+  for (let k = 0; k < beats; k += 4) b(bass, k, Math.min(4, beats - k) * 0.9);
 }
 
 /** I–IV–V–I (or i–iv–V–i) cadence that establishes a key before ear questions. */

@@ -109,6 +109,13 @@ export function scheduleDrums(start: number, duration: number, beat: number, sty
       if (b % 4 === 2) audio.drum('kick', t + beat * 0.75, 0.7);
       if (b % 2 === 1) audio.drum('snare', t, 0.8);
       for (let s = 0; s < 4; s++) audio.drum('hat', t + (s * beat) / 4, s % 2 ? 0.35 : 0.7);
+    } else if (style === 'bossa') {
+      // two-bar cross-stick figure over straight eighths, kick on 1 and 3 with pickups
+      if (b % 2 === 0) audio.drum('kick', t, 0.6);
+      if (b % 2 === 1) audio.drum('kick', t + beat * 0.5, 0.4);
+      for (const s of [0, 0.5]) audio.drum('hat', t + s * beat, s ? 0.25 : 0.4);
+      const bar = b % 8;
+      for (const x of [0, 1.5, 3, 5, 6.5]) if (Math.floor(x) === bar) audio.drum('click', t + (x - bar) * beat, 0.5);
     } else if (style === 'swing') {
       audio.drum('hat', t, 0.8);
       if (b % 2 === 1) audio.drum('hat', t + beat * 0.66, 0.45);
