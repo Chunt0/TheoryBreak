@@ -18,6 +18,7 @@ import { FORM_BY_ID, FORM_GROUPS, FORMS, judge, nearestGuide, roundsFor, slotOf,
 
 type Tempo = '70' | '90' | '110' | '130' | '160';
 type Show = 'show' | 'hide';
+type Rounds = 'auto' | '1' | '2' | '4' | '8' | '16' | 'nonstop';
 
 const TASKS: Choice<ChangesTask>[] = [
   { id: 'guide', label: 'Guide tones', title: 'Play a 3rd or 7th of every chord' },
@@ -25,6 +26,14 @@ const TASKS: Choice<ChangesTask>[] = [
   { id: 'line', label: 'Guide-tone line', title: 'Connect 3rds and 7ths by step or common tone' },
 ];
 const TEMPOS: Choice<Tempo>[] = (['70', '90', '110', '130', '160'] as Tempo[]).map((t) => ({ id: t, label: `♩ = ${t}` }));
+const roundChoices = (auto: number): Choice<Rounds>[] => [
+  { id: 'auto', label: `Auto · ${auto}×`, title: 'About ten bars' },
+  ...(['1', '2', '4', '8', '16'] as Rounds[]).map((n) => ({ id: n, label: `${n}× around` })),
+  { id: 'nonstop', label: 'Nonstop', title: 'Until you stop it; Stop scores the chords you played' },
+];
+const roundCount = (p: Rounds, form: Form): number => (p === 'auto' ? roundsFor(form) : p === 'nonstop' ? Infinity : Number(p));
+/** How far ahead rounds go to the audio engine (at least a round), so a long run never queues minutes of notes at once. */
+const AHEAD = 4;
 const FORM_CHOICES = FORM_GROUPS.map((g) => ({ title: g, options: FORMS.filter((f) => f.group === g).map((f) => ({ id: f.id, label: f.name })) }));
 
 /** 'any' for a random key each time, else the tonic's pitch class */
@@ -100,6 +109,7 @@ export function ChangesMode() {
   const [tempo, setTempo] = usePref<Tempo>('changes.tempo', '90');
   const [show, setShow] = usePref<Show>('changes.show', 'show');
   const [keyPick, setKeyPick] = usePref<KeyPick>('changes.key', 'any');
+  const [roundsPick, setRoundsPick] = usePref<Rounds>('changes.rounds', 'auto');
   const form = FORM_BY_ID[formId] ?? FORMS[0];
   const keyFor = (f: Form, p: KeyPick, prev: Key | null) => pickedKey(f, p) ?? randomKey(f, prev);
   const [key, setKey] = useState<Key>(() => keyFor(form, keyPick, null));
@@ -108,11 +118,12 @@ export function ChangesMode() {
   const [wrong, flash] = useFlash(300);
   const timers = useRef<number[]>([]);
   const ticker = useRef(0);
+  const feeder = useRef(0);
 
   const symbols = useMemo(() => progressionInKey(form.chords, form.key, key), [form, key]);
   const chords = useMemo(() => symbols.map((s) => resolveChord(s, key)!), [symbols, key]);
   const strip = useMemo(() => analyseTokens(symbols, key), [symbols, key]);
-  const rounds = roundsFor(form);
+  const rounds = roundCount(roundsPick, form);
   const pool = [...new Set(chords.map((c) => c.typeId))];
   const tally = useTally(`changes.${task}`, `Changes · ${TASKS.find((t) => t.id === task)!.label}`, pool, typeWord, ladder(TEMPOS, tempo, (t) => change(() => setTempo(t))));
   const running = run.state === 'count' || run.state === 'play';
@@ -121,6 +132,7 @@ export function ChangesMode() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     window.clearInterval(ticker.current);
+    window.clearInterval(feeder.current);
   };
   const stop = () => {
     clear();
@@ -143,21 +155,40 @@ export function ChangesMode() {
     const t0 = audio.now() + 0.15;
     for (let b = 0; b < 4; b++) audio.drum(b === 0 ? 'accent' : 'click', t0 + b * beat);
     const first = t0 + 4 * beat;
-    const slots: Slot[] = [];
-    for (let r = 0; r < rounds; r++) {
-      const at = first + r * prog.duration;
-      playEvents(prog.events, at);
-      prog.times.forEach((t, i) => slots.push({ start: at + t, end: at + t + prog.lengths[i], rootPc: chords[i].rootPc, typeId: chords[i].typeId, pos: i }));
-    }
-    scheduleDrums(first, prog.duration * rounds, beat, form.style);
-    audio.drum('accent', first + prog.duration * rounds, 0.5);
-    setRun({ state: 'count', slots, played: [], beat });
     const ms = (t: number) => Math.max(0, (t - audio.now()) * 1000);
-    timers.current = [
-      window.setTimeout(() => setRun((r) => (r.state === 'count' ? { ...r, state: 'play' } : r)), ms(first)),
-      window.setTimeout(() => setRun((r) => (r.state === 'play' ? { ...r, state: 'done' } : r)), ms(first + prog.duration * rounds) + 250),
-    ];
+    setRun({ state: 'count', slots: [], played: [], beat });
+    timers.current = [window.setTimeout(() => setRun((r) => (r.state === 'count' ? { ...r, state: 'play' } : r)), ms(first))];
+    // queue each round a few seconds before it starts; the last one ends on an accent
+    let queued = 0;
+    const feed = () => {
+      const slots: Slot[] = [];
+      while (queued < rounds && (queued === 0 || first + queued * prog.duration < audio.now() + Math.max(AHEAD, prog.duration))) {
+        const at = first + queued * prog.duration;
+        playEvents(prog.events, at);
+        scheduleDrums(at, prog.duration, beat, form.style);
+        prog.times.forEach((t, i) => slots.push({ start: at + t, end: at + t + prog.lengths[i], rootPc: chords[i].rootPc, typeId: chords[i].typeId, pos: i }));
+        if (++queued === rounds) {
+          const end = at + prog.duration;
+          audio.drum('accent', end, 0.5);
+          timers.current.push(window.setTimeout(() => setRun((r) => (r.state === 'play' ? { ...r, state: 'done' } : r)), ms(end) + 250));
+        }
+      }
+      if (slots.length) setRun((r) => (r.state === 'count' || r.state === 'play' ? { ...r, slots: [...r.slots, ...slots] } : r));
+    };
+    feed();
+    feeder.current = window.setInterval(feed, 250);
     ticker.current = window.setInterval(() => setNow(audio.now() - audio.latency()), 40);
+  };
+  // Stop mid-run: score the chords already played through (a nonstop run ends only this way)
+  const finish = () => {
+    const t = audio.now() - audio.latency();
+    clear();
+    audio.stop();
+    audio.stopScheduledClicks();
+    setRun((r) => {
+      const slots = r.state === 'play' ? r.slots.filter((s) => s.end <= t + 0.05) : [];
+      return slots.length ? { ...r, state: 'done', slots } : IDLE;
+    });
   };
 
   // a finished run goes into the record, one answer per chord
@@ -218,7 +249,7 @@ export function ChangesMode() {
   useHotkeys((e) => {
     if (e.code === 'Space') {
       e.preventDefault();
-      if (running) stop();
+      if (running) finish();
       else start();
     } else if (e.code === 'Enter' && !running) {
       e.preventDefault();
@@ -251,6 +282,7 @@ export function ChangesMode() {
   // beat counts under the chords only when they differ
   const mixed = new Set(form.beats).size > 1;
   const round = cur >= 0 ? Math.floor(cur / chords.length) + 1 : 1;
+  const roundsPill = <Pick label="Rounds" value={roundsPick} options={roundChoices(roundsFor(form))} onChange={setRoundsPick} />;
   // the marks on the keys, on or off at any point, even mid-run
   const targets = (
     <button type="button" className="btn ghost small" aria-pressed={show === 'show'} onClick={() => setShow(show === 'show' ? 'hide' : 'show')}
@@ -271,7 +303,7 @@ export function ChangesMode() {
       <section className="s-stage">
         <div className="s-q">
           <h1>{task === 'guide' ? 'Play the 3rds and 7ths' : task === 'downbeat' ? 'Land a chord tone on beat 1' : 'Connect 3rds and 7ths by step'}</h1>
-          <p className="sub">{keyName(key)} · {form.name} · {rounds}× around</p>
+          <p className="sub">{keyName(key)} · {form.name} · {rounds === Infinity ? 'nonstop' : `${rounds}× around`}</p>
         </div>
         <ol className={`s-steps prog ${chords.length > 8 ? 'tight' : ''}`} aria-label="Chords">
           {strip.map((c, i) => (
@@ -289,12 +321,13 @@ export function ChangesMode() {
               </strong>
               <button type="button" className="btn primary" onClick={start}>Again <K>Space</K></button>
               <button type="button" className="btn" onClick={newKey}>{keyLabel} <K>Enter</K></button>
+              {roundsPill}
               {targets}
             </>
           ) : running ? (
             <>
-              <span>{run.state === 'count' ? 'Count-in…' : `Round ${round} of ${rounds}`}</span>
-              <button type="button" className="btn" onClick={stop}>■ Stop <K>Space</K></button>
+              <span>{run.state === 'count' ? 'Count-in…' : `Round ${round}${rounds === Infinity ? '' : ` of ${rounds}`}`}</span>
+              <button type="button" className="btn" onClick={finish} title="Stop and score the chords played so far">■ Stop <K>Space</K></button>
               {targets}
             </>
           ) : (
@@ -302,6 +335,7 @@ export function ChangesMode() {
               <span className="s-hint s-about">{form.about}</span>
               <button type="button" className="btn primary" onClick={start} title="One bar of clicks, then the band plays">▶ Play <K>Space</K></button>
               <button type="button" className="btn ghost small" onClick={newKey}>{keyLabel} <K>Enter</K></button>
+              {roundsPill}
               {targets}
             </>
           )}
