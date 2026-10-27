@@ -14,10 +14,10 @@ export type ModuleType =
   | 'lpg' | 'comb' | 'vowel' | 'ring' | 'drive' | 'crush'
   | 'verb' | 'chorus' | 'phaser' | 'pan' | 'xfade'
   | 'scope' | 'spectrum' | 'sono' | 'xy' | 'tuner' | 'keys' | 'roll' | 'volts'
-  | 'cosm';
+  | 'cosm' | 'mood';
 
 export type Curve = 'lin' | 'exp' | 'int';
-export type Unit = 'hz' | 's' | 'st' | 'v' | 'bpm' | 'pct' | 'x' | 'oct' | 'table' | 'vowel' | 'db' | 'shape' | 'spd';
+export type Unit = 'hz' | 's' | 'st' | 'v' | 'bpm' | 'pct' | 'x' | 'oct' | 'table' | 'vowel' | 'db' | 'shape' | 'spd' | 'clk' | 'wave';
 
 export interface ParamDef {
   id: string;
@@ -105,6 +105,25 @@ export function snapSpeed(v: number): number {
   return v;
 }
 const SPEED_NAMES = ['¼×', '½×', '1×', '2×', '4×'];
+
+/** The two-channel micro-looper's modes: its Wet Channel, routing, and Micro-Looper. */
+export const MOOD_WET = ['Reverb', 'Delay', 'Slip'];
+export const MOOD_ROUTES = ['In', 'In + loop', 'Loop'];
+export const MOOD_LOOPS = ['Env', 'Tape', 'Stretch'];
+/** Knobs that ramping and the EXP jack can move (EXP with none chosen moves Mix, as on the pedal). */
+export const MOOD_KNOBS = ['Time', 'Length', 'Wet mod', 'Clock', 'Loop mod'];
+export const MOOD_KNOB_IDS = ['time', 'len', 'wmod', 'clock', 'lmod'];
+export const MOOD_WAVES = ['Triangle', 'Square', 'Sine', 'Random', 'Smooth random'];
+/** Clock: 2 kHz to 64 kHz, five octaves, in harmonized steps (unison, major third, fourth, fifth, major sixth of each octave). */
+const MOOD_STEPS = [1, 5 / 4, 4 / 3, 3 / 2, 5 / 3].map(Math.log2);
+export function moodRate(v: number, smooth = false): number {
+  const oct = 5 * Math.min(1, Math.max(0, v));
+  if (smooth) return 2000 * 2 ** oct;
+  const o = Math.floor(oct);
+  let best = o;
+  for (const s of [...MOOD_STEPS, 1]) if (Math.abs(o + s - oct) < Math.abs(best - oct)) best = o + s;
+  return 2000 * 2 ** Math.min(5, best);
+}
 
 const knob = (id: string, label: string, min: number, max: number, def: number, curve: Curve = 'lin', unit?: Unit): ParamDef => ({ id, label, min, max, def, curve, unit });
 const toggle = (id: string, label: string, def = 0): ParamDef => ({ id, label, min: 0, max: 1, def, kind: 'toggle', curve: 'int' });
@@ -413,6 +432,24 @@ const LIST: ModuleDef[] = [
     ins: ports(['l', 'In L'], ['r', 'In R'], ['clock', 'Clock'], ['freeze', 'Hold'], ['loop', 'Loop'], ['act', 'EXP']),
     outs: ports(['l', 'L'], ['r', 'R']),
   },
+  {
+    type: 'mood', name: 'MOOD', title: 'Micro-looper and wet channel (after the Chase Bliss MOOD MKII)', family: 'fx', cols: 8,
+    blurb: 'Two channels that feed each other: a Wet Channel (reverb, delay, Slip) and an always-listening Micro-Looper (Env, Tape, Stretch), both run at the sample rate the Clock knob sets, from hi-fi 64 kHz down to 2 kHz grit.',
+    params: [
+      knob('time', 'Time', 0, 1, 0.5, 'lin', 'pct'), knob('mix', 'Mix', 0, 1, 0.5, 'lin', 'pct'), knob('len', 'Length', 0, 1, 1, 'lin', 'pct'),
+      knob('wmod', 'Wet mod', 0, 1, 0.5, 'lin', 'pct'), knob('clock', 'Clock', 0, 1, 0.8, 'lin', 'clk'), knob('lmod', 'Loop mod', 0, 1, 0.7, 'lin', 'pct'),
+      choice('wet', 'Wet', MOOD_WET, 0), choice('route', 'Routing', MOOD_ROUTES, 1), choice('lmode', 'Looper', MOOD_LOOPS, 1),
+      knob('width', 'Width', 0, 1, 0.75, 'lin', 'pct'), knob('direct', 'Direct', 0, 1, 0, 'lin', 'pct'), knob('tone', 'Tone', 0, 1, 1, 'lin', 'pct'),
+      knob('fade', 'Fade', 0, 1, 1, 'lin', 'pct'), knob('bal', 'Balance', -1, 1, 0), choice('sync', 'Sync', ['Loop to wet', 'Off', 'Wet to loop'], 1),
+      choice('half', 'Loop size', ['Full', 'Half'], 0), choice('solo', 'Spread on', ['Both', 'Wet', 'Loop'], 0),
+      choice('ramp', 'Ramping', ['Off', 'Bounce', 'Ramp'], 0), choice('rknob', 'Ramp on', MOOD_KNOBS, 3), choice('sweep', 'Sweep', ['Bottom', 'Top'], 0),
+      knob('rwave', 'Waveform', 0, 1, 0, 'lin', 'wave'), knob('rspeed', 'Ramp rate', 0.02, 8, 0.25, 'exp', 'hz'), choice('exp', 'EXP to', ['Mix', ...MOOD_KNOBS], 0),
+      hidden(toggle('spread', 'Spread')), hidden(toggle('classic', 'Classic')), hidden(toggle('smooth', 'Smooth')), hidden(toggle('dry', 'Dry kill')),
+      hidden(toggle('trails', 'Trails')), hidden(toggle('latch', 'Latch')), hidden(toggle('nodub', 'No dub')),
+    ],
+    ins: ports(['l', 'In L'], ['r', 'In R'], ['wet', 'Wet'], ['loop', 'Loop'], ['frz', 'Freeze'], ['dub', 'Dub'], ['exp', 'EXP']),
+    outs: ports(['l', 'L'], ['r', 'R']),
+  },
   // ---------------------------------------------------------------- more utilities
   {
     type: 'chord', name: 'CHORD', title: 'Chord generator', family: 'util', cols: 4,
@@ -536,6 +573,11 @@ export function formatParam(p: ParamDef, v: number): string {
     case 'vowel': return VOWELS[Math.round(v)] ?? '';
     case 'db': return `${Math.round(v)}dB`;
     case 'shape': return SHAPES[shapeZone(v)];
+    case 'clk': {
+      const r = moodRate(v);
+      return `${r >= 10000 ? Math.round(r / 1000) : (r / 1000).toFixed(1)}k`;
+    }
+    case 'wave': return MOOD_WAVES[Math.round(v * 4)];
     case 'spd': {
       const s = snapSpeed(v);
       const i = LOOP_STEPS.indexOf(s);

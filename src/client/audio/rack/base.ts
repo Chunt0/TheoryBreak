@@ -32,7 +32,10 @@ export type RackView =
   | { k: 'volts'; v: number[]; lo: number[]; hi: number[]; on: boolean[] }
   /** the granular looper: tempo, beat of the bar, looper state (see LOOP_* in cosm.ts), play position 0–1, loop length s,
    *  Hold on, an overdub layer to undo, tempo from the Clock jack */
-  | { k: 'cosm'; bpm: number; beat: number; loop: number; pos: number; len: number; frozen: boolean; dub: boolean; clk: boolean };
+  | { k: 'cosm'; bpm: number; beat: number; loop: number; pos: number; len: number; frozen: boolean; dub: boolean; clk: boolean }
+  /** the two-channel micro-looper: channels on, Freeze and overdub held, the sample rate (Hz), loop length s,
+   *  position in it 0–1 (while listening, how far the recording has come round), Env hearing the input */
+  | { k: 'mood'; wet: boolean; loop: boolean; frz: boolean; dub: boolean; rate: number; len: number; pos: number; det: boolean };
 
 export class Port {
   readonly buf = new Float32Array(MAX_CH * BLOCK);

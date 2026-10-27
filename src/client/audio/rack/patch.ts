@@ -292,6 +292,27 @@ RACK_PRESETS.push(
       ['flt.lp', 'vca.in'], ['env.env', 'vca.cv'], ['vca.out', 'mc.l'], ['clk.q', 'mc.clock'], ['mc.l', 'out.l'], ['mc.r', 'out.r'],
     ]),
   },
+  {
+    notes: 'Soft plucks into MOOD: a smeared reverb on the Wet Channel while the Micro-Looper listens. Play a phrase, then tap Loop on the screen to loop the last two seconds; turn Clock down to slow it in harmonized steps, and try Loop mod and the three Looper modes.',
+    patch: rack('MOOD LOOPS', [
+      ['midi', 'midi', { voices: 2 }], ['vco', 'vco', { pw: 0.3 }], ['flt', 'vcf', { cutoff: 1500, res: 0.2, cv: 0.4 }], ['env', 'adsr', { a: 0.003, d: 0.5, s: 0.15, r: 0.4 }],
+      ['vca', 'vca'], ['md', 'mood', { wet: 0, time: 0.45, wmod: 0.75, mix: 0.5, spread: 1 }], ['out', 'out', { level: 0.5 }],
+    ], [
+      ['midi.voct', 'vco.voct'], ['vco.saw', 'flt.in'], ['midi.gate', 'env.gate'], ['env.env', 'flt.cv'], ['flt.lp', 'vca.in'], ['env.env', 'vca.cv'],
+      ['vca.out', 'md.l'], ['md.l', 'out.l'], ['md.r', 'out.r'],
+    ]),
+  },
+  {
+    notes: 'A clocked Dorian line into MOOD’s Slip, seven semitones up with a short Time: a pitch shifter, so every note gets its fifth. Turn Time up for phrases that answer behind you; Wet mod left of noon plays them backwards.',
+    patch: rack('SLIP FIFTHS', [
+      ['clk', 'clock', { bpm: 96 }], ['seq', 'seq', { s0: 0, s1: 3, s2: 5, s3: 7, s4: 9, s5: 7, s6: 3, s7: 10, len: 8 }], ['q', 'quant', { root: 2, scale: 3 }],
+      ['vco', 'vco'], ['flt', 'vcf', { cutoff: 1100, res: 0.3, cv: 0.4 }], ['env', 'adsr', { a: 0.003, d: 0.25, s: 0.2, r: 0.2 }], ['vca', 'vca'],
+      ['md', 'mood', { wet: 2, time: 0.12, wmod: 0.804, mix: 0.5, spread: 1 }], ['out', 'out', { level: 0.5 }],
+    ], [
+      ['clk.e', 'seq.clk'], ['seq.voct', 'q.in'], ['q.out', 'vco.voct'], ['vco.saw', 'flt.in'], ['seq.gate', 'env.gate'], ['env.env', 'flt.cv'],
+      ['flt.lp', 'vca.in'], ['env.env', 'vca.cv'], ['vca.out', 'md.l'], ['md.l', 'out.l'], ['md.r', 'out.r'],
+    ]),
+  },
 );
 
 export const rackPresetByName = (name: string): RackPatch | undefined => RACK_PRESETS.find((p) => p.patch.name === name)?.patch;

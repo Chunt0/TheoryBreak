@@ -1,12 +1,13 @@
 // The screens on the rack's display modules: oscilloscope, spectrum, spectrogram,
-// XY, tuner, keyboard, piano roll and voltmeter; and the granular looper's panel. Each reads its module's view from
+// XY, tuner, keyboard, piano roll and voltmeter; and the panels of the granular looper and the micro-looper. Each reads its module's view from
 // the status the worklet sends ~20× a second (see RackView in audio/rack/base.ts).
 
 import { useEffect, useRef, type KeyboardEvent, type PointerEvent, type ReactElement } from 'react';
 import type { RackStatus } from '../../audio/rack/dsp';
 import type { RackView } from '../../audio/rack/base';
-import { COSM_EFFECTS, COSM_FAMILIES, COSM_SUBS, NOTE_NAMES } from '../../audio/rack/modules';
+import { COSM_EFFECTS, COSM_FAMILIES, COSM_SUBS, MOOD_LOOPS, MOOD_ROUTES, MOOD_WET, NOTE_NAMES } from '../../audio/rack/modules';
 import { CMD_DOWN, CMD_ERASE, CMD_REC, CMD_STOP, CMD_TAP, CMD_UNDO, CMD_UP, LOOP_DUB, LOOP_EMPTY, LOOP_FADE, LOOP_PLAY, LOOP_REC } from '../../audio/rack/cosm';
+import { M_LOOP, M_LOOP_HOLD, M_LOOP_LET, M_WET, M_WET_HOLD, M_WET_LET } from '../../audio/rack/mood';
 import type { RackModule } from '../../audio/rack/patch';
 import { SONO_COLS, SONO_HI, SONO_LO, SONO_ROWS, SPECTRUM_HI, SPECTRUM_LO, SPECTRUM_POINTS } from '../../audio/rack/visual';
 import { createStore, useMini } from '../../app/createStore';
@@ -35,6 +36,7 @@ export function ModuleScreen({ m }: { m: RackModule }) {
     case 'roll': return <RollScreen id={m.id} />;
     case 'volts': return <VoltsScreen id={m.id} range={[1, 5, 10][Math.round(m.params.range)] ?? 10} />;
     case 'cosm': return <CosmScreen m={m} />;
+    case 'mood': return <MoodScreen m={m} />;
     default: return null;
   }
 }
@@ -485,6 +487,107 @@ function CosmScreen({ m }: { m: RackModule }) {
         <button type="button" onClick={() => press(CMD_UNDO)} disabled={!v?.dub} aria-label="Undo the overdubs" title="Undo: clear the overdubs, back to the first phrase">↶</button>
         <button type="button" onClick={() => press(CMD_STOP)} disabled={!(live || st === LOOP_REC)} aria-label="Stop the loop" title="Stop">■</button>
         <button type="button" onClick={() => press(CMD_ERASE)} disabled={st === LOOP_EMPTY} aria-label="Erase the loop" title="Erase">✕</button>
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------- two-channel micro-looper
+
+/** The pedal's dip switches, on the screen; its other hidden options are panel knobs. */
+const MOOD_DIPS: [id: string, label: string, title: string][] = [
+  ['spread', 'Spread', 'Spread: each mode makes its own stereo'],
+  ['classic', 'Classic', 'Classic: the original MOOD’s noise, wear and quirks'],
+  ['smooth', 'Smooth', 'Smooth clock: the Clock glides, without its harmonized steps'],
+  ['trails', 'Trails', 'Trails: the Wet Channel rings out when switched off'],
+  ['latch', 'Latch', 'Latch: Freeze and overdub stay on until the switch is held again'],
+  ['nodub', 'No dub', 'No dub: overdubbing replaces the loop instead of adding to it'],
+  ['dry', 'Dry kill', 'Dry kill: none of the clean sound at the output'],
+];
+/** how long a press must last to count as a hold */
+const HOLD_MS = 350;
+const isPressKey = (e: KeyboardEvent<HTMLButtonElement>) => e.key === ' ' || e.key === 'Enter';
+
+/** A footswitch: a tap sends `tap`; held, `hold` once it counts as a hold and `release` on letting go. */
+function useFootswitch(id: string, tap: number, hold: number, release: number) {
+  const timer = useRef(0);
+  const down = useRef(false);
+  const held = useRef(false);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const press = () => {
+    if (down.current) return;
+    down.current = true;
+    held.current = false;
+    timer.current = window.setTimeout(() => {
+      held.current = true;
+      rackCommand(id, 'cmd', hold);
+    }, HOLD_MS);
+  };
+  const up = (cancel = false) => {
+    if (!down.current) return;
+    down.current = false;
+    clearTimeout(timer.current);
+    if (held.current) rackCommand(id, 'cmd', release);
+    else if (!cancel) rackCommand(id, 'cmd', tap);
+  };
+  return {
+    onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      press();
+    },
+    onPointerUp: () => up(),
+    onPointerCancel: () => up(true),
+    onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => {
+      if (!isPressKey(e)) return;
+      e.preventDefault();
+      if (!e.repeat) press();
+    },
+    onKeyUp: (e: KeyboardEvent<HTMLButtonElement>) => {
+      if (isPressKey(e)) up();
+    },
+  };
+}
+
+function MoodScreen({ m }: { m: RackModule }) {
+  const v = useView(m.id, 'mood');
+  const on = (id: string) => (m.params[id] ?? 0) >= 0.5;
+  const flip = (id: string) => setRackParam(m.id, id, on(id) ? 0 : 1);
+  const wetSw = useFootswitch(m.id, M_WET, M_WET_HOLD, M_WET_LET);
+  const loopSw = useFootswitch(m.id, M_LOOP, M_LOOP_HOLD, M_LOOP_LET);
+  const wet = v?.wet ?? true;
+  const looping = v?.loop ?? false;
+  const khz = v ? v.rate / 1000 : 32;
+  const state = !looping ? 'listen' : v?.dub ? 'dub' : '';
+  return (
+    <div className={`rk-screen rk-cosm rk-mood ${v?.frz ? 'frz' : ''}`}>
+      <div className="rk-cz">
+        <span className="rk-cn">{MOOD_WET[Math.round(m.params.wet ?? 0)]}</span>
+        <span className="rk-cf">{MOOD_LOOPS[Math.round(m.params.lmode ?? 1)]} · {MOOD_ROUTES[Math.round(m.params.route ?? 1)]}</span>
+        {v?.frz ? <b className="frz">Freeze</b> : null}
+        {v?.dub ? <b className="dub">Dub</b> : null}
+        {v?.det ? <b>Env</b> : null}
+        <span className="rk-mr">{khz >= 10 ? Math.round(khz) : khz.toFixed(1)} kHz</span>
+      </div>
+      <div className="rk-cl">
+        <button type="button" className={`rk-fs ${wet ? 'on' : ''} ${v?.frz ? 'frz' : ''}`} aria-pressed={wet} title="Wet Channel: tap to switch, hold to freeze" {...wetSw}><i />Wet</button>
+        <span className={`rk-lbar ${state}`} aria-hidden="true"><i style={{ width: `${(v?.pos ?? 0) * 100}%` }} /></span>
+        <span className="rk-ls">{looping ? (v?.dub ? 'Overdub' : 'Looping') : 'Listening'}{v ? ` ${v.len.toFixed(1)}s` : ''}</span>
+        <button
+          type="button"
+          className={`rk-fs ${looping ? 'on' : 'listen'} ${!looping && (v?.pos ?? 1) < 0.08 ? 'blink' : ''} ${v?.dub ? 'dub' : ''}`}
+          aria-pressed={looping}
+          title="Micro-Looper: tap to loop what it heard (or listen again), hold to overdub"
+          {...loopSw}
+        >
+          <i />Loop
+        </button>
+      </div>
+      <div className="rk-ct">
+        <span className="rk-co">
+          {MOOD_DIPS.map(([id, label, title]) => (
+            <button key={id} type="button" className={on(id) ? 'on' : ''} aria-pressed={on(id)} onClick={() => flip(id)} title={title}>{label}</button>
+          ))}
+        </span>
       </div>
     </div>
   );

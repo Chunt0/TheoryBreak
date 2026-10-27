@@ -1229,6 +1229,22 @@ body { overscroll-behavior: none; }
 .rk-cl button.rec { color: #ff8a80; }
 .rk-cl button.rec.s1, .rk-cl button.rec.s3 { color: #0a0d0a; background: #ff5a4d; }
 
+/* the two-channel micro-looper: mode names and rate, the two footswitches with their lights, the dip switches */
+.rk-mood { --hl: #a78bfa; }
+.rk-mr { margin-left: auto; color: #b9d8b9; white-space: nowrap; }
+.rk-cz b.dub { background: #ff5a4d; }
+.rk-cl button.rk-fs { display: flex; align-items: center; gap: 4px; min-width: 54px; height: 20px; justify-content: center; touch-action: none; user-select: none; }
+.rk-fs i { width: 7px; height: 7px; border-radius: 50%; background: #2a352a; }
+.rk-fs.on i { background: #6cf08a; box-shadow: 0 0 5px #6cf08a; }
+.rk-fs.frz i { background: #5ab0ff; box-shadow: 0 0 6px #5ab0ff; }
+.rk-fs.listen i { background: #ff5a4d; opacity: 0.35; }
+.rk-fs.listen.blink i { opacity: 1; box-shadow: 0 0 6px #ff5a4d; }
+.rk-fs.dub i { background: #f5a524; box-shadow: 0 0 6px #f5a524; }
+.rk-cl button.rk-fs.on { color: #b9d8b9; background: #182018; box-shadow: inset 0 0 0 1px #2c3d2c; }
+.rk-lbar.listen i { background: #ff5a4d; opacity: 0.55; }
+.rk-lbar.dub i { background: #f5a524; }
+.rk-mood .rk-co { margin-left: 0; flex-wrap: wrap; }
+
 /* cables: a coloured wire over a soft shadow, plugs at both ends */
 .rk-cables { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
 .rk-cable .wire { fill: none; stroke: var(--cc); stroke-width: 4.5; stroke-linecap: round; opacity: 0.86; }

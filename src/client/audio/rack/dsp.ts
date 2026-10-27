@@ -7,6 +7,7 @@
 import { BLOCK, C4, HIGH, Input, MAX_CH, Mod, Port, TAU, blep, ftanh, type RackView } from './base';
 import { MORE_CLASSES } from './more';
 import { COSM_CLASSES } from './cosm';
+import { MOOD_CLASSES } from './mood';
 import { VIEW_CLASSES } from './visual';
 import { MODULES, QUANT_SCALES, SEQ_LEN, VOICE_COUNTS, type ModuleType } from './modules';
 import type { RackPatch } from './patch';
@@ -732,6 +733,7 @@ const CLASSES = {
   ...MORE_CLASSES,
   ...VIEW_CLASSES,
   ...COSM_CLASSES,
+  ...MOOD_CLASSES,
 } as Record<ModuleType, new (id: string, type: ModuleType, sr: number) => Mod>;
 
 // ----------------------------------------------------------------------- rack

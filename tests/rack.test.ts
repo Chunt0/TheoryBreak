@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { BLOCK, Rack } from '../src/client/audio/rack/dsp';
-import { MODULES, MODULE_LIST, formatParam, fromNorm, toNorm } from '../src/client/audio/rack/modules';
+import { MODULES, MODULE_LIST, formatParam, fromNorm, moodRate, toNorm } from '../src/client/audio/rack/modules';
 import { RACK_PRESETS, newModule, normalizeRack, type RackPatch } from '../src/client/audio/rack/patch';
 import { GUIDE } from '../src/client/audio/rack/guide';
 import { buildChord } from '../src/client/audio/rack/chords';
@@ -8,6 +8,7 @@ import { euclid } from '../src/client/audio/rack/more';
 import { SONO_ROWS, SPECTRUM_POINTS, detectPitch, spectrumHz } from '../src/client/audio/rack/visual';
 import type { RackView } from '../src/client/audio/rack/base';
 import { CMD_DOWN, CMD_REC, CMD_STOP, CMD_UNDO, CMD_UP, LOOP_PLAY, LOOP_REC, LOOP_STOP } from '../src/client/audio/rack/cosm';
+import { MOOD_RING, M_LOOP, M_LOOP_HOLD, M_LOOP_LET, M_WET, M_WET_HOLD, M_WET_LET, delayTime } from '../src/client/audio/rack/mood';
 
 const SR = 48000;
 
@@ -924,5 +925,343 @@ describe('granular looper', () => {
     }
     // 44 runs of 2.5 s: well under a fifth of real time
     expect(performance.now() - t0).toBeLessThan(44 * 2500 * 0.2);
+  });
+});
+
+describe('two-channel micro-looper', () => {
+  const C3 = 130.8128, C4 = 261.6256, C5 = 523.2511, G4 = 391.9954;
+  /** A VCO's sine (C4) through ATT/OFS (so it can be muted) into MOOD (all MOOD, no dry), MOOD into OUT. */
+  function mood(params: Record<string, number>, extra: [string, string, Record<string, number>?][] = [], wires: [string, string][] = []): Rack {
+    const rack = new Rack(SR);
+    rack.setPatch(patch(
+      [['v', 'vco'], ['u', 'util', { a1: 1 }], ['d', 'mood', { mix: 1, ...params }], ['o', 'out', { level: 0.25 }], ...extra],
+      [['v.sin', 'u.in1'], ['u.out1', 'd.l'], ['d.l', 'o.l'], ['d.r', 'o.r'], ...wires],
+    ));
+    return rack;
+  }
+  /** A 20 ms blip of C4 at the start into MOOD. */
+  function blip(params: Record<string, number>): Rack {
+    const rack = new Rack(SR);
+    rack.setPatch(patch(
+      [['m', 'midi', { voices: 0 }], ['v', 'vco'], ['e', 'adsr', { a: 0.001, d: 0.02, s: 0, r: 0.005 }], ['a', 'vca'], ['d', 'mood', { mix: 1, ...params }], ['o', 'out', { level: 0.25 }]],
+      [['v.sin', 'a.in'], ['m.gate', 'e.gate'], ['e.env', 'a.cv'], ['a.out', 'd.l'], ['d.l', 'o.l']],
+    ));
+    rack.noteOn(60, 100);
+    render(rack, 0.02);
+    rack.noteOff(60);
+    return rack;
+  }
+  const pitchAt = (b: Float32Array, at: number) => detectPitch(Float64Array.from(b.subarray(Math.round(at * SR), Math.round(at * SR) + 4096)), SR);
+  const rmsOf = (b: Float32Array, from: number, to: number) => {
+    let s = 0;
+    for (let i = Math.round(from * SR); i < Math.round(to * SR); i++) s += b[i] * b[i];
+    return Math.sqrt(s / (Math.round(to * SR) - Math.round(from * SR)));
+  };
+  /** The strongest frequency between 50 Hz and 1.2 kHz (Goertzel, 2 Hz then 0.1 Hz steps): grains of a sine fool autocorrelation */
+  const peakHz = (b: Float32Array, from: number, to: number) => {
+    const a = Math.round(from * SR), e = Math.round(to * SR);
+    const mag = (f: number) => {
+      const c = 2 * Math.cos((2 * Math.PI * f) / SR);
+      let s1 = 0, s2 = 0;
+      for (let i = a; i < e; i++) {
+        const s0 = b[i] + c * s1 - s2;
+        s2 = s1;
+        s1 = s0;
+      }
+      return s1 * s1 + s2 * s2 - c * s1 * s2;
+    };
+    let best = 50, bm = 0;
+    for (let f = 50; f <= 1200; f += 2) if (mag(f) > bm) (bm = mag(f)), (best = f);
+    for (let f = best - 2; f <= best + 2; f += 0.1) if (mag(f) > bm) (bm = mag(f)), (best = f);
+    return best;
+  };
+  /** How unevenly the level moves, frame to frame (5 ms): high for distinct echoes, low for a wash. */
+  const unevenness = (b: Float32Array, from: number, to: number) => {
+    const fr: number[] = [];
+    for (let t = from; t < to; t += 0.005) fr.push(rmsOf(b, t, t + 0.005));
+    const m = fr.reduce((x, y) => x + y) / fr.length;
+    return Math.sqrt(fr.reduce((x, y) => x + (y - m) ** 2, 0) / fr.length) / m;
+  };
+  let seq = 0;
+  const press = (rack: Rack, cmd: number) => rack.setParam('d', 'cmd', ++seq * 8 + cmd);
+  const st = (rack: Rack) => view(rack, 'd', 'mood');
+  /** Wet Channel off, listen to the sine until the ring is full, mute it, and loop what was heard. */
+  function looped(params: Record<string, number>): Rack {
+    const rack = mood(params);
+    press(rack, M_WET);
+    render(rack, 2.4);
+    rack.setParam('u', 'a1', 0);
+    press(rack, M_LOOP);
+    render(rack, 0.001);
+    return rack;
+  }
+
+  test('Clock moves in harmonized steps over five octaves, or glides with Smooth', () => {
+    expect(moodRate(0)).toBe(2000);
+    expect(moodRate(0.8)).toBe(32000);
+    expect(moodRate(1)).toBe(64000);
+    const ratios = [1, 5 / 4, 4 / 3, 3 / 2, 5 / 3];
+    for (let v = 0; v <= 1; v += 0.013) {
+      const r = moodRate(v) / 2000;
+      const oct = Math.floor(Math.log2(r) + 1e-9);
+      expect(ratios.some((q) => Math.abs(r / 2 ** oct / q - 1) < 1e-9)).toBe(true);
+    }
+    expect(moodRate(0.81, true)).toBeCloseTo(2000 * 2 ** 4.05, 3);
+    expect(formatParam(MODULES.mood.params.find((p) => p.id === 'clock')!, 0.8)).toBe('32k');
+  });
+
+  test('Micro-Looper: loops what it heard; Tape plays it at octave speeds either way; Clock an octave down halves it', () => {
+    const rack = looped({ lmode: 1, lmod: 0.7 });
+    let v = st(rack);
+    expect(v.loop).toBe(true);
+    expect(v.len).toBeCloseTo(MOOD_RING / 32000, 3);
+    const at = (lmod: number, clock = 0.8) => {
+      rack.setParam('d', 'lmod', lmod);
+      rack.setParam('d', 'clock', clock);
+      return pitchAt(render(rack, 0.5).L, 0.3);
+    };
+    expect(Math.abs(at(0.7) / C4 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(at(6.5 / 8) / C5 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(at(4.5 / 8) / C3 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(at(2.5 / 8) / C4 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(at(0.7, 0.6) / C3 - 1)).toBeLessThan(0.01);
+    v = st(rack);
+    expect(v.rate).toBe(16000);
+    expect(v.len).toBeCloseTo(MOOD_RING / 16000, 3);
+  });
+
+  test('until the ring has filled, the loop is only what it heard', () => {
+    const rack = mood({});
+    press(rack, M_WET);
+    render(rack, 0.5);
+    expect(st(rack).len).toBeCloseTo(0.5, 2);
+    rack.setParam('u', 'a1', 0);
+    press(rack, M_LOOP);
+    const { L } = render(rack, 1);
+    expect(rmsOf(L, 0.05, 0.45)).toBeGreaterThan(0.1);
+    expect(rmsOf(L, 0.55, 0.95)).toBeGreaterThan(0.1);
+  });
+
+  test('Tape Length shortens the loop, Stretch keeps the pitch as it crawls and holds still at noon', () => {
+    const rack = looped({ lmode: 2, lmod: 0.75, len: 1 });
+    const { L } = render(rack, 1);
+    expect(Math.abs(peakHz(L, 0.2, 0.9) / C4 - 1)).toBeLessThan(0.01);
+    // a quarter of real speed: 32000 samples a second, a quarter of them, of a 65536-sample loop
+    expect(st(rack).pos).toBeCloseTo(8000 / MOOD_RING, 2);
+    rack.setParam('d', 'lmod', 0.5);
+    const at = st(rack).pos;
+    const held = render(rack, 1).L;
+    expect(st(rack).pos).toBeCloseTo(at, 3);
+    expect(rmsOf(held, 0.2, 1)).toBeGreaterThan(0.05);
+    expect(Math.abs(peakHz(held, 0.2, 0.9) / C4 - 1)).toBeLessThan(0.01);
+    // Tape: Length at 3/7 plays a sixteenth of the loop over and over
+    rack.setParam('d', 'lmode', 1);
+    rack.setParam('d', 'lmod', 0.7);
+    rack.setParam('d', 'len', 3 / 7);
+    let hi = 0;
+    for (let i = 0; i < 20; i++) {
+      render(rack, 0.05);
+      hi = Math.max(hi, st(rack).pos);
+    }
+    expect(hi).toBeLessThan(1 / 16 + 0.002);
+  });
+
+  test('Env repeats the slice it is on while it hears the input, and moves on when it stops', () => {
+    const rack = mood({ lmode: 0, lmod: 1, len: 0.3 });
+    press(rack, M_WET);
+    render(rack, 2.4);
+    press(rack, M_LOOP);
+    render(rack, 0.5);
+    // a slice of 2^-6.3 of the loop, halved
+    expect(st(rack).pos).toBeLessThan(0.007);
+    expect(st(rack).det).toBe(true);
+    // (the detector lets go once the level has fallen under the threshold, a few tenths of a second at full sensitivity)
+    rack.setParam('u', 'a1', 0);
+    render(rack, 0.4);
+    expect(st(rack).det).toBe(false);
+    const from = st(rack).pos;
+    render(rack, 0.5);
+    expect(st(rack).pos - from).toBeCloseTo(16000 / MOOD_RING, 2);
+  });
+
+  test('overdubs add the clean input; Fade wears the loop down as you dub; No dub replaces it', () => {
+    // a loop of silence, then the sine overdubbed onto it
+    const rack = mood({ lmode: 1, lmod: 0.7 });
+    press(rack, M_WET);
+    rack.setParam('u', 'a1', 0);
+    render(rack, 2.4);
+    press(rack, M_LOOP);
+    expect(rmsOf(render(rack, 0.5).L, 0, 0.5)).toBe(0);
+    rack.setParam('u', 'a1', 1);
+    press(rack, M_LOOP_HOLD);
+    render(rack, 2.2);
+    expect(st(rack).dub).toBe(true);
+    press(rack, M_LOOP_LET);
+    rack.setParam('u', 'a1', 0);
+    const dubbed = rmsOf(render(rack, 2.1).L, 0, 2);
+    expect(dubbed).toBeGreaterThan(0.1);
+    // Fade down: two passes of dubbing silence leave about 0.3² of it
+    rack.setParam('d', 'fade', 0);
+    press(rack, M_LOOP_HOLD);
+    render(rack, 4.2);
+    press(rack, M_LOOP_LET);
+    const faded = rmsOf(render(rack, 2.1).L, 0, 2);
+    expect(faded / dubbed).toBeGreaterThan(0.04);
+    expect(faded / dubbed).toBeLessThan(0.2);
+    // No dub: one pass replaces the loop with what comes in (silence)
+    rack.setParam('d', 'nodub', 1);
+    press(rack, M_LOOP_HOLD);
+    render(rack, 2.2);
+    press(rack, M_LOOP_LET);
+    expect(rmsOf(render(rack, 2.1).L, 0, 2)).toBeLessThan(1e-4);
+  });
+
+  test('Delay echoes after Time, twice as late a Clock octave down, and Modify fully up keeps every repeat', () => {
+    // (the blip went in 20 ms before what is measured)
+    const d = delayTime(0.5) / 32000 - 0.02;
+    const echo = (clock: number, at: number) => {
+      const { L } = render(blip({ wet: 1, time: 0.5, wmod: 0, clock }), 1);
+      return [rmsOf(L, at + 0.003, at + 0.017), rmsOf(L, at - 0.05, at - 0.005)];
+    };
+    const [on, before] = echo(0.8, d);
+    expect(on).toBeGreaterThan(0.02);
+    expect(on).toBeGreaterThan(before * 20);
+    const [late, early] = echo(0.6, 2 * d + 0.02);
+    expect(late).toBeGreaterThan(0.02);
+    expect(late).toBeGreaterThan(early * 20);
+    const { L } = render(blip({ wet: 1, time: 0.5, wmod: 1 }), 1);
+    const e6 = 6 * (d + 0.02) - 0.02;
+    expect(rmsOf(L, e6 + 0.003, e6 + 0.017) / rmsOf(L, d + 0.003, d + 0.017)).toBeGreaterThan(0.9);
+  });
+
+  test('Freeze holds the Wet Channel while the left switch is held, or with Latch until it is held again', () => {
+    for (const latch of [0, 1]) {
+      const rack = mood({ wet: 1, time: 0.3, wmod: 0, latch });
+      render(rack, 0.5);
+      press(rack, M_WET_HOLD);
+      rack.setParam('u', 'a1', 0);
+      const held = render(rack, 1).L;
+      expect(st(rack).frz).toBe(true);
+      expect(rmsOf(held, 0.5, 1)).toBeGreaterThan(0.1);
+      press(rack, M_WET_LET);
+      const after = render(rack, 0.6).L;
+      if (latch) expect(rmsOf(after, 0.3, 0.6)).toBeGreaterThan(0.1);
+      else expect(rmsOf(after, 0.3, 0.6)).toBeLessThan(1e-3);
+    }
+  });
+
+  test('Reverb: Modify down is a pattern of distinct echoes, up a smooth wash; frozen it sustains', () => {
+    const uneven = (wmod: number) => unevenness(render(blip({ wet: 0, time: 0.8, wmod }), 1.2).L, 0.1, 1);
+    expect(uneven(0)).toBeGreaterThan(2 * uneven(1));
+    const rack = mood({ wet: 0, time: 0.6, wmod: 1 });
+    const before = rmsOf(render(rack, 1).L, 0.5, 1);
+    press(rack, M_WET_HOLD);
+    rack.setParam('u', 'a1', 0);
+    const held = render(rack, 3).L;
+    expect(rmsOf(held, 2, 3)).toBeGreaterThan(before * 0.3);
+    expect(finite(held)).toBe(true);
+  });
+
+  test('Slip plays the input back in semitone steps: a fifth up, an octave up, an octave up reversed, and neutral at noon', () => {
+    // (a long sampling size: a short one is a pitch shifter with a blur of sidebands)
+    const hz = (wmod: number) => peakHz(render(mood({ wet: 2, time: 0.4, wmod }), 1).L, 0.3, 0.9);
+    expect(Math.abs(hz(0.5) / C4 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(hz(0.804) / G4 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(hz(1) / C5 - 1)).toBeLessThan(0.01);
+    expect(Math.abs(hz(0) / C5 - 1)).toBeLessThan(0.01);
+  });
+
+  test('Routing decides what the Wet Channel hears with both channels on', () => {
+    const d = delayTime(0.5) / 32000;
+    for (const route of [0, 2]) {
+      const rack = new Rack(SR);
+      rack.setPatch(patch(
+        [['m', 'midi', { voices: 0 }], ['v', 'vco'], ['e', 'adsr', { a: 0.001, d: 0.02, s: 0, r: 0.005 }], ['a', 'vca'], ['d', 'mood', { mix: 1, wet: 1, time: 0.5, wmod: 0, route }], ['o', 'out', { level: 0.25 }]],
+        [['v.sin', 'a.in'], ['m.gate', 'e.gate'], ['e.env', 'a.cv'], ['a.out', 'd.l'], ['d.l', 'o.l']],
+      ));
+      // loop the silence first, so the loop adds nothing
+      render(rack, 0.1);
+      press(rack, M_LOOP);
+      render(rack, 0.1);
+      rack.noteOn(60, 100);
+      render(rack, 0.02);
+      rack.noteOff(60);
+      const { L } = render(rack, 0.5);
+      const e = rmsOf(L, d - 0.02 + 0.003, d - 0.02 + 0.017);
+      if (route === 0) expect(e).toBeGreaterThan(0.02);
+      else expect(e).toBeLessThan(1e-4);
+    }
+  });
+
+  test('switching the Wet Channel off cuts it, or with Trails lets it ring out; Dry kill silences the dry sound', () => {
+    for (const trails of [0, 1]) {
+      const rack = mood({ wet: 0, time: 0.8, wmod: 1, trails });
+      render(rack, 1);
+      rack.setParam('u', 'a1', 0);
+      press(rack, M_WET);
+      const { L } = render(rack, 0.4);
+      expect(st(rack).wet).toBe(false);
+      if (trails) expect(rmsOf(L, 0.2, 0.4)).toBeGreaterThan(0.02);
+      else expect(rmsOf(L, 0.2, 0.4)).toBe(0);
+    }
+    const dry = (kill: number) => {
+      const rack = mood({ mix: 0, dry: kill });
+      press(rack, M_WET);
+      return rmsOf(render(rack, 0.5).L, 0.2, 0.5);
+    };
+    expect(dry(0)).toBeGreaterThan(0.1);
+    expect(dry(1)).toBe(0);
+  });
+
+  test('Sync: Loop to wet makes the loop a run of delay times; Wet to loop steps Time in fractions of the loop', () => {
+    // (once the ring has filled: until then the loop is only what it has heard)
+    const rack = mood({ wet: 1, time: 0.5, sync: 0 });
+    render(rack, 2.2);
+    const v = st(rack);
+    const runs = (v.len * v.rate) / delayTime(0.5);
+    expect(Math.log2(runs) % 1).toBeCloseTo(0, 6);
+    expect(v.len * v.rate).toBeLessThanOrEqual(MOOD_RING);
+    // Wet to loop: Time at 0.65 is the seventh step, half the loop
+    const d = MOOD_RING / 2 / 32000 - 0.02;
+    const { L } = render(blip({ wet: 1, time: 0.65, wmod: 0, sync: 2 }), 1.2);
+    expect(rmsOf(L, d + 0.003, d + 0.017)).toBeGreaterThan(0.02);
+  });
+
+  test('ramping bounces the Clock between the knob and the bottom, and EXP moves Mix', () => {
+    const rack = mood({ ramp: 1, rknob: 3, rspeed: 2, clock: 1 });
+    const rates = new Set<number>();
+    for (let i = 0; i < 20; i++) {
+      render(rack, 0.05);
+      rates.add(st(rack).rate);
+    }
+    expect(rates.size).toBeGreaterThan(5);
+    expect(Math.max(...rates)).toBeLessThanOrEqual(64000);
+    // EXP: +5 V takes Mix from noon to MOOD only, so with both channels off nothing is heard
+    const mixed = (cv: number) => {
+      const r = mood({ mix: 0.5 }, [['k', 'util', { o2: cv }]], [['k.out2', 'd.exp']]);
+      press(r, M_WET);
+      return rmsOf(render(r, 0.5).L, 0.2, 0.5);
+    };
+    expect(mixed(0)).toBeGreaterThan(0.1);
+    expect(mixed(5)).toBe(0);
+  });
+
+  test('every mode, routing and switch stays finite and fits in the CPU', () => {
+    const t0 = performance.now();
+    let runs = 0;
+    for (let wet = 0; wet < 3; wet++) for (let lmode = 0; lmode < 3; lmode++) {
+      const classic = (wet + lmode) & 1;
+      const rack = mood({ wet, lmode, route: (wet + lmode) % 3, classic, spread: 1 - classic, wmod: 0.9, lmod: 0.3, len: 0.6, clock: 0.55, tone: 0.5, sync: lmode });
+      render(rack, 1);
+      press(rack, M_LOOP);
+      const { L, R } = render(rack, 1);
+      press(rack, M_LOOP_HOLD);
+      const b = render(rack, 0.5);
+      press(rack, M_LOOP_LET);
+      expect({ wet, lmode, ok: finite(L) && finite(R) && finite(b.L) && peak(L) < 6 && rmsOf(L, 0.2, 1) > 0.005 }).toEqual({ wet, lmode, ok: true });
+      runs++;
+    }
+    // 9 runs of 2.5 s: well under a fifth of real time
+    expect(performance.now() - t0).toBeLessThan(runs * 2500 * 0.2);
   });
 });
