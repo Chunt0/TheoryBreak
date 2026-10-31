@@ -1,14 +1,15 @@
-// The circle of fifths, seen from a key. Play and the circle lights up (chords
-// draw their shape); every slot names its degree from the tonic and the chord
-// built on it; a drone holds the tonic so the ear has somewhere to stand.
+// The circle of fifths, seen from a key. Out of the box it is only the degrees,
+// each its own colour round the rainbow (tonic red, 5 orange, 2 yellow…), and
+// whatever you play lights its degree. Info adds note names, the chord on each
+// degree, chord shapes and the words. A drone holds the tonic for the ear.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { audio } from '../audio/engine';
 import { input } from '../midi/input';
 import { chordSymbol, detectChord, getChord } from '../theory/chords';
 import { getInterval, mod, noteName, type Note } from '../theory/core';
 import type { KeyMark } from '../ui/Keyboard';
-import { Bar, Chips, K, Pick, playEvents, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
+import { Bar, Chips, K, Pick, playEvents, releaseFocus, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
 import type { Help } from './Lessons';
 import { pickFor, useTally } from './stats';
 import {
@@ -19,7 +20,7 @@ import {
 type Task = 'explore' | 'find' | 'walk';
 type Drone = 'off' | 'root' | 'fifth';
 type View = 'tonic' | 'c';
-type Rings = 'triads' | 'sevenths' | 'degrees' | 'notes';
+type Chords = 'triads' | 'sevenths' | 'none';
 type Ask = 'name' | 'ear';
 type Dir = 'fourths' | 'fifths';
 
@@ -28,14 +29,13 @@ const TASKS: Choice<Task>[] = [
   { id: 'find', label: 'Find', title: 'Find degrees: one is named (or played), you play it' },
   { id: 'walk', label: 'Walk', title: 'Walk the circle: every root in 4ths or 5ths, then home' },
 ];
-const DRONES: Choice<Drone>[] = [{ id: 'off', label: 'Off' }, { id: 'root', label: 'Tonic' }, { id: 'fifth', label: 'Tonic + 5th' }];
-const VIEWS: Choice<View>[] = [{ id: 'tonic', label: 'Tonic on top' }, { id: 'c', label: 'C on top' }];
-const RINGS: Choice<Rings>[] = [
-  { id: 'triads', label: 'Degrees + triads' },
-  { id: 'sevenths', label: 'Degrees + 7ths' },
-  { id: 'degrees', label: 'Degrees only' },
-  { id: 'notes', label: 'Names only' },
+const DRONES: Choice<Drone>[] = [
+  { id: 'off', label: 'Off', title: 'No drone' },
+  { id: 'root', label: '1', title: 'Drone on the tonic' },
+  { id: 'fifth', label: '1 + 5', title: 'Drone on the tonic and its 5th' },
 ];
+const VIEWS: Choice<View>[] = [{ id: 'tonic', label: 'Tonic on top' }, { id: 'c', label: 'C on top' }];
+const CHORDS: Choice<Chords>[] = [{ id: 'triads', label: 'Triads' }, { id: 'sevenths', label: '7th chords' }, { id: 'none', label: 'No chords' }];
 const ASKS: Choice<Ask>[] = [{ id: 'name', label: 'By name' }, { id: 'ear', label: 'By ear' }];
 const DIRS: Choice<Dir>[] = [{ id: 'fourths', label: 'In 4ths ↺' }, { id: 'fifths', label: 'In 5ths ↻' }];
 
@@ -76,6 +76,28 @@ const HELP: Record<Task, Help> = {
   },
 };
 
+/**
+ * Each degree's colour, round the rainbow in circle order from a red tonic: the
+ * major scale is the warm half, the flats the cool. Lightness is set by eye per
+ * hue (yellow has to be light to look yellow at all); `ink` reads on top of it.
+ */
+const RAINBOW: { c: string; ink: string }[] = [
+  ['0.66 0.20 27', 0], // 1  red
+  ['0.75 0.17 55', 0], // 5  orange
+  ['0.87 0.17 95', 0], // 2  yellow
+  ['0.84 0.19 128', 0], // 6  lime
+  ['0.75 0.18 150', 0], // 3  green
+  ['0.76 0.13 185', 0], // 7  teal
+  ['0.74 0.13 225', 0], // ♯4 sky
+  ['0.62 0.18 262', 1], // ♭2 blue
+  ['0.56 0.21 287', 1], // ♭6 indigo
+  ['0.63 0.22 315', 1], // ♭3 violet
+  ['0.66 0.23 345', 1], // ♭7 magenta
+  ['0.76 0.15 10', 0], // 4  rose
+].map(([c, light]) => ({ c: `oklch(${c})`, ink: light ? '#fff' : '#141414' }));
+export const degreeColor = (semis: number): string => RAINBOW[slotOf(semis)].c;
+const degreeInk = (semis: number): string => RAINBOW[slotOf(semis)].ink;
+
 /** The register the circle's notes play in: tonic from G3 up to F♯4. */
 const tonicMidiOf = (p: number): number => 55 + mod(p - 7, 12);
 
@@ -103,8 +125,9 @@ export function CircleMode() {
   const [scaleId, setScaleId] = usePref('cof.scale', 'major');
   const [drone, setDrone] = usePref<Drone>('cof.drone', 'off');
   const [lastDrone, setLastDrone] = usePref<Exclude<Drone, 'off'>>('cof.droneKind', 'root');
+  const [info, setInfo] = usePref('cof.info', false);
   const [view, setView] = usePref<View>('cof.view', 'tonic');
-  const [rings, setRings] = usePref<Rings>('cof.rings', 'triads');
+  const [chordRing, setChordRing] = usePref<Chords>('cof.chords', 'triads');
   const [ask, setAsk] = usePref<Ask>('cof.ask', 'name');
   const [dir, setDir] = usePref<Dir>('cof.dir', 'fourths');
   const [walkBest, setWalkBest] = usePref<Record<string, number>>('cof.walkBest', {});
@@ -117,7 +140,7 @@ export function CircleMode() {
 
   // ------------------------------------------------------------ what is played
   const held = parseHeld(useSyncExternalStore((fn) => input.onChange(fn), heldKey));
-  /** the last notes played together: they stay drawn after the keys let go */
+  /** the last notes played together: they stay shown after the keys let go */
   const [shown, setShown] = useState<number[]>([]);
   const [wrong, flash] = useFlash(600);
 
@@ -126,8 +149,7 @@ export function CircleMode() {
   useEffect(() => () => audio.drone([]), []);
   const toggleDrone = () => {
     void audio.init();
-    if (drone === 'off') setDrone(lastDrone);
-    else setDrone('off');
+    setDrone(drone === 'off' ? lastDrone : 'off');
   };
   const pickDrone = (d: Drone) => {
     void audio.init();
@@ -158,10 +180,10 @@ export function CircleMode() {
     setQ(n);
     if (ask === 'ear') hear(n.semis);
   }, [task, ask, scaleId, tonicPc]);
-  // right answers move on by themselves
+  // answered questions move on by themselves (a miss stays up a little longer)
   useEffect(() => {
-    if (task !== 'find' || !q.done || q.missed) return;
-    const t = window.setTimeout(nextFind, 1100);
+    if (task !== 'find' || !q.done) return;
+    const t = window.setTimeout(nextFind, q.missed ? 2200 : 1100);
     return () => window.clearTimeout(t);
   }, [q, task]);
 
@@ -176,6 +198,7 @@ export function CircleMode() {
   // ------------------------------------------------------------ key moves
   /** One step round the circle: +1 clockwise (up a 5th), −1 counter-clockwise. */
   const stepKey = (steps: number) => setTonicPc(mod(tonicPc + steps * 7, 12));
+  const walkOn = () => stepKey(dir === 'fourths' ? -1 : 1);
 
   useEffect(() => input.placeRoot(tonicMidi), [tonicMidi]);
 
@@ -228,18 +251,20 @@ export function CircleMode() {
       else reveal();
     } else {
       if (k === 'Backspace') setWalk(freshWalk());
-      else if (k === 'Enter' && walkDone) stepKey(dir === 'fourths' ? -1 : 1);
+      else if (k === 'Enter' && walkDone) walkOn();
       else if (k === 'Space') toggleDrone();
     }
   });
 
-  // ------------------------------------------------------------ the big keyboard
+  // ------------------------------------------------------------ the big keyboard: the same colours, degrees unless Info is on
   useEffect(() => {
     const marks: Record<number, KeyMark> = {};
-    const mark = (semis: number, tone: KeyMark['tone'], label = noteName(spell(semis))) => (marks[tonicMidi + semis] = { label, tone });
+    const mark = (semis: number, tone: KeyMark['tone']) => {
+      marks[tonicMidi + semis] = { label: info ? noteName(spell(semis)) : degreeLabel(semis, scaleId), tone, color: degreeColor(semis), ink: degreeInk(semis) };
+    };
     if (task === 'explore') {
       pool.forEach((s) => mark(s, s === 0 ? 'root' : 'scale'));
-      mark(12, 'root', noteName(tonic));
+      mark(12, 'root');
     } else if (task === 'find') {
       mark(0, 'root');
       if (q.done) mark(q.semis, q.missed ? 'target' : 'ok');
@@ -247,24 +272,28 @@ export function CircleMode() {
       mark(walkSeq[walk.idx], walk.idx === 0 ? 'root' : 'target');
     }
     setMarks(marks);
-  }, [task, tonicPc, scaleId, q, walk, walkSeq]);
+  }, [task, tonicPc, scaleId, q, walk, walkSeq, info]);
 
-  // ------------------------------------------------------------ what the centre says
+  // ------------------------------------------------------------ what the centre shows
   const lit = new Set(held.map((n) => mod(n - tonicPc, 12)));
-  const restShown = held.length === 0;
+  const resting = held.length === 0;
+  /** degrees of the last notes played, lowest first */
+  const shownDegs = [...new Set([...shown].sort((a, b) => a - b).map((n) => mod(n - tonicPc, 12)))];
   const centre = ((): Centre => {
     if (task === 'find') {
-      if (q.done) return { big: noteName(spell(q.semis)), small: `${degreeLabel(q.semis, scaleId)} of ${noteName(tonic)}`, tone: q.missed ? 'bad' : 'good' };
-      return ask === 'ear' ? { big: '?', small: 'play what you hear' } : { big: degreeLabel(q.semis, scaleId), small: `${intervalWords(q.semis, scaleId)} up` };
+      if (q.done) return info ? { big: noteName(spell(q.semis)), small: `${degreeLabel(q.semis, scaleId)} of ${noteName(tonic)}`, tone: q.missed ? 'bad' : 'good' } : { degs: [q.semis], tone: q.missed ? 'bad' : 'good' };
+      if (ask === 'ear') return info ? { big: '?', small: 'play what you hear' } : { big: '?' };
+      return info ? { big: degreeLabel(q.semis, scaleId), small: `${intervalWords(q.semis, scaleId)} up` } : { big: degreeLabel(q.semis, scaleId) };
     }
     if (task === 'walk') {
-      if (walkDone) return { big: walkSecs !== null ? `${walkSecs.toFixed(1)} s` : '✓', small: walk.misses ? `${walk.misses} miss${walk.misses > 1 ? 'es' : ''}` : 'no misses', tone: walk.misses ? undefined : 'good' };
-      return { big: noteName(spell(walkSeq[walk.idx])), small: `${walk.idx + 1} of ${walkSeq.length}` };
+      if (walkDone) return { big: walkSecs !== null ? `${walkSecs.toFixed(1)} s` : '✓', small: info ? (walk.misses ? `${walk.misses} miss${walk.misses > 1 ? 'es' : ''}` : 'no misses') : undefined, tone: walk.misses ? undefined : 'good' };
+      return info ? { big: noteName(spell(walkSeq[walk.idx])), small: `${walk.idx + 1} of ${walkSeq.length}` } : { degs: [walkSeq[walk.idx]] };
     }
-    return readout(shown, tonic, tonicPc, scaleId);
+    return info ? readout(shown, tonic, tonicPc, scaleId) : { degs: shownDegs, rest: resting };
   })();
+  /** tapping the centre: hear the question again, show the answer, or go on */
+  const hubAction = task === 'find' ? (q.done ? nextFind : ask === 'ear' ? () => hear() : reveal) : task === 'walk' && walkDone ? () => setWalk(freshWalk()) : undefined;
 
-  const shapePcs = task === 'explore' ? [...new Set(shown.map((n) => mod(n - tonicPc, 12)))] : [];
   const marksOn = new Map<number, string>();
   if (task === 'find' && q.done) marksOn.set(q.semis, q.missed ? 'target' : 'ok');
   if (task === 'walk') walkSeq.slice(0, walk.idx).forEach((s) => marksOn.set(s, 'ok'));
@@ -272,7 +301,6 @@ export function CircleMode() {
   for (const w of wrong) marksOn.set(w, 'wrong');
 
   const nextKeyName = (steps: number) => noteName(tonicFor(mod(tonicPc + steps * 7, 12), scaleId));
-  const droneOn = drone !== 'off';
 
   return (
     <div className="s-mode s-cofmode">
@@ -280,73 +308,81 @@ export function CircleMode() {
         <Chips label="Task" value={task} options={TASKS} onChange={setTask} />
         <Pick label="Key" prefix="Key" value={String(tonicPc)} options={KEY_ORDER.map((p) => ({ id: String(p), label: noteName(tonicFor(p, scaleId)) }))} onChange={(v) => setTonicPc(Number(v))} />
         <Pick label="Scale" value={scaleId} groups={SCALE_GROUPS} onChange={setScaleId} />
-        <Pick label="Drone" prefix="Drone" value={drone} options={DRONES} onChange={pickDrone} />
-        <Pick label="View" value={view} options={VIEWS} onChange={setView} />
-        <Pick label="Rings" value={rings} options={RINGS} onChange={setRings} />
         {task === 'find' ? <Pick label="Asked" value={ask} options={ASKS} onChange={setAsk} /> : null}
         {task === 'walk' ? <Pick label="Direction" value={dir} options={DIRS} onChange={setDir} /> : null}
+        <span className="s-cof-drone">
+          <span className="k">Drone</span>
+          <Chips label="Drone" value={drone} options={DRONES} onChange={pickDrone} />
+        </span>
+        {info ? <Pick label="View" value={view} options={VIEWS} onChange={setView} /> : null}
+        {info ? <Pick label="Chord ring" value={chordRing === 'triads' || chordRing === 'sevenths' ? chordRing : 'none'} options={CHORDS} onChange={setChordRing} /> : null}
+        <button type="button" className={`s-cof-info ${info ? 'on' : ''}`} aria-pressed={info} onClick={(e) => { setInfo(!info); if (e.detail) releaseFocus(e.currentTarget); }} title="Note names, the chord on each degree, chord shapes and notes on the circle">
+          <span className="dot" aria-hidden="true" /> Info
+        </button>
       </Bar>
 
       <section className="s-stage">
-        <div className="s-cof">
-          <div className="s-cof-side">
-            <div className="s-q">
-              <h1>{keyText(tonic, scaleId)}</h1>
-              <p className="sub">
-                {task === 'explore' ? shapeText(scaleId)
-                  : task === 'find' ? (ask === 'ear' ? 'A degree plays over the drone: find it on the keys.' : 'The centre names a degree: play it, in any octave.')
-                  : `Every root ${dir === 'fourths' ? 'counter-clockwise in 4ths' : 'clockwise in 5ths'} from ${noteName(tonic)}, then home.${best !== undefined ? ` Best clean run: ${best.toFixed(1)} s.` : ''}`}
-              </p>
-            </div>
-            <div className="s-status" aria-live="polite">
-              {task === 'explore' ? (
-                <>
-                  <button type="button" className={`btn ${droneOn ? 'primary' : ''}`} onClick={toggleDrone} aria-pressed={droneOn}>Drone {droneOn ? 'on' : 'off'} <K>Space</K></button>
-                  <button type="button" className="btn ghost small" onClick={() => stepKey(-1)} title="Down a 5th (up a 4th)">↺ {nextKeyName(-1)} <K>⌫</K></button>
-                  <button type="button" className="btn ghost small" onClick={() => stepKey(1)} title="Up a 5th">{nextKeyName(1)} ↻ <K>Enter</K></button>
-                </>
-              ) : task === 'find' ? (
-                q.done ? (
+        <div className={`s-cof ${info ? 'info' : ''}`}>
+          {info ? (
+            <div className="s-cof-side">
+              <div className="s-q">
+                <h1>{keyText(tonic, scaleId)}</h1>
+                <p className="sub">
+                  {task === 'explore' ? shapeText(scaleId)
+                    : task === 'find' ? (ask === 'ear' ? 'A degree plays over the drone: find it on the keys.' : 'The centre names a degree: play it, in any octave.')
+                    : `Every root ${dir === 'fourths' ? 'counter-clockwise in 4ths' : 'clockwise in 5ths'} from ${noteName(tonic)}, then home.${best !== undefined ? ` Best clean run: ${best.toFixed(1)} s.` : ''}`}
+                </p>
+              </div>
+              <div className="s-status" aria-live="polite">
+                {task === 'explore' ? (
                   <>
-                    <strong className={q.missed ? 'bad' : 'good'}>{q.missed ? '✗ ' : '✓ '}{noteName(spell(q.semis))} is the {degreeLabel(q.semis, scaleId)} of {noteName(tonic)}</strong>
-                    <button type="button" className="btn primary" onClick={nextFind}>Next <K>Space</K></button>
+                    <button type="button" className="btn ghost small" onClick={() => stepKey(-1)} title="Down a 5th (up a 4th)">↺ {nextKeyName(-1)} <K>⌫</K></button>
+                    <button type="button" className="btn ghost small" onClick={() => stepKey(1)} title="Up a 5th">{nextKeyName(1)} ↻ <K>Enter</K></button>
+                  </>
+                ) : task === 'find' ? (
+                  q.done ? (
+                    <>
+                      <strong className={q.missed ? 'bad' : 'good'}>{q.missed ? '✗ ' : '✓ '}{noteName(spell(q.semis))} is the {degreeLabel(q.semis, scaleId)} of {noteName(tonic)}</strong>
+                      <button type="button" className="btn primary" onClick={nextFind}>Next <K>Space</K></button>
+                    </>
+                  ) : (
+                    <>
+                      {wrong.size ? <span className="bad">That was the {[...wrong].map((w) => degreeLabel(w, scaleId)).join(', ')}</span> : null}
+                      {ask === 'ear' ? <button type="button" className="btn" onClick={() => hear()}>Hear it <K>Space</K></button> : <button type="button" className="btn ghost small" onClick={reveal}>Show me <K>Space</K></button>}
+                      <button type="button" className="btn ghost small" onClick={nextFind}>Skip <K>Enter</K></button>
+                    </>
+                  )
+                ) : walkDone ? (
+                  <>
+                    <strong className={walk.misses ? '' : 'good'}>✓ Round in {walkSecs!.toFixed(1)} s{walk.misses ? `, ${walk.misses} miss${walk.misses > 1 ? 'es' : ''}` : ''}</strong>
+                    <button type="button" className="btn primary" onClick={walkOn}>Next: {nextKeyName(dir === 'fourths' ? -1 : 1)} <K>Enter</K></button>
+                    <button type="button" className="btn ghost small" onClick={() => setWalk(freshWalk())}>Again <K>⌫</K></button>
                   </>
                 ) : (
                   <>
-                    {wrong.size ? <span className="bad">That was the {[...wrong].map((w) => degreeLabel(w, scaleId)).join(', ')}</span> : null}
-                    {ask === 'ear' ? <button type="button" className="btn" onClick={() => hear()}>Hear it <K>Space</K></button> : <button type="button" className="btn ghost small" onClick={reveal}>Show me <K>Space</K></button>}
-                    <button type="button" className="btn ghost small" onClick={nextFind}>Skip <K>Enter</K></button>
-                    <button type="button" className={`btn ghost small ${droneOn ? 'on' : ''}`} onClick={toggleDrone} aria-pressed={droneOn}>Drone {droneOn ? 'on' : 'off'} <K>⌫</K></button>
+                    <span className="tnum">{walk.idx} / {walkSeq.length}{walk.misses ? ` · ${walk.misses} miss${walk.misses > 1 ? 'es' : ''}` : ''}</span>
+                    {walk.idx ? <button type="button" className="btn ghost small" onClick={() => setWalk(freshWalk())}>Restart <K>⌫</K></button> : null}
                   </>
-                )
-              ) : walkDone ? (
-                <>
-                  <strong className={walk.misses ? '' : 'good'}>✓ Round in {walkSecs!.toFixed(1)} s{walk.misses ? `, ${walk.misses} miss${walk.misses > 1 ? 'es' : ''}` : ''}</strong>
-                  <button type="button" className="btn primary" onClick={() => stepKey(dir === 'fourths' ? -1 : 1)}>Next: {nextKeyName(dir === 'fourths' ? -1 : 1)} <K>Enter</K></button>
-                  <button type="button" className="btn ghost small" onClick={() => setWalk(freshWalk())}>Again <K>⌫</K></button>
-                </>
-              ) : (
-                <>
-                  <span className="tnum">{walk.idx} / {walkSeq.length}{walk.misses ? ` · ${walk.misses} miss${walk.misses > 1 ? 'es' : ''}` : ''}</span>
-                  <button type="button" className={`btn ghost small ${droneOn ? 'on' : ''}`} onClick={toggleDrone} aria-pressed={droneOn}>Drone {droneOn ? 'on' : 'off'} <K>Space</K></button>
-                  {walk.idx ? <button type="button" className="btn ghost small" onClick={() => setWalk(freshWalk())}>Restart <K>⌫</K></button> : null}
-                </>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <Wheel
             tonicPc={tonicPc}
             tonic={tonic}
             scaleId={scaleId}
             inScale={inScale}
-            view={view}
-            rings={rings}
+            info={info}
+            view={info ? view : 'tonic'}
+            chordRing={chordRing}
+            droneOn={drone !== 'off'}
             lit={lit}
             marks={marksOn}
-            shape={shapePcs}
-            shapeResting={restShown}
+            shape={info && task === 'explore' ? shownDegs : []}
+            shapeResting={resting}
             centre={centre}
+            onHub={hubAction}
             tonicMidi={tonicMidi}
           />
         </div>
@@ -356,13 +392,18 @@ export function CircleMode() {
 }
 
 interface Centre {
-  big: string;
-  small: string;
+  /** words (Info), or a short mark like "?" */
+  big?: string;
+  small?: string;
   more?: string;
+  /** degrees to show, each in its colour */
+  degs?: number[];
+  /** nothing held any more: shown dimmer */
+  rest?: boolean;
   tone?: string;
 }
 
-/** What the centre shows for the notes last played: a chord and its numeral, an interval, or a note and its degree. */
+/** What the centre shows with Info on: a chord and its numeral, an interval, or a note and its degree. */
 function readout(notes: number[], tonic: Note, tonicPc: number, scaleId: string): Centre {
   const pcs = [...new Set(notes.map((n) => mod(n, 12)))];
   const name = (p: number) => noteName(spellPcIn(tonic, p, scaleId));
@@ -455,13 +496,17 @@ function ChordLabel({ x, y, numeral }: { x: number; y: number; numeral: string }
   );
 }
 
-function Wheel({ tonicPc, tonic, scaleId, inScale, view, rings, lit, marks, shape, shapeResting, centre, tonicMidi }: {
+function Wheel({ tonicPc, tonic, scaleId, inScale, info, view, chordRing, droneOn, lit, marks, shape, shapeResting, centre, onHub, tonicMidi }: {
   tonicPc: number;
   tonic: Note;
   scaleId: string;
   inScale: Set<number>;
+  /** note names and chords as well as degrees */
+  info: boolean;
   view: View;
-  rings: Rings;
+  chordRing: Chords;
+  /** the tonic's slot breathes while the drone holds it */
+  droneOn: boolean;
   /** degrees sounding now */
   lit: Set<number>;
   /** degrees marked by the drill: ok, wrong, target */
@@ -470,18 +515,19 @@ function Wheel({ tonicPc, tonic, scaleId, inScale, view, rings, lit, marks, shap
   shape: number[];
   shapeResting: boolean;
   centre: Centre;
+  onHub?: () => void;
   tonicMidi: number;
 }) {
   const [box, width] = useWidth();
   const compact = width < 330;
-  const showDeg = rings !== 'notes';
-  const showChords = (rings === 'triads' || rings === 'sevenths') && !compact;
-  const chords = useMemo(() => new Map(diatonicOnDegrees(scaleId, rings === 'sevenths').map((c) => [c.semis, c])), [scaleId, rings]);
-  // radii: note names outside, degrees, chords, then the centre
+  const showChords = info && (chordRing === 'triads' || chordRing === 'sevenths') && !compact;
+  const chords = useMemo(() => new Map(diatonicOnDegrees(scaleId, chordRing === 'sevenths').map((c) => [c.semis, c])), [scaleId, chordRing]);
+  // rings, outside in: note names (Info), degrees, chords (Info), then the centre
   const R0 = 198;
-  const R1 = showDeg ? (compact ? 138 : 150) : 112;
-  const R2 = showDeg ? (showChords ? 106 : compact ? 84 : 98) : R1;
+  const R1 = info ? (compact ? 138 : 150) : R0;
+  const R2 = !info ? 96 : showChords ? 106 : compact ? 84 : 98;
   const R3 = showChords ? 64 : R2;
+  const hubR = R3 - 4;
   // the tonic's slot on the C-based circle; with the tonic on top the wheel turns to it
   const turn = useTurn(view === 'tonic' ? slotOf(tonicPc) : 0);
   const angleOf = (semis: number) => (slotOf(mod(tonicPc + semis, 12)) - turn) * 30 - 90;
@@ -500,6 +546,7 @@ function Wheel({ tonicPc, tonic, scaleId, inScale, view, rings, lit, marks, shap
     downs.current.delete(id);
   };
   useEffect(() => () => [...downs.current.keys()].forEach(release), []);
+  const ends = { onPointerUp: (e: PointerEvent) => release(e.pointerId), onPointerLeave: (e: PointerEvent) => release(e.pointerId), onPointerCancel: (e: PointerEvent) => release(e.pointerId) };
   const chordNotes = (semis: number, typeId: string) => {
     const root = 48 + mod(tonicPc + semis, 12);
     return getChord(typeId).intervals.map((i) => root + getInterval(i).semis);
@@ -507,60 +554,65 @@ function Wheel({ tonicPc, tonic, scaleId, inScale, view, rings, lit, marks, shap
 
   const order = Array.from({ length: 12 }, (_, i) => mod(i * 7, 12)); // degrees round from the tonic
   const pts = [...shape].sort((a, b) => mod(angleOf(a) + 90, 360) - mod(angleOf(b) + 90, 360)).map((s) => xy(R1 - 3, angleOf(s)));
-  const label = `Circle of fifths from ${noteName(tonic)}`;
-  const big = centre.big.length > 6 ? 'long' : '';
+  const slotClass = (semis: number) =>
+    `${scaleId === NO_SCALE || inScale.has(semis) ? 'in' : 'out'} ${semis === 0 ? 'tonic' : ''} ${lit.has(semis) ? 'lit' : ''} ${marks.get(semis) ?? ''}`;
+  const colour = (semis: number) => ({ '--c': degreeColor(semis), '--ink': degreeInk(semis) }) as CSSProperties;
+  // the centre's degrees: rows of up to four, smaller as more of them sound together
+  const degs = centre.degs ?? [];
+  const rows = Array.from({ length: Math.ceil(degs.length / 4) }, (_, i) => degs.slice(i * 4, i * 4 + 4));
+  const across = Math.min(degs.length, 4);
+  const degSize = Math.min([0, 64, 50, 40, 32][across], 150 / (rows.length * 1.1)) * (hubR / 92) * (compact ? 1.15 : 1);
+  const bigLong = (centre.big ?? '').length > 6 ? 'long' : '';
 
   return (
     <div className="s-cof-wheel" ref={box}>
-      <svg viewBox="-200 -200 400 400" role="img" aria-label={label} className={compact ? 'compact' : ''}>
+      <svg viewBox="-200 -200 400 400" role="img" aria-label={`Scale degrees on the circle of fifths, ${noteName(tonic)} on top`} className={`${compact ? 'compact' : ''} ${info ? 'info' : 'solo'} ${droneOn ? 'drone' : ''}`}>
         {order.map((semis) => {
           const a = angleOf(semis);
-          const ins = scaleId === NO_SCALE || inScale.has(semis);
           const chord = chords.get(semis);
-          const note = tonicMidi + semis;
-          const cls = `${ins ? 'in' : 'out'} ${semis === 0 ? 'tonic' : ''} ${lit.has(semis) ? 'lit' : ''} ${marks.get(semis) ?? ''}`;
           return (
-            <g key={semis} className={`slot ${cls}`}>
-              <g onPointerDown={(e) => press(e, [note])} onPointerUp={(e) => release(e.pointerId)} onPointerLeave={(e) => release(e.pointerId)} onPointerCancel={(e) => release(e.pointerId)}>
-                <path className="c-note" d={cell(a, R1, R0)} />
-                {showDeg ? <path className="c-deg" d={cell(a, R2, R1)} /> : null}
+            <g key={semis} className={`slot ${slotClass(semis)}`} style={colour(semis)}>
+              <g onPointerDown={(e) => press(e, [tonicMidi + semis])} {...ends}>
+                {info ? <path className="c-note" d={cell(a, R1, R0)} /> : null}
+                <path className="c-deg" d={cell(a, R2, R1)} />
               </g>
-              {showChords ? (
-                <path
-                  className={`c-chord ${chord ? 'has' : ''}`}
-                  d={cell(a, R3, R2)}
-                  onPointerDown={chord ? (e) => press(e, chordNotes(semis, chord.typeId)) : undefined}
-                  onPointerUp={(e) => release(e.pointerId)}
-                  onPointerLeave={(e) => release(e.pointerId)}
-                  onPointerCancel={(e) => release(e.pointerId)}
-                />
-              ) : null}
+              {showChords ? <path className={`c-chord ${chord ? 'has' : ''}`} d={cell(a, R3, R2)} onPointerDown={chord ? (e) => press(e, chordNotes(semis, chord.typeId)) : undefined} {...ends} /> : null}
             </g>
           );
         })}
-        {pts.length >= 2 ? (
-          <polygon className={`shape ${shapeResting ? 'rest' : ''}`} points={pts.map(([x, y]) => `${f2(x)},${f2(y)}`).join(' ')} />
-        ) : null}
+        {pts.length >= 2 ? <polygon className={`shape ${shapeResting ? 'rest' : ''}`} points={pts.map(([x, y]) => `${f2(x)},${f2(y)}`).join(' ')} /> : null}
         {order.map((semis) => {
           const a = angleOf(semis);
-          const ins = scaleId === NO_SCALE || inScale.has(semis);
           const chord = chords.get(semis);
           const [nx, ny] = xy((R0 + R1) / 2, a);
           const [dx, dy] = xy((R1 + R2) / 2, a);
           const [cx, cy] = xy((R2 + R3) / 2, a);
-          const cls = `${ins ? 'in' : 'out'} ${semis === 0 ? 'tonic' : ''} ${lit.has(semis) ? 'lit' : ''} ${marks.get(semis) ?? ''}`;
           return (
-            <g key={semis} className={`labels ${cls}`}>
-              <text x={f2(nx)} y={f2(ny)} className="t-note">{noteName(spellSemis(tonic, semis, scaleId))}</text>
-              {showDeg ? <text x={f2(dx)} y={f2(dy)} className="t-deg">{degreeLabel(semis, scaleId)}</text> : null}
+            <g key={semis} className={`labels ${slotClass(semis)}`} style={colour(semis)}>
+              {info ? <text x={f2(nx)} y={f2(ny)} className="t-note">{noteName(spellSemis(tonic, semis, scaleId))}</text> : null}
+              <text x={f2(dx)} y={f2(dy)} className="t-deg">{degreeLabel(semis, scaleId)}</text>
               {showChords && chord ? <ChordLabel x={cx} y={cy} numeral={chord.numeral} /> : null}
             </g>
           );
         })}
-        <circle r={R3 - 4} className="hub" />
-        <text y={centre.more ? (compact ? -20 : -14) : -6} className={`t-big ${big} ${centre.tone ?? ''}`}>{centre.big}</text>
-        <text y={centre.more ? (compact ? 14 : 14) : compact ? 26 : 22} className="t-small">{centre.small}</text>
-        {centre.more ? <text y={compact ? 38 : 32} className="t-more">{centre.more}</text> : null}
+        <circle r={hubR} className={`hub ${centre.tone ?? ''} ${onHub ? 'tap' : ''}`} onClick={onHub} />
+        {degs.length ? (
+          <g className={`t-degs ${centre.rest ? 'rest' : ''}`} style={{ fontSize: degSize }}>
+            {rows.map((row, r) => (
+              <text key={r} y={f2((r - (rows.length - 1) / 2) * degSize * 1.1)}>
+                {row.map((d, i) => (
+                  <tspan key={d} style={colour(d)} dx={i ? degSize * 0.22 : 0}>{degreeLabel(d, scaleId)}</tspan>
+                ))}
+              </text>
+            ))}
+          </g>
+        ) : centre.big !== undefined ? (
+          <>
+            <text y={centre.more ? (compact ? -20 : -14) : centre.small ? -6 : 0} className={`t-big ${bigLong} ${centre.tone ?? ''}`}>{centre.big}</text>
+            {centre.small ? <text y={centre.more ? 14 : compact ? 26 : 22} className="t-small">{centre.small}</text> : null}
+            {centre.more ? <text y={compact ? 38 : 32} className="t-more">{centre.more}</text> : null}
+          </>
+        ) : null}
       </svg>
     </div>
   );

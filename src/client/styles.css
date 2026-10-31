@@ -817,62 +817,83 @@ table.t th { color: var(--text-dim); font-weight: 650; font-size: 12.5px; text-t
 .s-circle text.on { fill: var(--accent-ink); }
 .s-circle .hit { fill: var(--accent-solid); }
 
-/* the Circle tab: a big wheel from the key, with the exercise's words beside it */
+/* the Circle tab: the wheel alone, or (Info) the wheel with the words beside it */
 .s-cof { flex: 1 1 0; min-height: 0; align-self: stretch; container-type: size; display: flex; align-items: center; justify-content: center; gap: clamp(20px, 4vw, 56px); }
 .s-cof-side { flex: 0 1 380px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .s-cof-side .s-q .sub { max-width: 380px; line-height: 1.4; text-wrap: balance; }
-.s-cof-side .btn.on { color: var(--accent); }
-.s-cof-wheel { flex: none; width: min(100cqh, 60cqw); aspect-ratio: 1; }
+.s-cof-wheel { flex: none; width: min(100cqh, 100cqw); aspect-ratio: 1; }
+.s-cof.info .s-cof-wheel { width: min(100cqh, 60cqw); }
 .s-cof-wheel svg { display: block; width: 100%; height: 100%; overflow: visible; touch-action: none; -webkit-user-select: none; user-select: none; }
 .s-cof-wheel text { text-anchor: middle; dominant-baseline: central; pointer-events: none; font-family: var(--font); }
+/* every slot carries its degree's colour in --c: faint at rest, full and glowing while it sounds */
+.s-cof-wheel .c-deg { fill: color-mix(in oklab, var(--c) 20%, var(--bg-elev)); cursor: pointer; transition: fill 0.9s ease-out, filter 0.9s ease-out; }
+.s-cof-wheel .out .c-deg { fill: color-mix(in oklab, var(--c) 6%, var(--bg-elev)); }
 .s-cof-wheel .c-note { fill: var(--bg-elev); stroke: var(--line); cursor: pointer; transition: fill 0.9s ease-out; }
 .s-cof-wheel .out .c-note { fill: color-mix(in oklab, var(--bg-elev) 40%, transparent); }
-.s-cof-wheel .c-deg { fill: transparent; cursor: pointer; transition: fill 0.9s ease-out; }
-.s-cof-wheel .in .c-deg { fill: color-mix(in oklab, var(--accent) 10%, transparent); }
 .s-cof-wheel .c-chord { fill: transparent; }
-.s-cof-wheel .c-chord.has { fill: color-mix(in oklab, var(--accent) 5%, transparent); cursor: pointer; }
-.s-cof-wheel .c-chord.has:hover, .s-cof-wheel .c-note:hover { stroke: var(--line-strong, var(--line)); }
-.s-cof-wheel .tonic .c-note { stroke: var(--accent); stroke-width: 2; }
-.s-cof-wheel .target .c-note { stroke: var(--tone-target); stroke-width: 2.5; stroke-dasharray: 6 4; }
-.s-cof-wheel .lit .c-note { fill: var(--accent-solid); transition-duration: 0.04s; }
-.s-cof-wheel .lit .c-deg { fill: color-mix(in oklab, var(--accent) 32%, transparent); transition-duration: 0.04s; }
-.s-cof-wheel .ok .c-note { fill: var(--good); transition-duration: 0.04s; }
-.s-cof-wheel .wrong .c-note { fill: var(--bad); transition-duration: 0.04s; }
+.s-cof-wheel .c-chord.has { fill: color-mix(in oklab, var(--c) 7%, transparent); cursor: pointer; }
+.s-cof-wheel .lit :is(.c-deg, .c-note), .s-cof-wheel .ok .c-deg { fill: var(--c); filter: drop-shadow(0 0 9px var(--c)); transition-duration: 0.04s; }
+.s-cof-wheel .solo .tonic .c-deg, .s-cof-wheel .info .tonic .c-note { stroke: var(--c); stroke-width: 2.5; }
+.s-cof-wheel .ok .c-deg { stroke: var(--good); stroke-width: 3; }
+.s-cof-wheel .wrong .c-deg { stroke: var(--bad); stroke-width: 3; }
+.s-cof-wheel .target .c-deg { stroke: var(--heading); stroke-width: 2.5; stroke-dasharray: 6 4; }
+/* the drone holds the tonic: its slot breathes */
+.s-cof-wheel .drone .tonic:not(.lit) .c-deg { animation: s-cof-breathe 4.5s ease-in-out infinite; }
+@keyframes s-cof-breathe { 50% { fill: color-mix(in oklab, var(--c) 48%, var(--bg-elev)); } }
+.s-cof-wheel .t-deg { font-size: 17px; font-weight: 700; fill: color-mix(in oklab, var(--c) 55%, var(--heading)); }
+.s-cof-wheel .solo .t-deg { font-size: 32px; letter-spacing: -0.02em; }
+.s-cof-wheel .out .t-deg { font-weight: 500; fill: color-mix(in oklab, var(--c) 30%, var(--text-faint)); }
+.s-cof-wheel :is(.lit, .ok) .t-deg { fill: var(--ink); }
+.s-cof-wheel .info .t-deg { paint-order: stroke; stroke: color-mix(in oklab, var(--bg) 70%, transparent); stroke-width: 3px; stroke-linejoin: round; }
+.s-cof-wheel .info .lit .t-deg { stroke: none; }
 .s-cof-wheel .t-note { font-size: 23px; font-weight: 650; fill: var(--text); }
 .s-cof-wheel .out .t-note { font-weight: 500; fill: var(--text-faint); }
-.s-cof-wheel .lit .t-note { fill: var(--on-accent); }
-.s-cof-wheel :is(.ok, .wrong) .t-note { fill: #fff; }
-.s-cof-wheel .t-deg { font-size: 17px; font-weight: 700; fill: var(--heading); paint-order: stroke; stroke: color-mix(in oklab, var(--bg) 75%, transparent); stroke-width: 3px; stroke-linejoin: round; }
-.s-cof-wheel .out .t-deg { font-weight: 500; fill: var(--text-faint); }
-.s-cof-wheel .tonic .t-deg { fill: var(--accent); }
+.s-cof-wheel .lit .t-note { fill: var(--ink); }
 .s-cof-wheel .t-chord { font-size: 12.5px; font-weight: 600; fill: var(--text-dim); paint-order: stroke; stroke: color-mix(in oklab, var(--bg) 75%, transparent); stroke-width: 3px; stroke-linejoin: round; }
 .s-cof-wheel .t-chord .q { font-size: 10.5px; font-weight: 550; }
-.s-cof-wheel .lit .t-deg { fill: var(--heading); }
-.s-cof-wheel .shape { fill: color-mix(in oklab, var(--accent) 14%, transparent); stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; pointer-events: none; transition: opacity 0.6s; }
+.s-cof-wheel .shape { fill: color-mix(in oklab, var(--text) 7%, transparent); stroke: color-mix(in oklab, var(--text) 55%, transparent); stroke-width: 2.5; stroke-linejoin: round; pointer-events: none; transition: opacity 0.6s; }
 .s-cof-wheel .shape.rest { opacity: 0.45; }
-.s-cof-wheel .hub { fill: var(--bg-elev); stroke: var(--line); pointer-events: none; }
+.s-cof-wheel .hub { fill: var(--bg-elev); stroke: var(--line); }
+.s-cof-wheel .hub.tap { cursor: pointer; }
+.s-cof-wheel .hub.good { stroke: var(--good); stroke-width: 3; }
+.s-cof-wheel .hub.bad { stroke: var(--bad); stroke-width: 3; }
+.s-cof-wheel .t-degs { font-weight: 750; letter-spacing: -0.02em; transition: opacity 0.6s; }
+.s-cof-wheel .t-degs tspan { fill: color-mix(in oklab, var(--c) 82%, var(--heading)); }
+.s-cof-wheel .t-degs.rest { opacity: 0.55; }
 .s-cof-wheel .t-big { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; fill: var(--heading); }
+.s-cof-wheel .solo .t-big { font-size: 56px; }
 .s-cof-wheel .t-big.long { font-size: 22px; }
 .s-cof-wheel .t-big.good { fill: var(--good); }
 .s-cof-wheel .t-big.bad { fill: var(--bad); }
 .s-cof-wheel .t-small { font-size: 15px; font-weight: 650; fill: var(--accent); }
 .s-cof-wheel .t-more { font-size: 11.5px; fill: var(--text-dim); }
-/* a small wheel drops the chord ring and draws its words bigger */
+/* a small wheel (phone) drops the chord ring and draws its words bigger */
 .s-cof-wheel .compact .t-note { font-size: 29px; }
-.s-cof-wheel .compact .t-deg { font-size: 23px; }
+.s-cof-wheel .compact.info .t-deg { font-size: 23px; }
+.s-cof-wheel .compact.solo .t-deg { font-size: 36px; }
 .s-cof-wheel .compact .t-big { font-size: 40px; }
+.s-cof-wheel .compact.solo .t-big { font-size: 64px; }
 .s-cof-wheel .compact .t-big.long { font-size: 26px; }
 .s-cof-wheel .compact .t-small { font-size: 20px; }
 .s-cof-wheel .compact .t-more { font-size: 15px; }
+/* the options row: the drone as a three-way switch, Info as a lamp */
+.s-cof-drone { display: inline-flex; align-items: center; gap: 7px; }
+.s-cof-drone > .k { font-size: 13px; color: var(--text-faint); }
+.s-cof-info { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-elev); color: var(--text-dim); font: 600 13.5px var(--font); cursor: pointer; }
+.s-cof-info .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); transition: background 0.2s, box-shadow 0.2s; }
+.s-cof-info.on { color: var(--text); border-color: color-mix(in oklab, var(--accent) 50%, var(--line)); }
+.s-cof-info.on .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.pk .mark.coloured text { fill: var(--ink); }
 @media (max-width: 760px) {
   .s-cof { flex-direction: column; gap: 14px; }
   .s-cof-side { flex: none; }
-  .s-cof-wheel { width: min(100cqw, calc(100cqh - 190px)); }
+  .s-cof.info .s-cof-wheel { width: min(100cqw, calc(100cqh - 190px)); }
 }
 @media (max-height: 540px) and (orientation: landscape) {
   .s-cof { gap: 16px; }
   .s-cof-side { flex-basis: 320px; gap: 8px; }
   .s-cof-side .s-q .sub { font-size: 12.5px; }
+  .s-cof-info { height: 30px; padding: 0 10px; font-size: 13px; }
 }
 
 /* the keyboard dock */

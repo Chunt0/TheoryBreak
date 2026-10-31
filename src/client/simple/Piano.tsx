@@ -2,7 +2,7 @@
 // they fill the width at any size; marks are labelled chips, the computer-key
 // letters sit on the keys they play and a bar underlines the stretch they reach.
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { KeyMark } from '../ui/Keyboard';
 
 const isBlack = (m: number): boolean => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
@@ -94,7 +94,7 @@ export function Piano({ marks, held, letters, onDown, onUp }: Props) {
     const mk = marks[m];
     if (!mk) return null;
     return (
-      <g key={`m${m}`} className={`mark tone-${mk.tone ?? 'chord'}`}>
+      <g key={`m${m}`} className={`mark tone-${mk.tone ?? 'chord'} ${mk.color ? 'coloured' : ''}`} style={mk.color ? ({ fill: mk.color, '--ink': mk.ink ?? '#141414' } as CSSProperties) : undefined}>
         {mk.label ? (
           <>
             <rect x={cx - width / 2} y={cy - ch / 2} width={width} height={ch} rx={black ? Math.min(5, width / 4) : Math.min(ch, width) / 2} />

@@ -5,6 +5,9 @@ import type { Tone } from '../learn/types';
 export interface KeyMark {
   label?: string;
   tone?: Tone;
+  /** a colour of its own (the Circle tab's degree colours), over the tone's, and the label's colour on it */
+  color?: string;
+  ink?: string;
 }
 
 interface Props {

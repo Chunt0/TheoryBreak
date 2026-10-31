@@ -192,7 +192,19 @@ export function Chips<T extends string>({ value, options, onChange, label }: { v
   return (
     <div className="s-seg" role="radiogroup" aria-label={label}>
       {options.map((o) => (
-        <button key={o.id} type="button" role="radio" aria-checked={value === o.id} title={o.title} className={value === o.id ? 'on' : ''} onClick={() => onChange(o.id)}>
+        <button
+          key={o.id}
+          type="button"
+          role="radio"
+          aria-checked={value === o.id}
+          title={o.title}
+          className={value === o.id ? 'on' : ''}
+          onClick={(e) => {
+            onChange(o.id);
+            // a click or tap lets go, so Space drives the exercise instead of pressing this again
+            if (e.detail) releaseFocus(e.currentTarget);
+          }}
+        >
           {o.label}
         </button>
       ))}
