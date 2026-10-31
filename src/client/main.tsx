@@ -15,6 +15,7 @@ function applySettings(): void {
   audio.setMaster(s.masterVolume);
   audio.setReverb(s.reverb);
   audio.setMetronome(s.metronome);
+  audio.setDroneLevel(s.drone);
   audio.setPatch(PART.lesson, presetByName(s.lessonPatch));
   audio.setInstrument(s.instrument);
   input.pads.channel = s.padChannel;

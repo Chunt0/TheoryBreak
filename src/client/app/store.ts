@@ -21,6 +21,8 @@ export interface Settings {
   masterVolume: number;
   reverb: number;
   metronome: number;
+  /** level of the tonic drone under the Circle tab */
+  drone: number;
   /** extra offset applied when scoring taps, ms (positive = you tap late) */
   tapOffsetMs: number;
   autoAdvance: boolean;
@@ -81,6 +83,7 @@ export const defaultSettings = (): Settings => ({
   masterVolume: 0.8,
   reverb: 0.18,
   metronome: 0.7,
+  drone: 0.5,
   tapOffsetMs: 0,
   autoAdvance: true,
   padChannel: 10,

@@ -9,6 +9,7 @@ import type { RackStatus } from './rack/dsp';
 import { defaultRack, type RackPatch } from './rack/patch';
 import type { WorkletIn, WorkletOut } from './worklet/dx7-processor';
 import type { RackIn, RackOut } from './worklet/rack-processor';
+import { midiToFreq } from '../theory/core';
 
 export const PART = { synth: 0, lesson: 1, bass: 2 } as const;
 export type PartId = 0 | 1 | 2;
@@ -46,6 +47,11 @@ class AudioEngine {
   private wet: GainNode | null = null;
   private clickBus: GainNode | null = null;
   private comp: DynamicsCompressorNode | null = null;
+  private verb: ConvolverNode | null = null;
+  private droneBus: GainNode | null = null;
+  private droneVoices: { out: GainNode; srcs: OscillatorNode[] }[] = [];
+  /** the drone notes asked for (kept while audio is still starting) */
+  private droneWant: number[] = [];
   private noise: AudioBuffer | null = null;
   private starting: Promise<void> | null = null;
   /** live notes played while the worklet is still loading (the very first key press) */
@@ -59,7 +65,7 @@ class AudioEngine {
   private statusListeners = new Set<(s: PartStatus[]) => void>();
   private stateListeners = new Set<() => void>();
   private scheduledNodes = new Set<AudioScheduledSourceNode>();
-  private settings = { master: 0.8, reverb: 0.18, metronome: 0.7 };
+  private settings = { master: 0.8, reverb: 0.18, metronome: 0.7, drone: 0.5 };
 
   // ------------------------------------------------------------------ setup
 
@@ -122,6 +128,8 @@ class AudioEngine {
     wet.gain.value = this.settings.reverb;
     const clickBus = ctx.createGain();
     clickBus.gain.value = this.settings.metronome;
+    const droneBus = ctx.createGain();
+    droneBus.gain.value = this.settings.drone;
 
     node.connect(comp);
     node.connect(verb).connect(wet).connect(comp);
@@ -129,6 +137,8 @@ class AudioEngine {
     rackNode.connect(verb);
     comp.connect(master).connect(analyser).connect(ctx.destination);
     clickBus.connect(master);
+    droneBus.connect(comp);
+    droneBus.connect(verb);
 
     this.node = node;
     this.rackNode = rackNode;
@@ -137,6 +147,8 @@ class AudioEngine {
     this.analyser = analyser;
     this.clickBus = clickBus;
     this.comp = comp;
+    this.verb = verb;
+    this.droneBus = droneBus;
     this.noise = this.makeNoise(ctx);
     this.patches.forEach((patch, part) => this.post({ t: 'patch', part, patch }));
     this.configs.forEach((config, part) => this.post({ t: 'config', part, config }));
@@ -146,6 +158,9 @@ class AudioEngine {
     this.postRack({ t: 'active', on: this.instrument === 'rack' });
     this.rackPending.splice(0).forEach((m) => this.postRack(m));
     if (this.rackListeners.size) this.postRack({ t: 'status', enabled: true });
+    const want = this.droneWant;
+    this.droneWant = [];
+    this.drone(want);
     await ctx.resume();
     this.setState(ctx.state === 'running' ? 'running' : 'suspended');
   }
@@ -256,6 +271,10 @@ class AudioEngine {
     this.settings.metronome = v;
     if (this.clickBus && this.ctx) this.clickBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
   }
+  setDroneLevel(v: number): void {
+    this.settings.drone = v;
+    if (this.droneBus && this.ctx) this.droneBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
+  }
 
   setPatch(part: PartId, patch: Patch): void {
     this.patches[part] = normalizePatch(patch);
@@ -316,6 +335,7 @@ class AudioEngine {
     this.post({ t: 'panic' });
     this.postRack({ t: 'panic' });
     this.stopScheduledClicks();
+    this.drone([]);
   }
 
   /**
@@ -334,6 +354,66 @@ class AudioEngine {
       end = Math.max(end, off);
     }
     return { start: t0, end };
+  }
+
+  // ---------------------------------------------------------------- drone
+
+  /**
+   * A held tone under an exercise, the ear's anchor: `notes` sound until the
+   * next call, [] fades them out, a new set crossfades from the old. It runs
+   * beside the synths (stop() leaves it; panic() silences it).
+   */
+  drone(notes: number[]): void {
+    const same = notes.length === this.droneWant.length && notes.every((n, i) => n === this.droneWant[i]);
+    this.droneWant = [...notes];
+    const ctx = this.ctx;
+    if (same || !ctx || !this.droneBus) return;
+    const t = ctx.currentTime;
+    for (const v of this.droneVoices) {
+      v.out.gain.cancelScheduledValues(t);
+      v.out.gain.setTargetAtTime(0, t, 0.12);
+      v.srcs.forEach((o) => o.stop(t + 1));
+    }
+    // the tonic itself carries it; the octave below and the 5th sit a little under
+    this.droneVoices = notes.map((note, i) => this.droneVoice(ctx, note, i === 1 ? 1 : 0.75, t));
+  }
+
+  /** Two slightly detuned saws through a slowly breathing low-pass (a tanpura's buzz, roughly), plus a sine for body. */
+  private droneVoice(ctx: AudioContext, note: number, level: number, t: number): { out: GainNode; srcs: OscillatorNode[] } {
+    const f = midiToFreq(note);
+    const out = ctx.createGain();
+    out.gain.value = 0;
+    out.gain.setTargetAtTime(0.085 * level, t, 0.3);
+    // keep some buzz above 700 Hz so the pitch still reads on a phone speaker
+    const cutoff = Math.min(4000, Math.max(700, f * 5));
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = cutoff;
+    lp.Q.value = 0.8;
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.09 + Math.random() * 0.08;
+    const depth = ctx.createGain();
+    depth.gain.value = cutoff * 0.3;
+    lfo.connect(depth).connect(lp.frequency);
+    const srcs = [lfo];
+    for (const cents of [-4, 4]) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = f;
+      o.detune.value = cents;
+      o.connect(lp);
+      srcs.push(o);
+    }
+    const sine = ctx.createOscillator();
+    sine.frequency.value = f;
+    const body = ctx.createGain();
+    body.gain.value = 0.7;
+    sine.connect(body).connect(out);
+    srcs.push(sine);
+    lp.connect(out).connect(this.droneBus!);
+    srcs.forEach((o) => o.start(t));
+    sine.onended = () => out.disconnect();
+    return { out, srcs };
   }
 
   // ----------------------------------------------------- clicks and drums

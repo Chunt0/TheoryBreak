@@ -22,6 +22,7 @@ import { IntervalsMode } from './IntervalsMode';
 import { ChordsMode } from './ChordsMode';
 import { ProgressionsMode } from './ProgressionsMode';
 import { KeysMode } from './KeysMode';
+import { CircleMode } from './CircleMode';
 import { EarMode } from './EarMode';
 import { ChangesMode } from './ChangesMode';
 import { RhythmMode } from './RhythmMode';
@@ -37,6 +38,7 @@ const MODES = [
   { id: 'chords', label: 'Chords', View: ChordsMode },
   { id: 'progressions', label: 'Progressions', View: ProgressionsMode },
   { id: 'keys', label: 'Keys', View: KeysMode },
+  { id: 'circle', label: 'Circle', View: CircleMode },
   { id: 'ear', label: 'Ear', View: EarMode },
   { id: 'changes', label: 'Changes', View: ChangesMode },
   { id: 'rhythm', label: 'Rhythm', View: RhythmMode },
@@ -309,6 +311,7 @@ function SoundSettings() {
         {slider('Volume', s.masterVolume, (v) => { updateSettings({ masterVolume: v }); audio.setMaster(v); })}
         {slider('Reverb', s.reverb, (v) => { updateSettings({ reverb: v }); audio.setReverb(v); })}
         {slider('Metronome', s.metronome, (v) => { updateSettings({ metronome: v }); audio.setMetronome(v); })}
+        {slider('Drone', s.drone, (v) => { updateSettings({ drone: v }); audio.setDroneLevel(v); })}
         <div className="s-pop-row">
           <span>On-screen keys</span>
           <div className="s-seg" role="radiogroup" aria-label="On-screen keys">
