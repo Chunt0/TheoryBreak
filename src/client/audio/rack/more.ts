@@ -3,11 +3,11 @@
 // generator, more filters and effects, and utilities (logic, crossfader, panner).
 // Same conventions as dsp.ts: ±5 V audio, 1 V/oct pitch, 10 V gates.
 
-import { BLOCK, C4, Edges, HIGH, MAX_CH, Mod, TAU, ftanh, onePole, readDelay } from './base';
+import { BLOCK, C4, Edges, HIGH, MAX_CH, Mod, TAU, ftanh, onePole, rand, readDelay } from './base';
 import { buildChord } from './chords';
 import { FM_RATIOS, type ModuleType } from './modules';
 
-const rnd = (): number => Math.random() * 2 - 1;
+const rnd = (): number => rand() * 2 - 1;
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 // ===================================================================== sources
@@ -447,7 +447,8 @@ class RandMod extends Mod {
 // ================================================================== sequencing
 
 class TuringMod extends Mod {
-  private reg = Math.floor(Math.random() * 0xffff);
+  // bit 0 set: whatever the Length, the loop holds a note, so a locked machine is never silent
+  private reg = Math.floor(rand() * 0x10000) | 1;
   private edges = new Edges();
 
   process(n: number): void {
@@ -461,7 +462,7 @@ class TuringMod extends Mod {
       if (this.edges.rose(0, k)) {
         // the bit leaving the loop comes back in, sometimes flipped
         let bit = (this.reg >> (len - 1)) & 1;
-        if (Math.random() < this.p.change) bit ^= 1;
+        if (rand() < this.p.change) bit ^= 1;
         this.reg = ((this.reg << 1) | bit) & 0xffff;
       }
       cv.buf[i] = ((this.reg & 0xff) / 255) * this.p.range;
@@ -562,7 +563,7 @@ class CoinMod extends Mod {
       const go = g.off(c), po = prob.off(c), o = c * BLOCK;
       for (let i = 0; i < n; i++) {
         const v = g.buf[go + i];
-        if (this.edges.rose(c, v)) this.toB[c] = Math.random() < this.p.prob + prob.buf[po + i] * 0.1 ? 1 : 0;
+        if (this.edges.rose(c, v)) this.toB[c] = rand() < this.p.prob + prob.buf[po + i] * 0.1 ? 1 : 0;
         const high = v >= HIGH ? 10 : 0;
         a.buf[o + i] = this.toB[c] ? 0 : high;
         b.buf[o + i] = this.toB[c] ? high : 0;
@@ -651,7 +652,7 @@ class ArpMod extends Mod {
         } else {
           const L = seq.length;
           let k: number;
-          if (mode === 3) k = Math.floor(Math.random() * L);
+          if (mode === 3) k = Math.floor(rand() * L);
           else if (mode === 2 && L > 1) {
             // up-down without repeating the turning notes
             const cycle = 2 * L - 2;

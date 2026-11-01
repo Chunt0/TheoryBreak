@@ -4,7 +4,7 @@
 // sets the voice count and everything downstream follows. A mono cable feeds
 // every voice. Feedback loops work, delayed by one block.
 
-import { BLOCK, C4, HIGH, Input, MAX_CH, Mod, Port, TAU, blep, ftanh, type RackView } from './base';
+import { BLOCK, C4, HIGH, Input, MAX_CH, Mod, Port, TAU, blep, ftanh, rand, type RackView } from './base';
 import { MORE_CLASSES } from './more';
 import { COSM_CLASSES } from './cosm';
 import { MOOD_CLASSES } from './mood';
@@ -253,7 +253,7 @@ class NoiseMod extends Mod {
       let held = this.held[c];
       let last = this.lastClk[c];
       for (let i = 0; i < n; i++) {
-        const w = Math.random() * 2 - 1;
+        const w = rand() * 2 - 1;
         white.buf[o + i] = w * lv;
         // Paul Kellet's economy pink filter
         b0 = 0.99765 * b0 + w * 0.099046;

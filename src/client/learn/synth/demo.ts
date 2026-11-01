@@ -4,6 +4,7 @@
 
 import { Part } from '../../audio/dx7/dsp';
 import { initOperator, initPatch, type Operator, type Patch } from '../../audio/dx7/patch';
+import { seedRand } from '../../audio/rack/base';
 import { BLOCK, Rack } from '../../audio/rack/dsp';
 import type { ModuleType } from '../../audio/rack/modules';
 import { normalizeRack, type RackPatch } from '../../audio/rack/patch';
@@ -114,6 +115,13 @@ export interface Rendered {
   sampleRate: number;
 }
 
+/** A demo's random seed, from its name (FNV-1a). */
+function seedOf(name: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+
 /**
  * Render one variant to stereo samples. `gain` is shared by a demo's variants (from its first,
  * see demoGain) so they compare at the levels they really have.
@@ -128,15 +136,22 @@ export function renderDemo(d: SynthDemo, set: Tweak | undefined, sampleRate: num
   }).sort((a, b) => a.t - b.t || a.vel - b.vel);
   let k = 0;
   if (d.rack) {
-    const rack = new Rack(sampleRate);
-    rack.setPatch(rackOf(d.rack, d.name, set));
-    for (let i = 0; i < n; i += BLOCK) {
-      const t = (i + BLOCK) / sampleRate;
-      for (; k < events.length && events[k].t < t; k++) {
-        if (events[k].vel) rack.noteOn(events[k].note, events[k].vel);
-        else rack.noteOff(events[k].note);
+    // the same dice for every variant and every play: a random demo always sounds as it was
+    // tested, and Locked and Evolving start from the same phrase
+    seedRand(seedOf(d.name));
+    try {
+      const rack = new Rack(sampleRate);
+      rack.setPatch(rackOf(d.rack, d.name, set));
+      for (let i = 0; i < n; i += BLOCK) {
+        const t = (i + BLOCK) / sampleRate;
+        for (; k < events.length && events[k].t < t; k++) {
+          if (events[k].vel) rack.noteOn(events[k].note, events[k].vel);
+          else rack.noteOff(events[k].note);
+        }
+        rack.render(l, r, i, BLOCK);
       }
-      rack.render(l, r, i, BLOCK);
+    } finally {
+      seedRand(null);
     }
   } else {
     const part = new Part(sampleRate, fmOf(d.fm ?? {}, d.name, set), 8);

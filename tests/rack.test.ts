@@ -6,7 +6,7 @@ import { GUIDE } from '../src/client/audio/rack/guide';
 import { buildChord } from '../src/client/audio/rack/chords';
 import { euclid } from '../src/client/audio/rack/more';
 import { SONO_ROWS, SPECTRUM_POINTS, detectPitch, spectrumHz } from '../src/client/audio/rack/visual';
-import type { RackView } from '../src/client/audio/rack/base';
+import { seedRand, type RackView } from '../src/client/audio/rack/base';
 import { CMD_DOWN, CMD_REC, CMD_STOP, CMD_UNDO, CMD_UP, LOOP_PLAY, LOOP_REC, LOOP_STOP } from '../src/client/audio/rack/cosm';
 import { MOOD_RING, M_LOOP, M_LOOP_HOLD, M_LOOP_LET, M_WET, M_WET_HOLD, M_WET_LET, delayTime } from '../src/client/audio/rack/mood';
 
@@ -325,6 +325,22 @@ describe('second shelf', () => {
     expect(seen.slice(4).map((x) => x & 15)).toEqual(seen.slice(0, 8).map((x) => x & 15));
   });
 
+  test('a fresh Turing machine always has a note in its loop, whatever the Length', () => {
+    try {
+      for (let seed = 1; seed <= 200; seed++) {
+        seedRand(seed);
+        for (const length of [2, 5, 8]) {
+          const rack = new Rack(SR);
+          rack.setPatch(patch([['c', 'clock', { bpm: 300 }], ['t', 'turing', { change: 0, length }]], [['c.q', 't.clk']]));
+          render(rack, 0.01);
+          expect((rack.status().display.t ?? 0) & ((1 << length) - 1), `seed ${seed}, length ${length}`).not.toBe(0);
+        }
+      }
+    } finally {
+      seedRand(null);
+    }
+  });
+
   test('ARP steps through held notes', () => {
     const rack = new Rack(SR);
     rack.setPatch(patch([['m', 'midi', { voices: 2 }], ['a', 'arp', { rate: 10 }], ['v', 'vco'], ['o', 'out', { level: 0.3 }]], [['m.voct', 'a.voct'], ['m.gate', 'a.gate'], ['a.voct', 'v.voct'], ['v.sin', 'o.l']]));
@@ -607,9 +623,9 @@ describe('granular looper', () => {
     rack.setParam('u', 'a1', 0);
     const held = render(rack, 2).L;
     expect(rmsOf(held, 1, 2)).toBeGreaterThan(0.05);
-    // overlapping grains of a sine wobble its pitch a little either way
-    const seen = [0.3, 0.6, 0.9, 1.2, 1.5, 1.8].map((t) => pitchAt(held, t)).sort((a, b) => a - b);
-    expect(Math.abs(seen[3] / 261.6256 - 1)).toBeLessThan(0.015);
+    // overlapping grains of a sine wobble its pitch a little either way, so take the middle of many readings
+    const seen = Array.from({ length: 17 }, (_, k) => pitchAt(held, 0.2 + k * 0.1)).sort((a, b) => a - b);
+    expect(Math.abs(seen[8] / 261.6256 - 1)).toBeLessThan(0.02);
     rack.setParam('c', 'freeze', 0);
     expect(rmsOf(render(rack, 1).L, 0.6, 1)).toBeLessThan(0.001);
   });

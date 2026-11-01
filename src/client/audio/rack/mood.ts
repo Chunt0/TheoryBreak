@@ -12,7 +12,7 @@
 // to 2 kHz: an octave down, everything in the buffers plays an octave lower and twice as
 // long, and new sound comes in grittier. The dry sound passes as it came.
 
-import { HIGH, Mod, TAU, ftanh, onePole, type RackView } from './base';
+import { HIGH, Mod, TAU, ftanh, onePole, rand, type RackView } from './base';
 import { MOOD_KNOB_IDS, moodRate, type ModuleType } from './modules';
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
@@ -117,7 +117,7 @@ class MoodMod extends Mod {
   private k: Record<string, number> = { mix: 0.5, time: 0.5, len: 1, wmod: 0.5, clock: 0.8, lmod: 0.7 };
   private rph = 0;
   private r0 = 0;
-  private r1 = Math.random();
+  private r1 = rand();
   private rOnce = 1;
   private rmLast = 0;
   private wmode = 0;
@@ -330,7 +330,7 @@ class MoodMod extends Mod {
         if (this.rph >= 1) {
           this.rph -= Math.floor(this.rph);
           this.r0 = this.r1;
-          this.r1 = Math.random();
+          this.r1 = rand();
         }
         const w = this.wave(this.rph, p.rwave);
         k[id] = top ? v + (1 - v) * w : v * w;
@@ -579,8 +579,8 @@ class MoodMod extends Mod {
     const wgain = bal > 0 ? 1 - bal : 1, lgain = (bal < 0 ? 1 + bal : 1) * (this.wetOn && loopOn && this.route > 0 ? this.p.direct : 1);
     let ol = wl * wgain + ml * lgain, or = wr * wgain + mr * lgain;
     if (this.hiss > 0) {
-      ol += (Math.random() * 2 - 1) * this.hiss;
-      or += (Math.random() * 2 - 1) * this.hiss;
+      ol += (rand() * 2 - 1) * this.hiss;
+      or += (rand() * 2 - 1) * this.hiss;
     }
     this.tl = ol;
     this.tr = or;

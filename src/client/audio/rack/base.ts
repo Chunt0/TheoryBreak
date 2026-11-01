@@ -62,6 +62,24 @@ export class Input {
   }
 }
 
+/** The modules' random numbers: Math.random, unless seeded (lesson demos, so each plays the same every time). */
+export let rand: () => number = Math.random;
+
+/** Seed `rand` (mulberry32), or pass null to go back to Math.random. */
+export function seedRand(seed: number | null): void {
+  if (seed === null) {
+    rand = Math.random;
+    return;
+  }
+  let a = seed >>> 0;
+  rand = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /** Cheap tanh: exact enough for saturation, much faster than Math.tanh. */
 export const ftanh = (x: number): number => (x <= -3 ? -1 : x >= 3 ? 1 : (x * (27 + x * x)) / (27 + 9 * x * x));
 

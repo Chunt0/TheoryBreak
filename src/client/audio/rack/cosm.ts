@@ -14,12 +14,12 @@
 // stop playing the ring stops filling, so an effect can go on repeating what you last
 // played for as long as Repeats lets it.
 
-import { BLOCK, HIGH, Mod, TAU, ftanh, onePole, type RackView } from './base';
+import { BLOCK, HIGH, Mod, TAU, ftanh, onePole, rand, type RackView } from './base';
 import { COSM_EXP_IDS, MODULES, SUB_BEATS, fromNorm, shapeZone, snapSpeed, toNorm, type ModuleType, type ParamDef } from './modules';
 
 const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
-const pick = (xs: readonly number[]): number => xs[Math.floor(Math.random() * xs.length)];
-const bipolar = (): number => Math.random() * 2 - 1;
+const pick = (xs: readonly number[]): number => xs[Math.floor(rand() * xs.length)];
+const bipolar = (): number => rand() * 2 - 1;
 
 /** Looper states, as the screen shows them. */
 export const LOOP_EMPTY = 0, LOOP_REC = 1, LOOP_PLAY = 2, LOOP_DUB = 3, LOOP_STOP = 4, LOOP_FADE = 5;
@@ -968,22 +968,22 @@ class CosmMod extends Mod {
     // Repeats: how many times the order comes round before it is reshuffled
     if (j === 0 && --this.reps[0] <= 0) {
       this.reps[0] = this.repeats();
-      for (let k = 0; k < 8; k++) this.pat[k] = 1 + Math.floor(Math.random() * 8);
+      for (let k = 0; k < 8; k++) this.pat[k] = 1 + Math.floor(rand() * 8);
     }
     // C stacks up to four layers; D interlocks up to three parts: the pattern, ratchets on the off-steps, a part every third step
     const layers = vr === 2 ? 1 + Math.round(act * 3) : vr === 3 ? 1 + Math.round(act * 2) : 1;
     for (let L = 0; L < layers; L++) {
       if (vr === 3 && ((L === 1 && !(j & 1)) || (L === 2 && j % 3 !== 0))) continue;
       const back = this.pat[(j + L * 3) & 7];
-      const rate = vr === 1 && Math.random() < act * 0.8 ? 0.5 : 1;
+      const rate = vr === 1 && rand() < act * 0.8 ? 0.5 : 1;
       const pos = this.anchor - back * S;
       const len = vr === 3 && L === 1 ? S / 2 : S;
       const pan = (back & 1 ? 0.3 : -0.3) * (L + 1);
       const v = this.shaped(i, this.rev ? pos + len * rate : pos, this.rev ? -rate : rate, len, 0.9 / Math.sqrt(layers), pan);
-      if (vr === 0 && Math.random() < 0.25 + 0.75 * act) this.lowpass(v, 250 * Math.pow(2, Math.random() * 5), 2 - 1.5 * act * Math.random());
+      if (vr === 0 && rand() < 0.25 + 0.75 * act) this.lowpass(v, 250 * Math.pow(2, rand() * 5), 2 - 1.5 * act * rand());
       else if (vr === 2) this.sweep(v, ((L + j) & 1) === 1, 200, 7000, 1.2);
       else if (vr === 3) {
-        this.crushed(v, 0.15 + 0.15 * L + 0.15 * Math.random(), 3 + 2 * L + Math.floor(Math.random() * 3));
+        this.crushed(v, 0.15 + 0.15 * L + 0.15 * rand(), 3 + 2 * L + Math.floor(rand() * 3));
         // the ratchet: the same slice again in the second half of the step
         if (L === 1) {
           const w = this.shaped(i + len, v.pos, v.rate, len, 0.8, -pan);
@@ -1060,10 +1060,10 @@ class CosmMod extends Mod {
     else if (head - this.hsh > W + G) this.hsh = head - G * 1.1;
     if (--this.hcnt > 0) return;
     const d = Math.min(3 + act * act * 100, (28 * sr) / G);
-    this.hcnt = Math.max(1, (-Math.log(1 - Math.random()) * sr) / d);
-    const rate = vr === 2 ? (Math.random() < 0.5 ? 2 : 1) : vr === 3 ? (Math.random() < 0.5 ? 0.5 : 1) : 1;
+    this.hcnt = Math.max(1, (-Math.log(1 - rand()) * sr) / d);
+    const rate = vr === 2 ? (rand() < 0.5 ? 2 : 1) : vr === 3 ? (rand() < 0.5 ? 0.5 : 1) : 1;
     const span = G * rate;
-    let pos = vr === 0 ? this.hsh + bipolar() * 0.02 * sr * (0.3 + act) : head - span - 8 - Math.random() * W;
+    let pos = vr === 0 ? this.hsh + bipolar() * 0.02 * sr * (0.3 + act) : head - span - 8 - rand() * W;
     if (this.room(pos, rate) < G) pos = head - 8 - span;
     this.shaped(i, this.rev ? pos + span : pos, this.rev ? -rate : rate, G, 1.1 / Math.sqrt(Math.max(1, (d * G) / sr)), bipolar() * (0.2 + 0.8 * act));
   }
@@ -1129,7 +1129,7 @@ class CosmMod extends Mod {
     if (!this.crossed(0, this.divB / 4)) return;
     const act = this.act, vr = this.vr, sr = this.sr;
     const k = this.step++;
-    if (this.chain < 0.02 || Math.random() > 0.15 + 0.85 * act) return;
+    if (this.chain < 0.02 || rand() > 0.15 + 0.85 * act) return;
     const c = this.recent(8);
     const N = Math.min(c, 3 + Math.round(act * 5));
     const at = vr < 2 ? this.nbuf[0] : this.nbuf[this.cidx++ % N];
@@ -1171,13 +1171,15 @@ class CosmMod extends Mod {
     const S = stepB * this.B, act = this.act, vr = this.vr;
     const head = this.head();
     let pos = this.bsrc;
-    if (Math.random() < act) {
+    if (rand() < act) {
       if (vr === 0) {
         const c = this.recent(8);
         pos = this.nbuf[this.bidx++ % c];
-      } else pos = head - S - Math.random() * 4 * this.B;
+      } else pos = head - S - rand() * 4 * this.B;
+      // not from before you began playing, or a pause: back to the attack that set the burst off
+      if (!this.heard(pos, S)) pos = this.bsrc;
     }
-    const rate = (vr === 1 || vr === 3) && Math.random() < act ? pick(SHIFTS) : 1;
+    const rate = (vr === 1 || vr === 3) && rand() < act ? pick(SHIFTS) : 1;
     if (this.room(pos, rate) < S) pos = head - 8 - S * rate;
     const start = this.rev ? pos + S * rate : pos;
     const r = this.rev ? -rate : rate;
@@ -1188,7 +1190,7 @@ class CosmMod extends Mod {
       this.lowpass(v, 300 + 7000 * this.bg, 1.2);
       v.f1 = v.f0 / 6;
       this.bg *= 0.8;
-    } else if (vr === 3) this.crushed(v, 0.3, 3 + Math.floor(Math.random() * 6));
+    } else if (vr === 3) this.crushed(v, 0.3, 3 + Math.floor(rand() * 6));
   }
 
   /** Interrupt: now and then the sound is cut and glitches play in its place. */
@@ -1197,30 +1199,30 @@ class CosmMod extends Mod {
     if (this.crossed(0, stepB)) {
       if (this.inter > 0) {
         if (--this.inter === 0) this.duckT = 0;
-      } else if (Math.random() < this.rep * this.rep) {
-        this.inter = 1 + Math.floor(Math.random() * (1 + this.act * 3));
+      } else if (rand() < this.rep * this.rep) {
+        this.inter = 1 + Math.floor(rand() * (1 + this.act * 3));
         this.duckT = 1;
       }
     }
     if (!this.crossed(1, stepB / 2) || !this.duckT) return;
     const S = (stepB / 2) * this.B, act = this.act, vr = this.vr;
     let rate = 1;
-    if (vr === 1 && Math.random() < 0.3 + 0.7 * act) rate = pick(SHIFTS);
-    if (vr === 3 && Math.random() < 0.3 + 0.7 * act) rate = pick(WILD);
+    if (vr === 1 && rand() < 0.3 + 0.7 * act) rate = pick(SHIFTS);
+    if (vr === 3 && rand() < 0.3 + 0.7 * act) rate = pick(WILD);
     const ar = Math.abs(rate);
-    const len = Math.random() < act * 0.5 ? S / 2 : S;
-    const pos = this.head() - len * ar - 8 - Math.random() * Math.min(8 * this.B, this.HL * 0.2);
+    const len = rand() < act * 0.5 ? S / 2 : S;
+    const pos = this.head() - len * ar - 8 - rand() * Math.min(8 * this.B, this.HL * 0.2);
     const back = rate < 0 !== this.rev;
     const start = back ? pos + len * ar : pos;
     const r = back ? -ar : ar;
     const pan = bipolar() * 0.5 * act;
     const v = this.shaped(i, start, r, len, 1, pan);
     if (vr === 2) {
-      const up = Math.random() < 0.5;
+      const up = rand() < 0.5;
       this.sweep(v, up, 300, 6000, 1.1);
       // and an echo of it, three quarters of a step on, swept the other way
       this.sweep(this.shaped(i + 0.75 * stepB * this.B, start, r, len, 0.45, -pan), !up, 300, 6000, 1.1);
-    } else if (vr === 3) this.crushed(v, 0.25 + 0.25 * act, 2 + Math.floor(Math.random() * 8));
+    } else if (vr === 3) this.crushed(v, 0.25 + 0.25 * act, 2 + Math.floor(rand() * 8));
   }
 
   /** Arp: the notes just played, stepped through up and back down. */
@@ -1238,8 +1240,8 @@ class CosmMod extends Mod {
     const len = Math.min(stepB * this.B * (0.2 + this.rep * 1.8), 2 * sr, this.room(pos, rate));
     if (len < 0.01 * sr) return;
     const v = this.shaped(i, this.rev ? pos + len * rate : pos, this.rev ? -rate : rate, len, 0.9, (idx / Math.max(1, N - 1) - 0.5) * 1.2);
-    if (vr === 2) this.lowpass(v, 300 * Math.pow(2, Math.random() * 4.3), 1.6 - Math.random());
-    else if (vr === 3) this.crushed(v, 0.3, 4 + Math.floor(Math.random() * 4));
+    if (vr === 2) this.lowpass(v, 300 * Math.pow(2, rand() * 4.3), 1.6 - rand());
+    else if (vr === 3) this.crushed(v, 0.3, 4 + Math.floor(rand() * 4));
   }
 
   // --------------------------------------------------------------- voices
