@@ -34,6 +34,7 @@ export const CHORD_TYPES: ChordType[] = [
   { id: 'maj7s5', name: 'Major 7♯5', symbol: 'maj7♯5', intervals: ['P1', 'M3', 'A5', 'M7'], family: 'seventh', sound: 'Lydian augmented (3rd mode of melodic minor).' },
   { id: '7sus4', name: 'Dominant 7sus4', symbol: '7sus4', intervals: ['P1', 'P4', 'P5', 'm7'], family: 'sus', optional: ['P5'], sound: 'Suspended dominant: ii/V in one chord (G7sus4 ≈ Dm7/G).' },
   { id: 'aug7', name: 'Dominant 7♯5', symbol: '7♯5', intervals: ['P1', 'M3', 'A5', 'm7'], family: 'altered', sound: 'Whole-tone dominant.' },
+  { id: '9s5', name: 'Dominant 9♯5', symbol: '9♯5', intervals: ['P1', 'M3', 'A5', 'm7', 'M9'], family: 'altered', sound: 'Whole-tone dominant: the natural 9 rules out the altered scale.' },
   { id: '7b5', name: 'Dominant 7♭5', symbol: '7♭5', intervals: ['P1', 'M3', 'd5', 'm7'], family: 'altered', sound: 'Tritone-symmetrical: G7♭5 = D♭7♭5. French-sixth sound.' },
   // sixths
   { id: 'maj6', name: 'Major 6th', symbol: '6', intervals: ['P1', 'M3', 'P5', 'M6'], family: 'sixth', optional: ['P5'], sound: 'Swing-era tonic; avoids the maj7–root rub.' },
@@ -47,6 +48,7 @@ export const CHORD_TYPES: ChordType[] = [
   { id: 'dom9', name: 'Dominant 9th', symbol: '9', intervals: ['P1', 'M3', 'P5', 'm7', 'M9'], family: 'extended', optional: ['P5'], sound: 'The funk chord — James Brown vamps.' },
   { id: 'min9', name: 'Minor 9th', symbol: 'm9', intervals: ['P1', 'm3', 'P5', 'm7', 'M9'], family: 'extended', optional: ['P5'], sound: 'Smooth Dorian ii / i.' },
   { id: 'mmaj9', name: 'Minor-major 9th', symbol: 'm(maj9)', intervals: ['P1', 'm3', 'P5', 'M7', 'M9'], family: 'extended', optional: ['P5'], sound: 'Melodic-minor tonic, full.' },
+  { id: '7sus4b9', name: '7sus4♭9', symbol: '7sus4♭9', intervals: ['P1', 'P4', 'P5', 'm7', 'm9'], family: 'sus', optional: ['P5'], sound: 'Phrygian sus: the ♭9 over a suspended dominant (G7sus4♭9 ≈ Fm6/G).' },
   { id: '9sus4', name: '9sus4', symbol: '9sus4', intervals: ['P1', 'P4', 'P5', 'm7', 'M9'], family: 'sus', optional: ['P5'], sound: 'F/G sound (IV over V): gospel/R&B dominant.' },
   { id: 'm9b5', name: 'Half-diminished 9', symbol: 'm9♭5', intervals: ['P1', 'm3', 'd5', 'm7', 'M9'], family: 'extended', sound: 'Locrian ♮2 — the smoother minor ii.' },
   // elevenths

@@ -58,6 +58,35 @@ export const CORE_JAZZ_TOPICS: Topic[] = [
     drills: ['jazz.chordscale', 'ear.modes', 'gym.scales.play'],
   },
   {
+    id: 'core.cskey', title: 'Chord–scale outside the key', tags: ['core', 'jazz'], minutes: 4, level: 2,
+    summary: 'For a chord the key doesn\'t own: keep its chord tones, fill the gaps with the key\'s notes.',
+    blocks: [
+      { t: 'p', md: 'Inside a key the scale is the key\'s notes from the chord\'s root. For a chord the key **doesn\'t** own (a secondary dominant, say), keep the **chord tones** and fill every gap with the **key\'s notes**. What falls out sounds "in" while the chord is still the surprise.' },
+      { t: 'table', head: ['In C major', 'Chord tones', 'Key fills the gaps', 'Scale'], rows: [
+        ['C7 (V7/IV)', 'C E G B♭', 'D F A', 'Mixolydian'],
+        ['D7 (V7/V)', 'D F♯ A C', 'E G B', 'Mixolydian'],
+        ['A7 (V7/ii)', 'A C♯ E G', 'B D F', 'Mixolydian ♭6'],
+        ['E7 (V7/vi)', 'E G♯ B D', 'F A C', 'Phrygian dominant'],
+        ['B7 (V7/iii)', 'B D♯ F♯ A', 'C E G', 'Phrygian dominant'],
+      ] },
+      { t: 'p', md: 'The pattern: a dominant aimed at a **minor** chord picks up a ♭13 from the key (and a ♭9 when the key has one: Phrygian dominant; Mixolydian ♭6 when the 9 stays natural). One aimed at a **major** chord keeps its tensions natural: Mixolydian.' },
+      { t: 'listen', items: [
+        { label: 'D7: Mixolydian', music: { scale: 'mixolydian', from: 'D3', drone: true } },
+        { label: 'A7: Mixolydian ♭6', music: { scale: 'mixolydian_b6', from: 'A3', drone: true } },
+        { label: 'E7: Phrygian dominant', music: { scale: 'phrygian_dominant', from: 'E3', drone: true } },
+      ] },
+      { t: 'p', md: 'Then find the **avoid notes**: a scale note a half step above a chord tone. On a dominant only the 11 counts, since it buries the 3rd; the ♭9 and ♭13 rubs are the point. On a sus chord it flips: the 4 is a chord tone and the 3 is the note to pass through.' },
+      { t: 'example', title: 'A7 → Dm7 in C major', steps: [
+        'Chord tones: A C♯ E G.',
+        'Gaps, filled from C major: B between A and C♯ (natural 9), D between C♯ and E (11), F between E and G (♭13).',
+        'A B C♯ D E F G = A Mixolydian ♭6, the 5th mode of D melodic minor. D is the avoid note (a half step above C♯); F, the ♭13, is the colour that points at Dm.',
+      ], music: { scale: 'mixolydian_b6', from: 'A3', drone: true } },
+      { t: 'note', kind: 'keys', md: 'On the Scales tab, **Chord → scale** asks for the scale and **Over the chord** has you play it with the chord held underneath; avoid notes come up dashed.' },
+      { t: 'drill', skill: 'jazz.chordscale', count: 4 },
+    ],
+    drills: ['jazz.chordscale'],
+  },
+  {
     id: 'core.melodic', title: 'Melodic-minor harmony', tags: ['core', 'jazz'], minutes: 5, level: 3,
     summary: 'One scale, seven essential jazz colours.',
     blocks: [

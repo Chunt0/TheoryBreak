@@ -40,6 +40,8 @@ export const CHORD_SCALES: Record<string, ScaleChoice[]> = {
   '7b9b13': [{ scale: 'phrygian_dominant', when: 'V of minor' }, { scale: 'altered', when: 'add ♯9/♯11 for more tension' }],
   '7s9': [{ scale: 'altered', when: 'with ♭13' }, { scale: 'dim_hw', when: 'with natural 13' }, { scale: 'blues', when: 'funk/blues context' }],
   '7alt': [{ scale: 'altered', when: 'always (= melodic minor a half step up)' }],
+  '9s5': [{ scale: 'whole_tone', when: 'natural 9 with ♯5' }],
+  '7sus4b9': [{ scale: 'dorian_b2', when: '2nd mode of melodic minor (natural 13)' }, { scale: 'phrygian', when: 'with ♭13' }],
   aug7: [{ scale: 'whole_tone', when: '9 and ♯11 natural, ♯5' }, { scale: 'altered', when: 'with ♭9/♯9' }],
   '7b5': [{ scale: 'whole_tone', when: 'with ♯5' }, { scale: 'lydian_dom', when: '♭5 = ♯11' }],
   '7sus4': [{ scale: 'mixolydian', when: 'sus dominant' }, { scale: 'dorian', when: 'sus as "ii over V"' }],

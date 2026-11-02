@@ -21,7 +21,7 @@ export const SYNTH_TAGS: Tag[] = ['modular', 'seq', 'fm'];
 export const PATHS: Record<Tag, string[]> = {
   core: [
     'core.intervals', 'core.triads', 'core.sevenths', 'core.keys', 'core.degrees', 'core.diatonic',
-    'core.minorkeys', 'core.modes', 'core.function', 'core.rootmotion', 'core.tensions', 'core.chordscale',
+    'core.minorkeys', 'core.modes', 'core.function', 'core.rootmotion', 'core.tensions', 'core.chordscale', 'core.cskey',
     'core.melodic', 'core.symmetric', 'core.modulation', 'core.negative',
   ],
   jazz: [

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { ChordScaleMode, type CsTask } from './ChordScaleMode';
 import { useStore } from '../app/store';
 import { audio } from '../audio/engine';
 import { input } from '../midi/input';
@@ -7,7 +8,7 @@ import { getScale, scaleNotes, scaleSemis } from '../theory/scales';
 import type { KeyMark } from '../ui/Keyboard';
 import { degreeLine, type Dir, type Pattern } from './logic';
 import type { Help } from './Lessons';
-import { Bar, K, Listen, Pick, playLine, rootByPc, rootMidi, savePref, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
+import { Bar, Chips, K, Listen, Pick, playLine, rootByPc, rootMidi, savePref, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
 
 const SCALE_GROUPS: { title: string; ids: string[] }[] = [
   { title: 'Major & minor', ids: ['major', 'minor', 'harmonic_minor', 'melodic_minor'] },
@@ -63,8 +64,13 @@ const PATTERNS: Choice<Pattern>[] = [
   { id: 'sevenths', label: '7ths 1-3-5-7' },
 ];
 const OCTAVES: Choice<'1' | '2'>[] = [{ id: '1', label: '1 octave' }, { id: '2', label: '2 octaves' }];
-const CLOCKS: Choice<Clock>[] = [{ id: 'free', label: 'Free time' }, { id: 'metro', label: 'Metronome' }];
-const SUBS: Choice<'1' | '2'>[] = [{ id: '1', label: '♩ 1 per click' }, { id: '2', label: '♫ 2 per click' }];
+// timing and notes per click share one pill, so the options row stays one row
+type Timing = 'free' | 'metro1' | 'metro2';
+const TIMINGS: Choice<Timing>[] = [
+  { id: 'free', label: 'Free time' },
+  { id: 'metro1', label: 'Click ♩', title: 'Metronome, one note per click' },
+  { id: 'metro2', label: 'Click ♫', title: 'Metronome, two notes per click' },
+];
 const scaleLabel = (id: string) => (TITLE[id] ? TITLE[id][0].toUpperCase() + TITLE[id].slice(1) : SHORT[id]);
 const SCALE_CHOICES = SCALE_GROUPS.map((g) => ({ title: g.title, options: g.ids.map((id) => ({ id, label: scaleLabel(id) })) }));
 // circle of fifths order, for the key strip and "next key"
@@ -88,7 +94,21 @@ interface KeyRecord {
   bpm?: number;
 }
 
+type Task = 'run' | CsTask;
+const TASKS: Choice<Task>[] = [
+  { id: 'run', label: 'Run it', title: 'Run a scale through patterns, against the clock or a metronome' },
+  { id: 'name', label: 'Chord → scale', title: 'Name the scale a chord takes where it stands' },
+  { id: 'play', label: 'Over the chord', title: 'Play the chord\'s scale with the chord held underneath' },
+];
+
+/** Run scales, or chord–scale: which scale a chord takes, and playing it over the chord. */
 export function ScalesMode() {
+  const [task, setTask] = usePref<Task>('scale.task', 'run');
+  const chips = <Chips label="Task" value={task} options={TASKS} onChange={setTask} />;
+  return task === 'run' ? <ScaleRun taskChips={chips} /> : <ChordScaleMode key={task} task={task} taskChips={chips} />;
+}
+
+function ScaleRun({ taskChips }: { taskChips: ReactNode }) {
   useModeCleanup();
   const [rootPc, setRootPc] = usePref('scale.root', 0);
   const [scaleId, setScaleId] = usePref('scale.id', 'major');
@@ -238,21 +258,27 @@ export function ScalesMode() {
   return (
     <div className="s-mode">
       <Bar help={scaleHelp(scaleId)}>
+        {taskChips}
         <Pick label="Scale" value={scaleId} groups={SCALE_CHOICES} onChange={setScaleId} />
         <Pick label="Pattern" value={pattern} options={PATTERNS} onChange={setPattern} />
         <Pick label="Range" value={octs} options={OCTAVES} onChange={setOcts} />
         <Pick label="Direction" value={dir} options={DIRS} onChange={setDir} />
         <Pick label="Guide" value={guide} options={GUIDES} onChange={setGuide} />
-        <Pick label="Timing" value={clock} options={CLOCKS} onChange={setClock} />
+        <Pick
+          label="Timing"
+          value={metro ? (`metro${sub}` as Timing) : 'free'}
+          options={TIMINGS}
+          onChange={(t) => {
+            if (t !== 'free') setSub(t === 'metro1' ? '1' : '2');
+            setClock(t === 'free' ? 'free' : 'metro');
+          }}
+        />
         {metro ? (
-          <>
-            <span className="s-stepper" role="group" aria-label="Tempo">
-              <button type="button" onClick={() => setBpm(Math.max(40, bpm - 4))} aria-label="Slower">−</button>
-              <span>♩ = {bpm}</span>
-              <button type="button" onClick={() => setBpm(Math.min(240, bpm + 4))} aria-label="Faster">+</button>
-            </span>
-            <Pick label="Notes per click" value={sub} options={SUBS} onChange={setSub} />
-          </>
+          <span className="s-stepper" role="group" aria-label="Tempo">
+            <button type="button" onClick={() => setBpm(Math.max(40, bpm - 4))} aria-label="Slower">−</button>
+            <span>♩ = {bpm}</span>
+            <button type="button" onClick={() => setBpm(Math.min(240, bpm + 4))} aria-label="Faster">+</button>
+          </span>
         ) : null}
       </Bar>
 
