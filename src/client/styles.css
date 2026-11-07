@@ -531,14 +531,29 @@ table.t th { color: var(--text-dim); font-weight: 650; font-size: 12.5px; text-t
   height: 52px; padding: 0 14px 0 18px; border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg) 84%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
-.s-tabs { grid-column: 2; align-self: stretch; display: flex; gap: 2px; }
-.s-tabs a {
-  position: relative; display: flex; align-items: center; padding: 0 12px;
-  color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 550; transition: color 0.12s;
+/* sections: a quiet word each; the open one becomes a capsule holding its drills */
+.s-tabs { grid-column: 2; display: flex; align-items: center; gap: 2px; min-width: 0; }
+.s-tabs a { text-decoration: none; }
+.s-sec {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px;
+  color: var(--text-dim); font-size: 14px; font-weight: 550; white-space: nowrap; transition: color 0.12s, background 0.12s;
 }
-.s-tabs a:hover { color: var(--text); }
-.s-tabs a.on { color: var(--accent); }
-.s-tabs a.on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; border-radius: 2px 2px 0 0; background: var(--accent); }
+a.s-sec:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.s-sec .icon { flex: none; opacity: 0.7; }
+.s-sec.on {
+  height: 36px; padding: 3px; gap: 0;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-elev)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, var(--line));
+}
+.s-sec-name { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 10px 0 9px; color: var(--accent); font-weight: 650; }
+.s-sec-name .icon { opacity: 1; }
+.s-subs { display: inline-flex; align-items: center; gap: 2px; height: 100%; padding-left: 3px; border-left: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)); }
+.s-subs a {
+  display: inline-flex; align-items: center; height: 100%; padding: 0 11px; border-radius: 999px;
+  color: var(--text-dim); font-size: 13.5px; font-weight: 550; transition: color 0.12s, background 0.12s;
+}
+.s-subs a:hover { color: var(--text); }
+.s-subs a.on { background: var(--bg-elev); color: var(--text); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgb(0 0 0 / 0.08); }
+.s-tabs a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .s-top-right { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; }
 .s-sound-off {
   display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 11px; border-radius: 9px; cursor: pointer;
@@ -592,6 +607,15 @@ table.t th { color: var(--text-dim); font-weight: 650; font-size: 12.5px; text-t
 .s-pill select {
   appearance: none; height: 100%; padding: 0 30px 0 0; border: 0; border-radius: 0; background: none; outline: none;
   color: var(--text); font: 600 13.5px var(--font); cursor: pointer;
+}
+/* "More": the finer options of a drill, folded into one pill */
+.s-more { padding-right: 30px; color: var(--text); font: 600 13.5px var(--font); cursor: pointer; }
+.s-more .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.s-pop.s-more-pop { inset: 112px auto auto 50%; translate: -50% 0; width: auto; min-width: 210px; padding: 12px; }
+.s-pop.s-more-pop:popover-open { gap: 8px; }
+.s-more-pop .s-pill { justify-content: space-between; }
+@supports (position-area: block-end) {
+  .s-pop.s-more-pop { inset: auto; translate: none; margin: 6px 0 0; position-area: block-end span-inline-end; position-try-fallbacks: flip-inline, flip-block; }
 }
 .s-pill::after {
   content: ""; position: absolute; right: 13px; top: 50%; width: 6px; height: 6px; margin-top: -5px; pointer-events: none;
@@ -952,9 +976,10 @@ table.t th { color: var(--text-dim); font-weight: 650; font-size: 12.5px; text-t
 }
 @media (max-width: 760px) {
   .s-top { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 0 10px; }
-  .s-tabs { grid-column: 1; overflow-x: auto; scrollbar-width: none; }
+  .s-tabs { grid-column: 1; overflow-x: auto; scrollbar-width: none; justify-content: safe center; }
   .s-top-right { grid-column: 2; }
-  .s-tabs a { padding: 0 9px; font-size: 13.5px; }
+  .s-sec { padding: 0 9px; font-size: 13.5px; }
+  .s-subs a { padding: 0 9px; }
   .s-patch select { max-width: 104px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .s-sound-off { padding: 0 8px; font-size: 0; gap: 0; }
   .s-bar { grid-template-columns: 1fr; padding: 12px 12px 0; }
@@ -1412,8 +1437,11 @@ body { overscroll-behavior: none; }
 @media (max-height: 540px) and (orientation: landscape) {
   .s-top { height: 42px; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; }
   .s-tabs { grid-column: 1; overflow-x: auto; scrollbar-width: none; justify-content: safe center; }
-  .s-tabs a { padding: 0 9px; font-size: 13.5px; white-space: nowrap; }
-  .s-tabs a.on::after { left: 9px; right: 9px; }
+  .s-sec { height: 32px; padding: 0 8px; font-size: 13.5px; }
+  .s-sec.on { height: 34px; }
+  .s-sec .icon { display: none; }
+  .s-sec-name { padding: 0 8px; }
+  .s-subs a { padding: 0 9px; white-space: nowrap; }
   .s-top-right { grid-column: 2; gap: 6px; }
   .s-sound-off { height: 30px; padding: 0 8px; }
   .s-sound-off span { display: none; }
@@ -1512,6 +1540,10 @@ body { overscroll-behavior: none; }
 }
 
 /* wide and short: the question on the left, its answers on the right */
+@media (max-height: 540px) and (orientation: landscape) and (max-width: 740px) {
+  a.s-sec .icon { display: inline; opacity: 0.8; }
+  a.s-sec .nm { display: none; }
+}
 @media (max-height: 540px) and (orientation: landscape) and (min-width: 700px) {
   .s-stage:has(> .s-answers, > .s-notegrid) {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-content: center; justify-items: center; align-items: center; column-gap: 20px; row-gap: 8px;

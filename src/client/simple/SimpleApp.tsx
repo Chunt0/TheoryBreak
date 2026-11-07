@@ -32,19 +32,49 @@ import { Lessons } from './Lessons';
 import { Backdrop } from '../ui/Backdrop';
 import { resolveTheme, THEMES } from '../app/themes';
 
-const MODES = [
-  { id: 'scales', label: 'Scales', View: ScalesMode },
-  { id: 'intervals', label: 'Intervals', View: IntervalsMode },
-  { id: 'chords', label: 'Chords', View: ChordsMode },
-  { id: 'progressions', label: 'Progressions', View: ProgressionsMode },
-  { id: 'keys', label: 'Keys', View: KeysMode },
-  { id: 'circle', label: 'Circle', View: CircleMode },
-  { id: 'ear', label: 'Ear', View: EarMode },
-  { id: 'changes', label: 'Changes', View: ChangesMode },
-  { id: 'rhythm', label: 'Rhythm', View: RhythmMode },
-  { id: 'read', label: 'Read', View: ReadMode },
-  { id: 'synth', label: 'Synth', View: SynthMode },
+// Five sections up top; the open one shows its drills beside it. A drill keeps its old address (#/scales…).
+const SECTIONS = [
+  { id: 'notes', label: 'Notes', icon: 'note', about: 'Scales, intervals and reading the staff', modes: [
+    { id: 'scales', label: 'Scales', View: ScalesMode },
+    { id: 'intervals', label: 'Intervals', View: IntervalsMode },
+    { id: 'read', label: 'Reading', View: ReadMode },
+  ] },
+  { id: 'chords', label: 'Chords', icon: 'keys', about: 'Chord types, progressions, and playing over changes', modes: [
+    { id: 'chords', label: 'Types', View: ChordsMode },
+    { id: 'progressions', label: 'Progressions', View: ProgressionsMode },
+    { id: 'changes', label: 'Changes', View: ChangesMode },
+  ] },
+  { id: 'keys', label: 'Keys', icon: 'target', about: 'Key signatures, relatives, modes and the circle of fifths', modes: [
+    { id: 'keys', label: 'Signatures', View: KeysMode },
+    { id: 'circle', label: 'Circle', View: CircleMode },
+  ] },
+  { id: 'ear', label: 'Ear', icon: 'ear', about: 'Hearing degrees, melodies, cadences and rhythm', modes: [
+    { id: 'ear', label: 'Melody', View: EarMode },
+    { id: 'rhythm', label: 'Rhythm', View: RhythmMode },
+  ] },
+  { id: 'synth', label: 'Synth', icon: 'synth', about: 'The DX7 and the modular rack your keys play', modes: [
+    { id: 'synth', label: 'Synth', View: SynthMode },
+  ] },
 ];
+const MODES = SECTIONS.flatMap((s) => s.modes);
+const sectionOf = (id: string) => SECTIONS.find((s) => s.modes.some((m) => m.id === id)) ?? SECTIONS[0];
+
+// a section's link goes back to the drill you last had open there
+const LAST_KEY = 'tb.nav.last';
+const lastOpen = (): Record<string, string> => {
+  try {
+    return JSON.parse(localStorage.getItem(LAST_KEY) ?? '{}') as Record<string, string>;
+  } catch {
+    return {};
+  }
+};
+const rememberOpen = (section: string, mode: string): void => {
+  try {
+    localStorage.setItem(LAST_KEY, JSON.stringify({ ...lastOpen(), [section]: mode }));
+  } catch {
+    /* private mode: sections just open on their first drill */
+  }
+};
 
 let inputVersion = 0;
 input.onChange(() => {
@@ -57,7 +87,9 @@ const touchOnly = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)
 export function SimpleApp() {
   const route = useRoute();
   const mode = MODES.find((m) => m.id === route[0]) ?? MODES[0];
+  const section = sectionOf(mode.id);
   const isSynth = mode.id === 'synth';
+  useEffect(() => rememberOpen(section.id, mode.id), [section, mode]);
   useSyncExternalStore((fn) => input.onChange(fn), () => inputVersion);
   const audioState = useSyncExternalStore((fn) => audio.onState(fn), () => audio.state);
   const marks = useMini(kb, (k) => k.marks);
@@ -98,11 +130,7 @@ export function SimpleApp() {
     <div className="s-app">
       <Backdrop />
       <header className="s-top">
-        <nav className="s-tabs" aria-label="Mode">
-          {MODES.map((m) => (
-            <a key={m.id} href={href(m.id)} className={m === mode ? 'on' : ''} aria-current={m === mode ? 'page' : undefined}>{m.label}</a>
-          ))}
-        </nav>
+        <SectionNav section={section} mode={mode} />
         <div className="s-top-right">
           {audioState !== 'running' ? (
             <button type="button" className="s-sound-off" onClick={() => void audio.init()} title={audioState === 'error' ? audio.error : 'Sound starts on your first click or key press'}>
@@ -149,6 +177,46 @@ export function SimpleApp() {
       <ThemeSheet />
       <Lessons />
     </div>
+  );
+}
+
+type Section = (typeof SECTIONS)[number];
+
+/** The sections, with the open one's drills beside its name. */
+function SectionNav({ section, mode }: { section: Section; mode: (typeof MODES)[number] }) {
+  const last = lastOpen();
+  return (
+    <nav className="s-tabs" aria-label="Sections">
+      {SECTIONS.map((s) => {
+        const open = s === section;
+        const to = s.modes.find((m) => m.id === last[s.id]) ?? s.modes[0];
+        const name = (
+          <>
+            <Icon name={s.icon} size={15} />
+            <span className="nm">{s.label}</span>
+          </>
+        );
+        if (!open) {
+          return <a key={s.id} href={href(to.id)} className="s-sec" title={s.about} aria-label={s.label}>{name}</a>;
+        }
+        return (
+          <div key={s.id} className="s-sec on" role="group" aria-label={s.label}>
+            {s.modes.length > 1 ? (
+              <>
+                <span className="s-sec-name" title={s.about}>{name}</span>
+                <span className="s-subs">
+                  {s.modes.map((m) => (
+                    <a key={m.id} href={href(m.id)} className={m === mode ? 'on' : ''} aria-current={m === mode ? 'page' : undefined}>{m.label}</a>
+                  ))}
+                </span>
+              </>
+            ) : (
+              <a href={href(s.modes[0].id)} className="s-sec-name" aria-current="page" title={s.about}>{name}</a>
+            )}
+          </div>
+        );
+      })}
+    </nav>
   );
 }
 

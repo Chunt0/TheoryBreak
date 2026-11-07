@@ -8,7 +8,7 @@ import { getScale, scaleNotes, scaleSemis } from '../theory/scales';
 import type { KeyMark } from '../ui/Keyboard';
 import { degreeLine, type Dir, type Pattern } from './logic';
 import type { Help } from './Lessons';
-import { Bar, Chips, K, Listen, Pick, playLine, rootByPc, rootMidi, savePref, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
+import { Bar, Chips, K, Listen, More, Pick, playLine, rootByPc, rootMidi, savePref, setMarks, useFlash, useHotkeys, useModeCleanup, useNoteOn, usePref, type Choice } from './common';
 
 const SCALE_GROUPS: { title: string; ids: string[] }[] = [
   { title: 'Major & minor', ids: ['major', 'minor', 'harmonic_minor', 'melodic_minor'] },
@@ -260,9 +260,6 @@ function ScaleRun({ taskChips }: { taskChips: ReactNode }) {
       <Bar help={scaleHelp(scaleId)}>
         {taskChips}
         <Pick label="Scale" value={scaleId} groups={SCALE_CHOICES} onChange={setScaleId} />
-        <Pick label="Pattern" value={pattern} options={PATTERNS} onChange={setPattern} />
-        <Pick label="Range" value={octs} options={OCTAVES} onChange={setOcts} />
-        <Pick label="Direction" value={dir} options={DIRS} onChange={setDir} />
         <Pick label="Guide" value={guide} options={GUIDES} onChange={setGuide} />
         <Pick
           label="Timing"
@@ -280,6 +277,11 @@ function ScaleRun({ taskChips }: { taskChips: ReactNode }) {
             <button type="button" onClick={() => setBpm(Math.min(240, bpm + 4))} aria-label="Faster">+</button>
           </span>
         ) : null}
+        <More changed={pattern !== 'straight' || octs !== OCTAVES[0].id || dir !== 'up'}>
+          <Pick label="Pattern" prefix="Pattern" value={pattern} options={PATTERNS} onChange={setPattern} />
+          <Pick label="Range" prefix="Range" value={octs} options={OCTAVES} onChange={setOcts} />
+          <Pick label="Direction" prefix="Direction" value={dir} options={DIRS} onChange={setDir} />
+        </More>
       </Bar>
 
       <section className="s-stage">

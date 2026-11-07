@@ -1,7 +1,7 @@
 // Shared bits for the practice modes: the big keyboard's marks, note
 // listeners, the options row, answer pickers, playback and saved preferences.
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { audio, PART, type NoteEvent, type PartId } from '../audio/engine';
 import { COMMAND_CODE, commandLabel, controllerKind, type Command, type ControllerKind } from '../midi/commands';
 import { input } from '../midi/input';
@@ -241,6 +241,20 @@ export function Pick<T extends string>({ value, options, groups, onChange, label
         {groups ? groups.map((g) => <optgroup key={g.title} label={g.title}>{opts(g.options)}</optgroup>) : opts(options ?? [])}
       </select>
     </label>
+  );
+}
+
+/** The finer options, folded away: a quiet pill that opens them. The row stays short; the depth is one tap off. */
+export function More({ children, changed }: { children: ReactNode; changed?: boolean }) {
+  const id = `s-more-${useId().replace(/[^a-z0-9]/gi, '')}`;
+  return (
+    <>
+      <button type="button" className={`s-pill s-more ${changed ? 'changed' : ''}`} popoverTarget={id} title={changed ? 'More options (some changed)' : 'More options'}>
+        {changed ? <i className="dot" aria-hidden="true" /> : null}
+        More
+      </button>
+      <div id={id} popover="auto" className="s-pop s-more-pop">{children}</div>
+    </>
   );
 }
 
