@@ -6,6 +6,7 @@ import { FUNK } from './funk';
 import { JAZZ } from './jazz';
 import { MODULAR } from './modular';
 import { RHYTHM } from './rhythm';
+import { SEQ } from './seq';
 import { SOUL } from './soul';
 
-export const LESSONS: Lesson[] = [...CORE, ...JAZZ, ...FUNK, ...SOUL, ...BACH, ...RHYTHM, ...MODULAR];
+export const LESSONS: Lesson[] = [...CORE, ...JAZZ, ...FUNK, ...SOUL, ...BACH, ...RHYTHM, ...MODULAR, ...SEQ];
