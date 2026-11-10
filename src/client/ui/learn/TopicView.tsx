@@ -14,7 +14,7 @@ import { ProgressionStrip } from '../ProgressionStrip';
 import { RhythmGrid, playRhythm } from '../Rhythm';
 import { ExerciseRunner } from './ExerciseRunner';
 
-const NOTE_ICON = { ear: 'ear', keys: 'keys', writing: 'writing', jazz: 'note' } as const;
+const NOTE_ICON = { ear: 'ear', keys: 'keys', writing: 'writing', jazz: 'note', recap: 'note' } as const;
 
 /**
  * A lesson. `embedded` (the drawer opened from a drill) leaves out the inline
@@ -65,9 +65,11 @@ function BlockView({ b, onDrill }: { b: Block; onDrill?: (skill: string) => void
   switch (b.t) {
     case 'p':
       return <Markdown md={b.md} />;
+    case 'h':
+      return <h3>{b.md}</h3>;
     case 'note':
       return (
-        <div className={`callout ${b.kind === 'jazz' ? 'song' : b.kind === 'ear' ? 'ear' : 'keys'}`}>
+        <div className={`callout ${b.kind === 'jazz' ? 'song' : b.kind === 'ear' ? 'ear' : b.kind === 'recap' ? 'recap' : 'keys'}`}>
           <span className="ico"><Icon name={NOTE_ICON[b.kind]} /></span>
           <div><Markdown md={b.md} /></div>
         </div>

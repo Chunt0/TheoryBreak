@@ -28,8 +28,12 @@ export type Music =
   | { prog: string[]; key: string; bpm?: number; style?: CompStyle; beats?: number | number[] };
 
 export type Block =
+  /** prose: one or more paragraphs (blank line between), lists allowed */
   | { t: 'p'; md: string }
-  | { t: 'note'; kind: 'ear' | 'keys' | 'writing' | 'jazz'; md: string }
+  /** a section heading inside the lesson */
+  | { t: 'h'; md: string }
+  /** a side note; `recap` is the lesson's short version, for coming back to */
+  | { t: 'note'; kind: 'ear' | 'keys' | 'writing' | 'jazz' | 'recap'; md: string }
   | { t: 'keys'; notes: string[]; labels?: string[]; caption?: string }
   | { t: 'staff'; chords: { notes: string[]; label?: string }[]; caption?: string }
   | { t: 'listen'; items: { label: string; music: Music; note?: string }[] }
@@ -56,6 +60,25 @@ export interface Topic {
   blocks: Block[];
   /** skills drilled from this topic */
   drills: string[];
+}
+
+/** A lesson as written: its reading time is worked out from what it holds. */
+export type Lesson = Omit<Topic, 'minutes'>;
+
+/** Reading time: prose at an unhurried pace, plus time to play and listen. */
+export function readingMinutes(l: Lesson): number {
+  let words = 0;
+  let extra = 0;
+  const count = (s: string) => s.split(/\s+/).filter(Boolean).length;
+  for (const b of l.blocks) {
+    if (b.t === 'p' || b.t === 'h' || b.t === 'note') words += count(b.md);
+    else if (b.t === 'table') words += count([...b.head, ...b.rows.flat()].join(' ')) * 0.6;
+    else if (b.t === 'example') { words += count(b.steps.join(' ')); extra += b.music ? 0.3 : 0; }
+    else if (b.t === 'listen') extra += b.items.length * 0.2;
+    else if (b.t === 'prog' || b.t === 'rhythm' || b.t === 'keys' || b.t === 'staff') extra += 0.3;
+    else if (b.t === 'synth') extra += 0.6 + b.demo.tries.length * 0.15;
+  }
+  return Math.max(3, Math.round(words / 220 + extra));
 }
 
 export function staffFromStrings(chords: { notes: string[]; label?: string }[]): StaffChord[] {

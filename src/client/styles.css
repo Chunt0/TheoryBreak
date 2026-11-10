@@ -680,6 +680,13 @@ a.s-sec:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6
 .s-lessons .rk-g-body ul { margin: 0 0 8px; padding-left: 1.2em; }
 .s-lessons .card { padding: 12px; }
 .s-lessons .callout { font-size: 13.5px; }
+.s-lessons .rk-g-body { font-size: 14.5px; line-height: 1.62; }
+.s-lessons .rk-g-body p { margin: 0 0 10px; max-width: 62ch; }
+.s-lessons .rk-g-body .block > p:last-child { margin-bottom: 0; }
+.s-lessons .rk-g-body .block + .block:has(> .s-lesson-h) { margin-top: 22px; }
+.s-lesson-h { margin: 0 !important; font-size: 15px !important; text-transform: none !important; letter-spacing: 0 !important; color: var(--text) !important; font-weight: 700; }
+.callout-k { display: block; margin-bottom: 3px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); }
+.callout.recap { border-color: color-mix(in oklab, var(--accent) 45%, var(--line)); background: var(--accent-soft); }
 .s-lessons .example ol { margin: 8px 0 0; }
 .s-method { padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); }
 .s-method ol { margin: 0; padding-left: 1.2em; color: var(--text); }

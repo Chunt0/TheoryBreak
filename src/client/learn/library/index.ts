@@ -5,9 +5,16 @@ import { MORE_TOPICS } from './topics-more';
 import { MODULAR_TOPICS } from './topics-modular';
 import { SEQ_TOPICS } from './topics-seq';
 import { FM_TOPICS } from './topics-fm';
-import type { Tag, Topic } from './types';
+import { LESSONS } from './lessons';
+import { readingMinutes, type Tag, type Topic } from './types';
 
-const ALL: Topic[] = [...FOUNDATION_TOPICS, ...CORE_JAZZ_TOPICS, ...SOUL_BACH_TOPICS, ...MORE_TOPICS, ...MODULAR_TOPICS, ...SEQ_TOPICS, ...FM_TOPICS];
+// rewritten lessons replace the old reference cards with the same id
+const WRITTEN: Topic[] = LESSONS.map((l) => ({ ...l, minutes: readingMinutes(l) }));
+const NEW_IDS = new Set(WRITTEN.map((t) => t.id));
+const ALL: Topic[] = [
+  ...[...FOUNDATION_TOPICS, ...CORE_JAZZ_TOPICS, ...SOUL_BACH_TOPICS, ...MORE_TOPICS, ...MODULAR_TOPICS, ...SEQ_TOPICS, ...FM_TOPICS].filter((t) => !NEW_IDS.has(t.id)),
+  ...WRITTEN,
+];
 const BY_ID: Record<string, Topic> = Object.fromEntries(ALL.map((t) => [t.id, t]));
 
 export const TAG_ORDER: Tag[] = ['core', 'jazz', 'funk', 'soul', 'bach', 'rhythm', 'modular', 'seq', 'fm'];

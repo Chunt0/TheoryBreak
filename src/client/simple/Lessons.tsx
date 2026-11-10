@@ -170,14 +170,25 @@ function Index({ help }: { help: Help }) {
   );
 }
 
-const CALLOUT = { ear: 'ear', keys: 'keys', writing: 'keys', jazz: 'song' } as const;
+const CALLOUT = { ear: 'ear', keys: 'keys', writing: 'keys', jazz: 'song', recap: 'recap' } as const;
+/** a small label saying why the box is there */
+const CALLOUT_LABEL = { ear: 'Listening', keys: 'Try it', writing: 'Writing', jazz: 'On record', recap: 'In short' } as const;
 
 function BlockView({ b }: { b: Block }) {
   switch (b.t) {
     case 'p':
       return <Markdown md={b.md} />;
+    case 'h':
+      return <h3 className="s-lesson-h">{b.md}</h3>;
     case 'note':
-      return <div className={`callout ${CALLOUT[b.kind]}`}><div><Markdown md={b.md} /></div></div>;
+      return (
+        <div className={`callout ${CALLOUT[b.kind]}`}>
+          <div>
+            <span className="callout-k">{CALLOUT_LABEL[b.kind]}</span>
+            <Markdown md={b.md} />
+          </div>
+        </div>
+      );
     case 'keys': {
       const mids = b.notes.map((n) => parsePitch(n) ?? 60);
       const lo = Math.min(...mids);
