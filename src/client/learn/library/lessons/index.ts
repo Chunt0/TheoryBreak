@@ -3,5 +3,6 @@ import type { Lesson } from '../types';
 import { CORE } from './core';
 import { FUNK } from './funk';
 import { JAZZ } from './jazz';
+import { SOUL } from './soul';
 
-export const LESSONS: Lesson[] = [...CORE, ...JAZZ, ...FUNK];
+export const LESSONS: Lesson[] = [...CORE, ...JAZZ, ...FUNK, ...SOUL];
