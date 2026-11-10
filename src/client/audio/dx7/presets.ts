@@ -135,7 +135,7 @@ export const PRESETS: Preset[] = [
   },
   {
     category: 'Mallet & Bell',
-    notes: 'A non-integer ratio (3.50) creates inharmonic sidebands — that is what makes FM bells sound like metal. Long, exponential-looking decays.',
+    notes: 'A non-integer ratio (4.50: coarse 3, fine 50) creates inharmonic sidebands — that is what makes FM bells sound like metal. Long, exponential-looking decays.',
     patch: P('TUBE BELLS', 5, 0, [
       O(1, 95, [99, 30, 20, 30], [99, 0, 0, 0], { velocitySens: 2 }),
       O(3, 75, [99, 35, 20, 30], [99, 0, 0, 0], { fine: 50, velocitySens: 4 }),

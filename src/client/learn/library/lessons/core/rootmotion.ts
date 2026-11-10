@@ -24,6 +24,11 @@ export const rootmotion: Lesson = {
     h('By 3rds: gentle shifts'),
     p('Roots falling a 3rd — C to A, A to F, F to D — give a soft, descending sequence of colours with two common tones at every step. The very common I–vi–IV–V progression begins with two of these moves (C → A → F) before stepping up to G for the push home. Falling 3rds are the sound of ballads and of slow, gentle harmony.'),
     p('Roots rising a 3rd are less common in tonal music and feel a little like stepping back: I to iii, for instance, can sound like the music has hesitated. A special case is the **major-3rd cycle** — roots moving by major 3rds, which divide the octave into three equal parts (C, E, A♭). Because each key is far from the next, this motion sounds bright but disorienting. It is the engine of John Coltrane\'s "Giant Steps".'),
+    p('A related colour is the **chromatic mediant**: two chords a 3rd apart that are both major (or both minor), so they share only one note and one of them lies outside the key. C major to A♭ major, or C major to E major, keeps one common tone (C, and E) while the other notes slide by half steps. The effect is a sudden change of light — warm and expansive going to A♭, bright and lifted going to E — without any sense of a cadence. It is a favourite of film composers, and of gospel and soul arrangers who drop from I to ♭VI for a big, open moment.'),
+    listen([
+      { label: 'C → A♭', music: { prog: ['C', 'Ab', 'C'], key: 'C', beats: 2 }, note: 'C holds; E falls to E♭, G rises to A♭' },
+      { label: 'C → E', music: { prog: ['C', 'E', 'C'], key: 'C', beats: 2 }, note: 'E holds; C falls to B, G rises to G♯' },
+    ]),
     { t: 'prog', key: 'C', tokens: ['Cmaj7', 'Am7', 'Fmaj7', 'Dm7'], style: 'ballad', caption: 'Falling 3rds: two common tones every move' },
 
     h('By step: linear motion'),

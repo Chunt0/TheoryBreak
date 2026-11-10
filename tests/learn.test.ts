@@ -75,6 +75,12 @@ describe('library', () => {
           : b.t === 'example' && b.music ? pitches(b.music) : [];
         for (const p of all) expect(parsePitch(p), `${t.id}: ${p}`).not.toBeNull();
         if (b.t === 'keys' && b.labels) expect(b.labels).toHaveLength(b.notes.length);
+        const timed = [...(b.t === 'listen' ? b.items.map((it) => it.music) : []), ...(b.t === 'example' && b.music ? [b.music] : [])];
+        for (const m of timed) if ('notes' in m && m.at) {
+          expect(m.at, `${t.id}: at`).toHaveLength(m.notes.length);
+          if (m.len) expect(m.len, `${t.id}: len`).toHaveLength(m.notes.length);
+          expect([...m.at].sort((x, y) => x - y), `${t.id}: at in order`).toEqual(m.at);
+        }
       }
     }
   });

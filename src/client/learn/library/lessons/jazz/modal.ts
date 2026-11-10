@@ -47,10 +47,11 @@ export const modal: Lesson = {
     p('Quartal voicings can also move **within** the mode. Stack three notes in 4ths on each degree of D Dorian and move the stack up and down the scale over a D pedal: D–G–C, E–A–D, F–B–E, G–C–F and so on. Most of the stacks are perfect 4ths; one or two include the augmented 4th F–B, which adds a flicker of tension. This kind of parallel movement, called **planing**, is the sound of McCoy Tyner\'s piano behind John Coltrane, and it can make a single chord feel alive for minutes at a time.'),
 
     h('Sus chords: the modal dominant'),
-    p('Modal jazz has its own favourite dominant chord: the **sus chord**. G7sus4 is G C D F — a G7 with C replacing the 3rd. Look at it another way and it is a Dm7 chord over a G bass, Dm7/G: the ii and the V of a ii–V sounding at the same moment. That fusion gives the sus chord its special quality. It has the root of a dominant but none of the tension, because there is no 3rd to form a tritone with the 7th. It can resolve to C, but it does not have to; in modal tunes the 4th never needs to fall to the 3rd, and the chord simply hangs in the air.'),
+    p('Modal jazz has its own favourite dominant chord: the **sus chord**. G7sus4 is G C D F — a G7 with C replacing the 3rd. Add the 9th, A, and you get G9sus4: G C D F A. Look at the upper notes and they are a complete Dm7 (D F A C) over a G bass — **Dm7/G**, the ii and the V of a ii–V sounding at the same moment. (F/G, an F triad over G, is the same sound with the D left out, and it is how many charts write it.) That fusion gives the sus chord its special quality. It has the root of a dominant but none of the tension, because there is no 3rd to form a tritone with the 7th. It can resolve to C, but it does not have to; in modal tunes the 4th never needs to fall to the 3rd, and the chord simply hangs in the air.'),
     p('Herbie Hancock\'s "Maiden Voyage" is built almost entirely from sus chords, each sustained for several bars and moving to another sus chord a step or a 3rd away. The result floats in a way no ii–V–I can.'),
     listen([
-      { label: 'G7sus4', music: { chord: 'G7sus4' }, note: 'Dm7 over G: ii and V at once' },
+      { label: 'G7sus4', music: { chord: 'G7sus4' }, note: 'C in place of B: a dominant with no tritone' },
+      { label: 'G9sus4 = Dm7/G', music: { voicings: [['G2', 'D4', 'F4', 'A4', 'C5']], beat: 2 }, note: 'Dm7 over G: ii and V at once' },
       { label: 'G13sus4', music: { chord: 'G13sus4' }, note: 'the full modal-dominant sound' },
     ]),
 
@@ -65,7 +66,7 @@ export const modal: Lesson = {
       'Modal jazz replaces fast chord changes with long stretches of one mode ("So What": D Dorian, then E♭ Dorian).',
       'Keep the mode alive by leaning on its characteristic note (Dorian ♮6, Mixolydian ♭7, Lydian ♯4, Phrygian ♭2).',
       'Quartal voicings — stacked 4ths — are open and ambiguous, ideal for static harmony; the "So What" voicing is the classic shape.',
-      'Sus chords (G7sus4 = Dm7/G) are ii and V at once: dominant root, no tension, free to hang.',
+      'Sus chords (G9sus4 = Dm7/G) are ii and V at once: dominant root, no tension, free to hang.',
       'Modal vamps alternate chords within the mode (Dorian i7 – IV7) and lead straight into funk.',
     ]),
     drill('ear.modes', 3),

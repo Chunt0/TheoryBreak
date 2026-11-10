@@ -21,7 +21,7 @@ export const pluck = (o: { oct?: number; port?: string; cutoff?: number; res?: n
 export const PLUCK_WIRES = ['vco.saw>flt.in', 'env.env>flt.cv', 'flt.lp>vca.in', 'env.env>vca.cv', 'vca.out>out.l'];
 
 // minor-pentatonic bass line, two bars of 8ths
-export const LINE = [0, 0, 12, 0, 10, 0, 7, 5, 0, 0, 12, 0, 15, 12, 10, 7];
+export const LINE = [0, 0, 12, 0, 10, 0, 7, 5, 0, 0, 12, 0, 3, 5, 7, 10];
 
 export const CLOCK_BLEEP: SynthDemo = {
         name: 'CLOCK BLEEP', view: 'none', seconds: 4,

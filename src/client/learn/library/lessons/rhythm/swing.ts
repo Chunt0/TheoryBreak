@@ -1,5 +1,5 @@
 import type { Lesson } from '../../types';
-import { drill, ear, example, h, onRecord, p, recap, table, tryIt } from '../blocks';
+import { drill, ear, example, h, listen, onRecord, p, recap, table, tryIt } from '../blocks';
 
 export const swing: Lesson = {
   id: 'rhythm.swing',
@@ -22,7 +22,7 @@ export const swing: Lesson = {
     p('Within a line of 8th notes, swing players often place light accents on the **off-beat** 8ths — the short notes — and connect the notes smoothly (legato). This is the opposite of what you might expect: the short note gets the accent. That combination of long–short timing and off-beat accents is the essence of swung phrasing.'),
 
     h('The ride cymbal'),
-    p('The most recognisable swing pattern is the drummer\'s **ride-cymbal** figure: a hit on every beat, with an extra swung 8th before beats 2 and 4. Said aloud it goes "ding, ding-a ding, ding-a ding". With the hi-hat on 2 and 4 underneath, it defines the swing feel for the whole band.'),
+    p('The most recognisable swing pattern is the drummer\'s **ride-cymbal** figure: a hit on every beat, with an extra short swung 8th after beats 2 and 4 that skips into beats 3 and 1. Said aloud it goes "ding, ding-a ding, ding-a ding". With the hi-hat on 2 and 4 underneath, it defines the swing feel for the whole band.'),
     { t: 'rhythm', cells: ['100', '101', '100', '101'], per: 3, bpm: 100, caption: 'The ride-cymbal pattern: "ding, ding-a ding, ding-a".' },
 
     h('Where in the beat'),
@@ -46,6 +46,10 @@ export const swing: Lesson = {
       'Play a simple four-bar melody in even 8ths, as written.',
       'Play it again with every pair of 8ths long–short, as if each beat were a triplet.',
       'Play it a third time, swung, with a click on 2 and 4 and light accents on the off-beats. The same notes, three different feels.',
+    ]),
+    listen([
+      { label: 'Straight 8ths', music: { notes: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4'], at: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28], bpm: 120 }, note: 'even: square, like classical or rock' },
+      { label: 'Swung 8ths', music: { notes: ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4'], at: [0, 2.67, 4, 6.67, 8, 10.67, 12, 14.67, 16, 18.67, 20, 22.67, 24, 26.67, 28], len: [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 4], bpm: 120 }, note: 'the same scale, long–short from the triplet' },
     ]),
     onRecord('Listen to the drummer\'s ride cymbal on any classic small-group jazz record and tap along with it, then switch your attention to the walking bass. Notice how the two lock together, and how the soloist floats over them, sometimes behind the beat, sometimes ahead.'),
     ear('To hear swing, listen to a line of 8th notes and ask whether the pairs are even or long–short. Then listen for where the weight falls: snaps on 2 and 4, accents on the off-beats. If a jazz performance sounds stiff, it is usually because the 8ths are too even or the weight is on 1 and 3.'),

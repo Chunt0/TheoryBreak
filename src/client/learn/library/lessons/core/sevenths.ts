@@ -62,12 +62,22 @@ export const sevenths: Lesson = {
     p('Listen in layers rather than trying to recognise the whole chord at once. **First the 3rd**: is the chord bright or dark? That splits the five types into two groups — maj7 and dominant 7 on the bright side; m7, half-diminished and diminished on the dark side.'),
     p('**Then the 7th.** A major 7th sits a half step under the octave and rubs gently against it; you hear a shimmer. A minor 7th sits a whole step under the octave and sounds open and bluesy. Between the two bright chords, that is the whole difference: maj7 shimmers, dominant 7 has grit and wants to go somewhere.'),
     p('**Then the 5th**, for the dark chords. A plain minor 7th is mellow. Lower its 5th and it tightens into half-diminished, which sounds unresolved. Lower the 7th as well and you reach the fully diminished 7th, which is tense in a strange, balanced way — because it is symmetrical, it does not point to any one key and could resolve in several directions.'),
+    listen([
+      { label: 'The family, one semitone at a time', music: { voicings: [['C3', 'E3', 'G3', 'B3'], ['C3', 'E3', 'G3', 'Bb3'], ['C3', 'Eb3', 'G3', 'Bb3'], ['C3', 'Eb3', 'Gb3', 'Bb3'], ['C3', 'Eb3', 'Gb3', 'Bbb3']], beat: 1.5 }, note: 'maj7 → 7 → m7 → m7♭5 → °7: 7th, 3rd, 5th, then 7th again, each down a semitone' },
+      { label: 'Shimmer or grit', music: { voicings: [['C3', 'G3', 'B3', 'E4'], ['C3', 'G3', 'Bb3', 'E4']], beat: 1.6 }, note: 'Cmaj7, then C7: only the 7th moves' },
+      { label: 'Mellow or tight', music: { voicings: [['C3', 'G3', 'Bb3', 'Eb4'], ['C3', 'Gb3', 'Bb3', 'Eb4']], beat: 1.6 }, note: 'Cm7, then Cm7♭5: only the 5th moves' },
+    ]),
     p('Context helps too. The chords that contain a tritone — the dominant 7th, half-diminished and diminished 7th — sound like they are leading somewhere. The ones without — maj7 and m7 — sound like places to stay.'),
 
     h('Why the 7th matters'),
     p('In classical harmony the 7th is a dissonance, and dissonances resolve: the 7th of a chord moves down by step into the next chord. In G7 going to C, the F falls to E. Bach treats almost every 7th this way, and it is a large part of why his harmony feels so purposeful.'),
     p('Jazz relaxes the rule — Cmaj7 is a perfectly good final chord, and nobody expects its B to resolve — but the tendency is still there underneath. In a ii–V–I, the 7th of each chord falls by step to become the 3rd of the next: the C of Dm7 becomes the B of G7, and the F of G7 becomes the E of Cmaj7. Those falling lines, called **guide tones**, are the backbone of jazz voicing and improvisation, and they get a lesson of their own.'),
     p('Seventh chords can be inverted just like triads, and with four notes there are three inversions: the 3rd, the 5th or the 7th in the bass. In figured bass these are written 6/5, 4/3 and 4/2. The last one, with the 7th in the bass, is the most restless: the bass itself is the dissonance, so it usually steps down — V4/2 resolving to I6 is a standard Bach move.'),
+    example('G7 with its 7th in the bass', [
+      'Put F, the 7th of G7, at the bottom: F–G–B–D. Above F you find a 2nd (G) and a 4th (B), hence the figure **4/2** (the 6th, D, is taken for granted).',
+      'The bass is a dissonance, so it does what 7ths do: it falls a step, F to E.',
+      'Above it, G holds, B (the leading tone) rises to C and D falls to C. The result is C/E — I6 — and the whole move, V4/2 → I6, is a step or a held note in every voice.',
+    ], { voicings: [['F3', 'G3', 'B3', 'D4'], ['E3', 'G3', 'C4', 'C4']], beat: 1.6 }),
 
     ear('Name the chord in three questions: bright or dark (the 3rd)? Shimmer or grit (the 7th)? And if it is dark, mellow or tight (the 5th)? Three yes-or-no answers get you to any of the five.'),
     tryIt('Play this chain on one root: Cmaj7 → C7 → Cm7 → Cm7♭5 → C°7. Each step lowers exactly one note by a semitone — first the 7th, then the 3rd, then the 5th, then the 7th again. Learning the five types as one family, a semitone apart, is far easier than learning them as five separate shapes. Then try the chain on F, B♭ and E♭.'),

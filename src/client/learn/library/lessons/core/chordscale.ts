@@ -67,6 +67,12 @@ export const chordscale: Lesson = {
       ['7♯5', 'whole tone'],
       ['m(maj7), m6', 'melodic minor'],
     ]),
+    example('Scales through a major ii–V–I: Dm7 – G7 – Cmaj7', [
+      'All three chords belong to C major, so all three take C major\'s notes: **D Dorian**, **G Mixolydian**, **C Ionian**.',
+      'That is one set of seven notes the whole way through. What changes is which of them are chord tones: over Dm7 the strong notes are D F A C, over G7 they are G B D F, over Cmaj7 C E G B.',
+      'So the skill is not switching scales but **re-aiming** — F is a chord tone over Dm7 and G7, then becomes the avoid note over Cmaj7, where it should fall to E. B is the 13th of Dm7, the 3rd of G7, the 7th of Cmaj7.',
+      'Swap G7 for G7alt (A♭ melodic minor from G) and four notes change for one bar. That contrast — the key, then a burst of altered colour, then the key again — is the sound of a modern ii–V–I.',
+    ], { prog: ['Dm7', 'G7', 'Cmaj7', 'Cmaj7'], key: 'C', beats: 2, style: 'swing' }),
 
     h('Using a scale musically'),
     p('A scale is a set of notes, not a melody. Running it up and down from the root over each chord is the quickest way to sound like an exercise. The scale is better treated as a map with three kinds of note on it.'),

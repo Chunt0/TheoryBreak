@@ -30,7 +30,7 @@ export const alt: Lesson = {
       ['♯11 / ♭5', 'C♯ (D♭)', 'down to C, the root, or up to D'],
       ['♭13 / ♯5', 'E♭', 'up to E, the 3rd, or down to D'],
     ]),
-    p('Combine those with the guide tones — the 3rd B rising to C or staying as the maj7, the ♭7 F falling to E — and every note of an altered chord moves to the tonic by a half step or less. A plain G7, by contrast, has notes like D and A that can move in several directions without any particular pull. The altered dominant is all pull.'),
+    p('Combine those with the guide tones — the 3rd B rising to C or staying as the maj7, the ♭7 F falling to E — and every note of an altered chord moves to the tonic by a half step or less. A plain G9, by contrast, has notes like D and A that can move in several directions without any particular pull. The altered dominant is all pull.'),
     example('Resolve G7alt to Cmaj9 by half steps', [
       'Voice G7alt as F B E♭ A♭ (♭7, 3, ♭13, ♭9) over G.',
       'Move each note the shortest way: F → E, B stays, E♭ → D, A♭ → G.',
@@ -57,7 +57,7 @@ export const alt: Lesson = {
     },
     p('Upper-structure triads are another route. A major triad built on the ♭6 of the dominant — E♭ major over G7 (E♭ G B♭) — gives you the ♭13, root and ♯9 in one easy shape; a triad on the ♭5 — D♭ major (D♭ F A♭) — gives the ♯11, ♭7 and ♭9. The lesson on upper-structure triads goes through these in detail.'),
     p('Chord charts are not consistent about altered dominants. A chart might say **G7♭9**, **G7♯9**, **G7♭13**, **G7♯5** or simply **G7alt**. "Alt" gives you permission to use any combination of altered tensions; a specific symbol suggests which ones the composer heard. In practice, many players treat any dominant that resolves to a minor chord, or any dominant at a strong cadence, as a candidate for altered colour.'),
-    onRecord('Listen for altered dominants at the ends of phrases in hard-bop and post-bop records — the last chord before the tonic, where the pianist\'s voicing suddenly darkens and the soloist\'s line gets crunchier. The release into the next chord is the point.'),
+    onRecord('Many lead sheets write the alterations in. "Stella by Starlight" opens Em7♭5 – A7♭9; "Blue Bossa" cadences into C minor through Dm7♭5 – G7♭9. On the records, the pianist will usually go further than the symbol and the soloist will reach for the altered scale on that bar — listen for the moment the line turns crunchy just before the minor chord, and for how cleanly it lands.'),
     ear('An altered dominant sounds dark, dense and urgent, with no clear 5th. If you can hear a note a half step above the root (♭9) or a bluesy clash between a minor and major 3rd (♯9 against 3), you are almost certainly hearing an altered chord.'),
     tryIt('Play G7 – Cmaj7, then G7alt (F B E♭ A♭ over G) – Cmaj9, and listen to each altered note slide into its target. Then practise the shortcut in several keys: name the melodic minor scale for E7alt, B♭7alt, D7alt and A7alt, and play it over the chord before resolving.'),
     recap([

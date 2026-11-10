@@ -1,5 +1,5 @@
 import type { Lesson } from '../../types';
-import { drill, ear, example, h, listen, p, recap, table, tryIt } from '../blocks';
+import { drill, ear, example, h, listen, onRecord, p, recap, table, tryIt } from '../blocks';
 
 export const modes: Lesson = {
   id: 'core.modes',
@@ -42,6 +42,7 @@ export const modes: Lesson = {
       { label: 'D Lydian', music: { scale: 'lydian', from: 'D3', drone: true }, note: 'the G♯' },
       { label: 'D Phrygian', music: { scale: 'phrygian', from: 'D3', drone: true }, note: 'the E♭' },
       { label: 'D Aeolian', music: { scale: 'minor', from: 'D3', drone: true }, note: 'the B♭' },
+      { label: 'D Locrian', music: { scale: 'locrian', from: 'D3', drone: true }, note: 'E♭ and A♭: even the 5th is unstable' },
     ]),
     example('E Phrygian vs E Aeolian', [
       'E Aeolian (the relative minor of G major): E F♯ G A B C D.',
@@ -61,6 +62,7 @@ export const modes: Lesson = {
 
     h('Where the modes live'),
     p('In jazz, modes are mostly a way of choosing notes for a chord: Dorian over ii7, Mixolydian over V7, Ionian or Lydian over Imaj7. That idea — chord–scale theory — gets its own lesson. In **modal** music, by contrast, the mode is the whole tonal world. Miles Davis\'s "So What" sits on D Dorian for long stretches before moving up to E♭ Dorian; a funk vamp may stay on one Mixolydian or Dorian chord for an entire song. Here there is no ii–V–I pulling the music along; the colour of the mode itself, and especially its characteristic note, is what the music is about.'),
+    onRecord('**Dorian:** "So What" and Coltrane\'s "Impressions"; the Am7–D7 vamp of "Oye Como Va". **Mixolydian:** the melody of "Norwegian Wood"; almost every one-chord James Brown vamp. **Lydian:** the theme from *The Simpsons*, which leans hard on its ♯4. **Aeolian:** the i–♭VII–♭VI of "All Along the Watchtower". **Phrygian:** flamenco, and the Spanish-tinged section of Miles Davis\'s "Flamenco Sketches".'),
     ear('Over a drone, decide major or minor 3rd first, then listen only for the characteristic note. You never need to hear all seven notes to name the mode.'),
     tryIt('Hold a low D and improvise slowly in each mode, leaning on its characteristic note: G♯ in Lydian, C in Mixolydian, B in Dorian, E♭ in Phrygian. Then try the same thing on a different root. The goal is to feel the colour of each mode, not to run the scale up and down.'),
     recap([

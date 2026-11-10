@@ -28,7 +28,7 @@ export const symmetric: Lesson = {
       ['C♯°7', 'E°7 · G°7 · B♭°7', 'C7 · E♭7 · G♭7 · A7'],
       ['D°7', 'F°7 · A♭°7 · B°7', 'D♭7 · E7 · G7 · B♭7'],
     ]),
-    p('Bach exploits this constantly. A diminished 7th is the most dramatic chord in his vocabulary, and because it can be respelled as the vii°7 of four different keys, it is his favourite hinge for a sudden modulation: the music arrives on a diminished chord heard as belonging to one key, and leaves it as if it belonged to another.'),
+    p('Bach exploits this constantly. A diminished 7th is the most dramatic chord in his vocabulary, and because it can be respelled as the vii°7 of four different keys, it is his favourite hinge for a sudden modulation: the music arrives on a diminished chord heard as belonging to one key, and leaves it as if it belonged to another. On paper the spelling changes with the destination: heading for C, the chord is B D F A♭ (vii°7 of C); heading for E♭, the same keys are written D F A♭ C♭ (vii°7 of E♭), with B respelled as C♭ so that every note shows how it resolves.'),
     listen([
       { label: 'B°7 → C, then → E♭', music: { voicings: [['B3', 'D4', 'F4', 'Ab4'], ['C4', 'E4', 'G4', 'C5'], ['B3', 'D4', 'F4', 'Ab4'], ['Bb3', 'Eb4', 'G4', 'Bb4']], beat: 1 }, note: 'the same chord resolving two ways' },
     ]),

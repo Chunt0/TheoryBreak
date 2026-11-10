@@ -55,7 +55,7 @@ export const species: Lesson = {
     example('Write a line above C – D – F – E – D – C', [
       'Start on an octave: C above C. Against D, move down to B — a 6th, in contrary motion.',
       'Against F, step down to A (a 3rd, contrary again); against E, leap up to C (a 6th), then step back down to B against D (a 6th — two parallel 6ths are fine).',
-      'End on C against C: the 6th expands to an octave, B rising, D falling. Intervals 8 6 3 6 6 8; upper line C B A C B C — mostly steps, one small leap balanced by a step back.',
+      'End on C against C: the 6th expands to an octave, B rising, D falling. Intervals 8 6 3 6 6 8; upper line C B A C B C — mostly steps, one small leap balanced by a step back. (It touches C three times, so C is a ceiling rather than a single peak: fine in six notes, but in a longer line aim for one clear high point.)',
     ], { voicings: [['C3', 'C4'], ['D3', 'B3'], ['F3', 'A3'], ['E3', 'C4'], ['D3', 'B3'], ['C3', 'C4']], beat: 0.75 }),
 
     h('Why start here'),

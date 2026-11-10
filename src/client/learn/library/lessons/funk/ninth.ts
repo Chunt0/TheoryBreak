@@ -17,7 +17,7 @@ export const ninth: Lesson = {
 
     h('Three colours'),
     p('**The 9 chord.** E9 is E G♯ B D F♯: a dominant 7th with a natural 9th on top. It is smooth and full, and it is the James Brown chord — the bright, chopped guitar chord that drives so many of his grooves. The 9th softens the dominant\'s edge without making it any less funky.'),
-    p('**The 13 chord.** E13 adds the 13th (C♯), usually in place of the 5th: E G♯ D C♯ in a typical voicing. The 13th is the same note as the 6th, and it makes the chord brighter and more open, with a slightly jazzier lilt. Moving between a 9 and a 13 voicing on the same root — the top note moving between F♯ and C♯ — is a classic way of making a one-chord vamp move.'),
+    p('**The 13 chord.** E13 adds the 13th (C♯), usually in place of the 5th: E G♯ D C♯ in a typical voicing. The 13th is the same note as the 6th, and it makes the chord brighter and more open, with a slightly jazzier lilt. Moving between a 9 and a 13 voicing on the same root — the top note moving between F♯ and C♯ while the 3rd and ♭7 hold — is a classic way of making a one-chord vamp move.'),
     p('**The 7♯9 chord.** E7♯9 is E G♯ B D G: a dominant 7th with a raised 9th on top. The ♯9 is spelled F𝄪 in theory but always written and thought of as G, because what it really is, sonically, is a **minor 3rd sitting above a major 3rd**. The chord contains both G♯ and G at once — major and minor together, the blues in a single chord. It is raw, aggressive and instantly recognisable; rock players call it the Hendrix chord, and in funk it is a tonic in its own right.'),
     listen([
       { label: 'E9', music: { voicings: [['E2', 'G#3', 'D4', 'F#4']], beat: 1.6 }, note: 'smooth and full' },
@@ -44,7 +44,7 @@ export const ninth: Lesson = {
     { t: 'prog', key: 'E', tokens: ['E7#9', 'E7#9', 'A9', 'E7#9'], beats: 4, bpm: 100, style: 'funk', caption: 'One-chord funk: E7♯9 with a IV9 answer.' },
     example('Make a one-chord vamp move', [
       'Play E9 (G♯ D F♯ over E) on the One and the "&" of 2.',
-      'On the "a" of 3, slide the top voice up a 4th to a 13 voicing (G♯ D C♯) or slip the whole chord down from F9 to E9.',
+      'On the "a" of 3, lift the top voice from F♯ up to C♯ for a 13 voicing (G♯ D C♯), or slip the whole chord down from F9 to E9.',
       'Every few bars, answer with A9 (C♯ G B over A) for one bar, then return. The harmony barely changes; the groove feels alive.',
     ], { prog: ['E9', 'E13', 'E9', 'A9', 'E9'], key: 'E', beats: [4, 4, 4, 4, 4], style: 'funk' }),
     onRecord('James Brown\'s rhythm guitarists built whole songs from tightly chopped 9th chords, and the 7♯9 is all over funk and funk-rock. Listen for how short the chords are and how much of their effect comes from the silence after each stab.'),

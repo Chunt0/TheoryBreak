@@ -23,6 +23,7 @@ export const clave: Lesson = {
 
     h('3-2 and 2-3'),
     p('The same pattern can start from either half. Begin with the two-stroke half and you have **2-3 clave**. The rhythm is identical as a repeating cycle; what changes is which half lines up with the start of the musical phrase. That matters a great deal in Afro-Cuban music: a melody or arrangement is written "in 3-2" or "in 2-3", and playing the clave the wrong way round makes everything sound subtly crossed, even to listeners who could not explain why. A song\'s phrasing — where its strong melodic accents fall — usually tells you which direction it is in.'),
+    { t: 'rhythm', onsets: [2, 4, 8, 11, 14], caption: 'Son clave 2-3: the same cycle starting from the two-stroke side — the "&" of 1 and beat 2, then 3, the "a" of 3 and the "&" of 4.', bpm: 96 },
 
     h('Rumba and bossa clave'),
     p('Two close relatives differ by a single stroke. The **rumba clave** delays the third stroke of the three-side by one 16th, so the strokes fall on 1, the "a" of 1 and the "a" of 2 rather than the "&" of 2. That small shift makes the pattern more tense and off-balance; it is the timeline of Cuban rumba. The **bossa nova clave**, heard on the rim of the snare drum in bossa nova, instead delays the last stroke of the two-side, giving a lighter, more lilting cycle.'),

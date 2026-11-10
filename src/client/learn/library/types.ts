@@ -20,7 +20,8 @@ export const TAG_NAMES: Record<Tag, string> = {
 };
 
 export type Music =
-  | { notes: string[]; mode?: 'chord' | 'arp' | 'seq'; beat?: number }
+  /** a line or chord; with `at`, each note starts on that 16th of the bar (0 = beat 1) and lasts `len` 16ths */
+  | { notes: string[]; mode?: 'chord' | 'arp' | 'seq'; beat?: number; at?: number[]; len?: number[]; bpm?: number }
   | { voicings: string[][]; beat?: number }
   | { interval: string; from: string; dir?: 'asc' | 'desc' | 'harm' }
   | { scale: string; from: string; dir?: 'up' | 'down' | 'updown'; drone?: boolean }
@@ -93,6 +94,10 @@ export function staffFromStrings(chords: { notes: string[]; label?: string }[]):
 export function renderMusic(m: Music): NoteEvent[] {
   if ('notes' in m) {
     const mids = m.notes.map(parsePitch).filter((x): x is number => x !== null);
+    if (m.at) {
+      const sixteenth = 60 / (m.bpm ?? 96) / 4;
+      return mids.map((n, i) => ev(n, m.at![i] * sixteenth, (m.len?.[i] ?? 1) * sixteenth * 0.9));
+    }
     if (m.mode === 'chord') return chordEvents(mids, { dur: 2 });
     if (m.mode === 'arp') return chordEvents(mids, { arp: true });
     return melodyEvents(mids, m.beat ?? 0.4);

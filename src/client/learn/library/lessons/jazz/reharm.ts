@@ -52,8 +52,9 @@ export const reharm: Lesson = {
       'Result: | Em7 | A7 | Dm7 | Fm7 B♭7 | Cmaj7 |. Every melody note still fits, the start and the arrival are unchanged, and the journey between them is richer.',
     ], { prog: ['Em7', 'A7', 'Dm7', 'Fm7', 'Bb7', 'Cmaj7'], key: 'C', beats: [4, 4, 4, 2, 2, 4], style: 'ballad' }),
     listen([
-      { label: 'Original', music: { prog: ['Cmaj7', 'Cmaj7', 'Dm7', 'G7', 'Cmaj7'], key: 'C', beats: 4, style: 'ballad' }, note: 'plain and clear' },
-      { label: 'Reharmonised', music: { prog: ['Em7', 'A7', 'Dm7', 'Fm7', 'Bb7', 'Cmaj7'], key: 'C', beats: [4, 4, 4, 2, 2, 4], style: 'ballad' }, note: 'the same melody, a richer journey' },
+      { label: 'Original, melody on top', music: { voicings: [['C2', 'E3', 'B3', 'G4'], ['C2', 'G3', 'B3', 'E4'], ['D2', 'A3', 'C4', 'F4'], ['G2', 'F3', 'B3', 'D4'], ['C2', 'E3', 'G3', 'C4']], beat: 1.6 }, note: 'G, E, F, D, C over the plain changes' },
+      { label: 'Reharmonised, same melody', music: { voicings: [['E2', 'D3', 'B3', 'G4'], ['A2', 'G3', 'C#4', 'E4'], ['D2', 'A3', 'C4', 'F4'], ['F2', 'Eb3', 'Ab3', 'D4'], ['Bb2', 'Ab3', 'D4'], ['C2', 'E3', 'G3', 'C4']], beat: 1.6 }, note: 'the top line never changes; listen to the floor move under it' },
+      { label: 'Reharmonised, with the band', music: { prog: ['Em7', 'A7', 'Dm7', 'Fm7', 'Bb7', 'Cmaj7'], key: 'C', beats: [4, 4, 4, 2, 2, 4], style: 'ballad' }, note: 'the new changes as a rhythm section would comp them' },
     ]),
     writing('Reharmonise *against the melody*: every important melody note must be a chord tone or an available tension of the new chord. Hold the melody note with one hand and try new chords under it with the other.'),
     onRecord('Listen to several recordings of the same standard by different pianists or arrangers. The melody stays recognisable every time, but the chords underneath can vary enormously — and comparing them is the quickest way to build your own toolkit.'),

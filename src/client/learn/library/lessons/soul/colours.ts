@@ -55,10 +55,11 @@ export const colours: Lesson = {
       'Add the 9th to each chord: Cmaj9, Am9, Fmaj9.',
       'Swap the plain V for G9sus4 (= F/G), so that no leading tone makes it sound like a hymn.',
       'Keep G on top through all four: it is the 5th of Cmaj9, the ♭7 of Am9, the 9th of Fmaj9 and the root of G9sus4. One note, four colours.',
-    ], { prog: ['Cmaj9', 'Am9', 'Fmaj9', 'G9sus4'], key: 'C', beats: 4, style: 'ballad' }),
+    ], { voicings: [['C2', 'G2', 'B3', 'D4', 'E4', 'G4'], ['A1', 'E2', 'B3', 'C4', 'E4', 'G4'], ['F1', 'C2', 'A3', 'C4', 'E4', 'G4'], ['G1', 'D2', 'A3', 'C4', 'F4', 'G4'], ['C2', 'G2', 'B3', 'D4', 'E4', 'G4']], beat: 1.8 }),
     listen([
       { label: 'Plain triads', music: { prog: ['C', 'Am', 'F', 'G'], key: 'C', beats: 2, style: 'ballad' }, note: 'the bare progression' },
       { label: 'R&B colours', music: { prog: ['Cmaj9', 'Am9', 'Fmaj9', 'G9sus4'], key: 'C', beats: 2, style: 'ballad' }, note: 'the same progression, recoloured' },
+      { label: 'R&B colours, G on top', music: { voicings: [['C2', 'G2', 'B3', 'D4', 'E4', 'G4'], ['A1', 'E2', 'B3', 'C4', 'E4', 'G4'], ['F1', 'C2', 'A3', 'C4', 'E4', 'G4'], ['G1', 'D2', 'A3', 'C4', 'F4', 'G4']], beat: 1.8 }, note: 'one held top note, four different roles' },
     ]),
     onRecord('The electric piano parts on 1970s soul records by Stevie Wonder, Donny Hathaway and others are full of these voicings: m9 and maj9 chords with the 9th rubbing against the 3rd, and 9sus4 chords leading home. Listen especially to the top note of the keyboard part, which often stays put while the chords change.'),
     ear('To hear a 9th in a chord, listen for a soft shimmer at the top or in the middle of the voicing — a note that does not clash, does not want to resolve, but makes the chord sound wider. If the chord sounds settled and has no 7th, it is probably add9 or 6/9; if it sounds lush, it is probably maj9 or m9.'),

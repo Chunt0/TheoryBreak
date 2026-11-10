@@ -44,12 +44,12 @@ export const soulVoicings: Lesson = {
     example('Voice Dm9 – G13 – Cmaj9 neo-soul style', [
       'Left hand: root and 7th — D–C, G–F, C–B — while the roots fall in 5ths.',
       'Right hand: a three-note cluster with a 2nd inside: E F A (9, ♭3, 5), then E A B (13, 9, 3), then D E G (9, 3, 5).',
-      'E holds across the first two chords: a common tone that ties the colours together, while the other voices move by step.',
+      'E holds through all three chords — the 9th of Dm9, the 13th of G13, the 3rd of Cmaj9 — and A holds from the first into the second. The roots leap in 5ths underneath, but the right hand barely moves: common tones tie the colours together.',
     ], { voicings: [['D2', 'C3', 'E4', 'F4', 'A4'], ['G2', 'F3', 'E4', 'A4', 'B4'], ['C2', 'B2', 'D4', 'E4', 'G4']], beat: 1.4 }),
     example('Build a Cm11 cluster and move it to Fm11', [
       'Left hand C and B♭ (root and ♭7). Right hand E♭ F G (♭3, 11, 5): Cm11.',
       'Move to Fm11 in the same way: left hand F and E♭, right hand A♭ B♭ C.',
-      'The right-hand shape is identical, moved up a 4th; the whole-step rubs come along with it.',
+      'The right-hand shape is identical, just transposed to the new root (here down a 5th, to stay in the same register); the whole-step rubs come along with it.',
     ], { voicings: [['C2', 'Bb3', 'Eb4', 'F4', 'G4'], ['F2', 'Eb3', 'Ab3', 'Bb3', 'C4']], beat: 1.5 }),
 
     h('Register and touch'),

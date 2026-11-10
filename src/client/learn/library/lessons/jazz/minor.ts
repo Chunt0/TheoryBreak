@@ -42,7 +42,7 @@ export const minor: Lesson = {
       ['V7♭9', 'Phrygian dominant (♭9 ♭13) · altered'],
       ['i6 / im(maj7)', 'melodic minor · Dorian for a plain m7'],
     ]),
-    p('Guide tones work exactly as in major: the 7th of each chord falls by step to the 3rd of the next, and the 3rd stays to become the next 7th. In C minor: C (7th of Dm7♭5) falls to B (3rd of G7), and F (3rd of Dm7♭5) stays as the 7th of G7 before falling to E♭, the 3rd of Cm. The only difference from major is that last half step: F to E♭ rather than F to E.'),
+    p('Guide tones work exactly as in major: the 7th of each chord falls by step to the 3rd of the next, and the 3rd stays to become the next 7th. In C minor: C (7th of Dm7♭5) falls to B (3rd of G7), and F (3rd of Dm7♭5) stays as the 7th of G7 before falling to E♭, the 3rd of Cm. The only difference from major is that last half step: F to E♭ rather than F to E. The other line, C → B, decides the tonic\'s flavour: hold the B and you have Cm(maj7); let it step down to A and you have Cm6; let it rise to C and you have the root, with the plainest arrival of all.'),
 
     h('Major and minor side by side'),
     p('Many standards are built from both kinds of ii–V, often in the relative major and minor keys, which share most of their notes. "Autumn Leaves" is the classic example: a major ii–V–I to the relative major, then a minor ii–V–i to the tonic minor, over and over. Learning to hear which kind of ii–V is coming — and the ♭5 of the ii and the ♭9 of the V are the giveaways — is one of the most useful listening skills in jazz.'),

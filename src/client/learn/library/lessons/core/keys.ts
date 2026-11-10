@@ -29,6 +29,7 @@ export const keys: Lesson = {
       ['1♯', 'G', 'E'], ['2♯', 'D', 'B'], ['3♯', 'A', 'F♯'], ['4♯', 'E', 'C♯'], ['5♯', 'B', 'G♯'],
       ['1♭', 'F', 'D'], ['2♭', 'B♭', 'G'], ['3♭', 'E♭', 'C'], ['4♭', 'A♭', 'F'], ['5♭', 'D♭', 'B♭'],
       ['6♭ / 6♯', 'G♭ / F♯', 'E♭ / D♯'],
+      ['7♭ / 7♯', 'C♭ / C♯', 'A♭ / A♯'],
     ]),
     example('Name the key with four flats', [
       'The flats in order: B♭ E♭ A♭ D♭.',
@@ -43,6 +44,7 @@ export const keys: Lesson = {
 
     h('The circle of fifths'),
     p('Lay the keys out in order of 5ths and something tidy happens: C, G, D, A, E, B, F♯… each one a 5th above the last, each one with one more sharp. Keep going and the sharps pile up until you reach keys that are easier to write in flats. F♯ major (six sharps) and G♭ major (six flats) are the same keys on the keyboard — **enharmonic** spellings of one key — and from G♭ the circle carries on through D♭, A♭, E♭, B♭ and F, shedding a flat each time, back to C. Twelve steps of a 5th visit all twelve keys and return home. That loop is the **circle of fifths**.'),
+    p('Near the bottom of the circle the sharp and flat sides overlap, and three keys can be written either way: B major (5♯) is C♭ major (7♭), F♯ major (6♯) is G♭ major (6♭), and D♭ major (5♭) is C♯ major (7♯). Musicians nearly always choose the spelling with fewer accidentals, so you will see D♭ and B far more often than C♯ and C♭. Jazz adds a habit of its own: because so much of the repertoire was written for B♭ and E♭ horns, lead sheets lean towards the flat side — D♭, G♭, A♭ — wherever there is a choice.'),
     p('The circle is a map of closeness. Neighbouring keys share six of their seven notes, so a piece can move between them smoothly; each step further round changes one more note, so a move feels more distant. From C, the closest keys are G and F (one accidental away) together with the three relative minors, A minor, E minor and D minor. These are called the **closely related keys**, and they are where pieces usually go when they modulate — a Bach invention in C major will typically visit G major and A minor before coming home. The key directly opposite C, F♯, is as far away as it is possible to go.'),
 
     h('The circle in motion'),

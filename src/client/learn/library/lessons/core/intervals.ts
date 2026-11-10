@@ -11,7 +11,7 @@ export const intervals: Lesson = {
     p('An **interval** is the distance between two notes. It sounds like a small idea, but almost everything else in theory is built out of it. A chord is a stack of intervals. A scale is a row of them. A melody is a chain of steps and leaps, and voice leading is nothing more than watching the intervals between parts. Once you can name an interval quickly and recognise it by ear, the rest of harmony becomes a matter of combining things you already know.'),
     p('This lesson covers how intervals are named, a reliable way to work any of them out, and — most usefully — how to hear each one by the role it plays inside a chord.'),
 
-    h('Two numbers in one name'),
+    h('Two parts to every name'),
     p('Every interval name has two parts: a **size** (2nd, 3rd, 5th…) and a **quality** (major, minor, perfect…). You need both because a note has two identities at once. It has a letter name, which tells you where it sits on the staff, and it has a pitch, which tells you which key on the keyboard it is. The size comes from the letters; the quality comes from the exact distance in semitones.'),
     p('**Size: count the letter names, both ends included.** From C up to E you pass through C, D, E — three letters, so it is a 3rd. From C up to A: C D E F G A, a 6th. There is no "zeroth": the same note twice is a unison, or 1st. Accidentals never change the size. C to E♭ is still a 3rd, and so is C♯ to E♭, because the letters are still C and E.'),
     p('**Quality: count the semitones.** Intervals fall into two families. The **perfect** family is the unison, 4th, 5th and octave. These are the simplest, most blended sounds in music — an octave is a 2:1 frequency ratio, a 5th is 3:2, a 4th is 4:3 — and they come in one "normal" size, called perfect. The other family is the 2nds, 3rds, 6ths and 7ths, which each come in two common sizes a semitone apart: **major** (the larger) and **minor** (the smaller).'),
@@ -19,7 +19,8 @@ export const intervals: Lesson = {
 
     h('The major-scale shortcut'),
     p('Counting semitones works, but it is slow and easy to get wrong by one. Fluent readers use a better reference: the major scale. Measured up from its tonic, **every note of a major scale is either a major or a perfect interval**. In C major, C–D is a major 2nd, C–E a major 3rd, C–F a perfect 4th, C–G a perfect 5th, C–A a major 6th, C–B a major 7th and C–C a perfect octave.'),
-    p('So to identify any interval, imagine the major scale of the bottom note. If the top note is in that scale, the interval is major or perfect. If it is a semitone lower than the scale note, a major interval becomes minor and a perfect one becomes diminished. A semitone higher makes it augmented. You only have to know your major scales — which you need anyway — and every interval falls out of them.'),
+    p('So to identify any interval, imagine the major scale of the bottom note. If the top note is in that scale, the interval is major or perfect. If it is a semitone lower than the scale note, a major interval becomes minor and a perfect one becomes diminished. A semitone higher makes it augmented. (Two semitones below a major interval is rare but real: that is diminished too, as in the diminished 7th C♯–B♭.) You only have to know your major scales — which you need anyway — and every interval falls out of them.'),
+    p('One snag: some bottom notes have no major scale you know by heart. Nobody thinks in D♯ major (it would need F𝄪 and C𝄪). The fix is to move both notes by the same accidental, which leaves the interval unchanged. D♯ up to B becomes D up to B♭ once you flatten both — a minor 6th, as the next example shows — so D♯–B is a minor 6th too. The same trick turns G♯–F into G–F♭ (a diminished 7th) and A♯–C♯ into A–C (a minor 3rd).'),
     example('What interval is D up to B♭?', [
       'Size first: D E F G A B — six letters, so it is some kind of 6th.',
       'D major has B natural (D E F♯ G A **B** C♯), so D–B would be a major 6th.',
@@ -51,7 +52,7 @@ export const intervals: Lesson = {
     example('Spell an augmented 4th above B♭', [
       'Four letters from B: B C D **E**.',
       'B♭ major contains E♭, a perfect 4th above B♭. Augmented is one semitone wider, so the answer is **E** natural (6 semitones).',
-      'Not F♭ — that is the same key on the piano, but it would be a diminished 5th, a different interval doing a different job. In C7, the E is the 3rd and the B♭ the 7th: that tritone is an augmented 4th, spelled with E.',
+      'Not F♭ — that is the same key on the piano, but it would be a diminished 5th, a different interval doing a different job. In C7 the E is the 3rd and the B♭ the 7th. With the B♭ underneath, the pair is this augmented 4th; turn it over (E below B♭) and the same two notes make a diminished 5th, E F G A B — five letters. Either way the spelling stays E and B♭, because those are the chord\'s 3rd and 7th.',
     ]),
 
     h('Hearing intervals by their job'),
@@ -62,6 +63,7 @@ export const intervals: Lesson = {
       { label: 'm3 vs M3', music: { voicings: [['C4', 'Eb4'], ['C4', 'E4']], beat: 1.2 }, note: 'minor colour, then major' },
       { label: 'P4 vs P5', music: { voicings: [['C4', 'F4'], ['C4', 'G4']], beat: 1.2 }, note: 'open and suspended, then a stable frame' },
       { label: 'Tritone', music: { interval: 'TT', from: 'B3', dir: 'harm' }, note: 'B–F: the engine of G7' },
+      { label: 'm6 vs M6', music: { voicings: [['E4', 'C5'], ['C4', 'A4']], beat: 1.3 }, note: 'E–C, a C chord upside down; then C–A, the warm 13th' },
       { label: 'm7 vs M7', music: { voicings: [['C4', 'Bb4'], ['C4', 'B4']], beat: 1.4 }, note: 'bluesy and open, then the maj7 rub' },
       { label: '♭9 vs 9', music: { voicings: [['G2', 'Ab3'], ['G2', 'A3']], beat: 1.4 }, note: 'dark tension, then a smooth one' },
     ]),

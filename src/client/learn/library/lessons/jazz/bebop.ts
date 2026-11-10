@@ -22,17 +22,17 @@ export const bebop: Lesson = {
     example('Run the G bebop dominant over G7', [
       'Start on the root on beat 1 and run down in eighths: G F♯ F E D C B A.',
       'The added F♯ shifts everything so that the beats fall on G, F, D and B — every one a chord tone of G7.',
-      'Then target the 3rd of Cmaj7 on the next downbeat, approached by an enclosure: F – D♯ – E.',
-    ], { notes: ['G4', 'F#4', 'F4', 'E4', 'D4', 'C4', 'B3', 'A3', 'F4', 'D#4', 'E4'], beat: 0.22 }),
+      'Over two bars of G7: let the run land on A, rest, and on beat 4 of the second bar play an enclosure — F above the target, D♯ below — so that E, the 3rd of Cmaj7, arrives on the downbeat as the chord changes.',
+    ], { notes: ['G4', 'F#4', 'F4', 'E4', 'D4', 'C4', 'B3', 'A3', 'F4', 'D#4', 'E4'], at: [0, 2.67, 4, 6.67, 8, 10.67, 12, 14.67, 28, 30.67, 32], len: [2, 1, 2, 1, 2, 1, 2, 3, 2, 1, 6], bpm: 132 }),
 
     h('Approach notes and enclosures'),
     p('The notes between the targets are rarely random. Most of them are **approach notes**, chosen to lead into the next target as strongly as possible.'),
     p('- A **chromatic approach** comes from a half step below or above the target: D♯ to E, or F to E. It is the simplest and strongest way to point at a note.\n- A **scale approach** comes from the next note of the scale above or below.\n- An **enclosure** surrounds the target from both sides before landing on it — typically a scale step above, then a chromatic step below, then the target: F – D♯ – E. Enclosures are one of the most recognisable sounds in bebop, and they let a line arrive on its target with real emphasis.\n- A **double chromatic approach** slides in by two half steps: D – D♯ – E.'),
     p('Approach notes usually fall on the weaker parts of the beat, with the target on the beat. That creates a constant feeling of forward motion: every off-beat leans into the next on-beat.'),
     listen([
-      { label: 'G bebop dominant ↓', music: { notes: ['G4', 'F#4', 'F4', 'E4', 'D4', 'C4', 'B3', 'A3', 'G3'], beat: 0.2 }, note: 'chord tones on every beat' },
-      { label: 'Enclosure into E', music: { notes: ['F4', 'D#4', 'E4'], beat: 0.25 }, note: 'above, below, target' },
-      { label: 'Double chromatic into E', music: { notes: ['D4', 'D#4', 'E4'], beat: 0.25 }, note: 'sliding in by two half steps' },
+      { label: 'G bebop dominant ↓', music: { notes: ['G4', 'F#4', 'F4', 'E4', 'D4', 'C4', 'B3', 'A3', 'G3'], at: [0, 2.67, 4, 6.67, 8, 10.67, 12, 14.67, 16], len: [2, 1, 2, 1, 2, 1, 2, 1, 4], bpm: 132 }, note: 'swung: G, F, D, B land on the beats' },
+      { label: 'Enclosure into E', music: { notes: ['F4', 'D#4', 'E4'], at: [0, 2.67, 4], len: [2, 1, 6], bpm: 120 }, note: 'above, below, target on the beat' },
+      { label: 'Double chromatic into E', music: { notes: ['D4', 'D#4', 'E4'], at: [0, 2.67, 4], len: [2, 1, 6], bpm: 120 }, note: 'sliding in by two half steps' },
     ]),
 
     h('Arpeggios from the 3rd'),
@@ -42,7 +42,7 @@ export const bebop: Lesson = {
       'Dm7, two beats: arpeggiate from the 3rd — F A C E — the rootless A voicing played as a line.',
       'G7, two beats: turn and come down through its chord tones — D B G F — with D and G on the beats and the guide tones B and F between them.',
       'Cmaj7: the F, the 7th of G7, falls a half step to E, the 3rd of Cmaj7, right on beat 1. The guide-tone resolution, at full speed.',
-    ], { notes: ['F4', 'A4', 'C5', 'E5', 'D5', 'B4', 'G4', 'F4', 'E4'], beat: 0.22 }),
+    ], { notes: ['F4', 'A4', 'C5', 'E5', 'D5', 'B4', 'G4', 'F4', 'E4'], at: [0, 2.67, 4, 6.67, 8, 10.67, 12, 14.67, 16], len: [2, 1, 2, 1, 2, 1, 2, 1, 6], bpm: 132 }),
 
     h('Rhythm and phrasing'),
     p('Notes are only half of bebop; rhythm is the other half. Eighth notes are **swung** — played long–short, with accents often falling on the off-beats rather than the beats. Phrases frequently **start on an off-beat**, which gives them a lively, conversational quality, and often end with a short, accented note on an off-beat rather than a long note on a downbeat. Varying the length of phrases, and leaving space between them, matters as much as the lines themselves.'),

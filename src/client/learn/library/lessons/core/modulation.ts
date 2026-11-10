@@ -41,6 +41,7 @@ export const modulation: Lesson = {
     listen([
       { label: 'Common tone C → A♭', music: { voicings: [['C3', 'E4', 'G4', 'C5'], ['Ab2', 'Eb4', 'Ab4', 'C5']], beat: 1.4 }, note: 'C held on top' },
       { label: 'Up a half step', music: { prog: ['C', 'G7', 'C', 'Ab7', 'Db'], key: 'C', beats: 2 }, note: 'the last-chorus lift, announced by its dominant' },
+      { label: 'Chromatic C → D', music: { voicings: [['C3', 'E4', 'G4', 'C5'], ['A2', 'E4', 'G4', 'C#5'], ['D3', 'F#4', 'A4', 'D5']], beat: 1.3 }, note: 'the top C slides to C♯, turning the chord into A7, the dominant of D' },
     ]),
     table(['Method', 'How', 'Sound'], [
       ['Pivot chord', 'a chord in both keys changes meaning (Am = vi in C = ii in G)', 'seamless'],

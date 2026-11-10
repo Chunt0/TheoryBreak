@@ -54,6 +54,11 @@ export const voicings: Lesson = {
 
     h('Register: where a voicing lives'),
     p('The same voicing sounds completely different in different parts of the keyboard, and the main reason is that low notes produce dense, slow-beating overtones that clash when notes are close together. Below about the C an octave beneath middle C, small intervals like 2nds and 3rds start to turn muddy; an octave lower still, only 5ths and octaves stay clear. This is why bass players own the roots, why shell and rootless voicings sit around middle C, and why the classic left-hand stretch for a full sound low down is a 10th — the root with the 3rd an octave above — rather than a close root and 3rd.'),
+    listen([
+      { label: 'Low and close', music: { voicings: [['C2', 'E2', 'G2', 'B2']], beat: 2 }, note: 'Cmaj7 packed into the bass: a growl, not a chord' },
+      { label: 'Low and open', music: { voicings: [['C2', 'G2', 'E3', 'B3']], beat: 2 }, note: 'the same four notes spread out: root and 5th low, 3rd and 7th above' },
+      { label: 'Around middle C', music: { voicings: [['C2', 'E3', 'G3', 'B3', 'D4']], beat: 2 }, note: 'bass note low, voicing in the sweet spot' },
+    ]),
     p('At the other end, voicings placed too high sound thin and lose their warmth. Most of the action in jazz and soul comping happens in the octave and a half around middle C, with the bass below and the melody above.'),
     p('The **top note** deserves special attention. Whatever note is highest in a voicing is the one listeners hear as a melody, even when you do not intend it. Good comping chooses voicings whose top notes form a smooth line from chord to chord, and good players often choose the top note first and build the voicing down from it.'),
     table(['Voicing', 'Notes', 'Best for'], [

@@ -54,6 +54,7 @@ export const melodic: Lesson = {
       'Dm7♭5 → Locrian ♮2 → F melodic minor (D E F G A♭ B♭ C from D).',
       'G7alt → altered → A♭ melodic minor.',
       'Cm(maj7) or Cm6 → C melodic minor. Three melodic minor scales in a row — F, A♭, C — a minor 3rd apart, and the whole cadence is covered.',
+      'They also connect smoothly: four of the seven notes carry over at each change, and the altered scale\'s darkest notes, A♭ and E♭, fall by step to G and D of the C minor chord. The line resolves even before the chord does.',
     ], { prog: ['Dm7b5', 'G7alt', 'CmMaj7'], key: 'Cm', beats: 2 }),
 
     h('Hearing and using these colours'),

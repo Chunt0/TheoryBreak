@@ -20,7 +20,7 @@ export const ratios: Lesson = {
       ['1 : 1', 'every harmonic', 'saw-like: brass, strings'],
       ['1 : 2', 'odd harmonics only', 'square-like: hollow, clarinet'],
       ['1 : 3', 'harmonics 1, 2, 4, 5, 7… (no multiples of 3)', 'nasal, reedy'],
-      ['2 : 1', 'carrier an octave up, every harmonic', 'bright, hollow'],
+      ['2 : 1', 'carrier on the 2nd harmonic; sidebands fill in every harmonic, including the fundamental (2f − f)', 'octave-heavy at low index, fuller as it rises'],
       ['1 : 14', 'sidebands far above', 'a high metallic "tine" (electric piano)'],
       ['1 : 3.5', 'partials not in the harmonic series', 'bell'],
       ['1 : 1.41', '√2: no common pattern at all', 'clangorous metal, gong'],
@@ -31,6 +31,7 @@ export const ratios: Lesson = {
 
     h('Bells and metal'),
     p('Real bells and metal bars do not have harmonic spectra; their partials are spread out at irregular intervals, which is why they sound clangorous. FM imitates them beautifully with non-integer ratios. A ratio of around **1:3.5** or **1:1.4**, with both operators given long decaying envelopes — the modulator decaying a little faster than the carrier, so the sound starts bright and mellows as it rings — produces a convincing bell. The DX7\'s famous tubular bells and its many metallic patches are built this way.'),
+    p('There is a subtle difference between those two ratios. At **1:3.5**, the partials land at 1, 2.5, 4.5, 6, 8… times the note: none of them on the note\'s harmonics, but all of them on a grid of **half** the note\'s frequency. The ear hears a bell with a slightly ambiguous pitch, sometimes an octave lower than you expect, which is part of a tubular bell\'s character. At **1:1.41**, roughly √2, there is no common grid at all, and the sound is truly inharmonic: a gong, a sheet of metal. Half-integer ratios give pitched bells; irrational ones give clangs.'),
     { t: 'synth', demo: BELL },
     p('In the demo, the 1:3.5 bell is followed by the same envelopes at 1:3, which turns it into a plucked, pitched tone, and at 1:4. Only the ratio changes, but the difference between a bell and a pluck is entirely a matter of whether the partials line up.'),
 

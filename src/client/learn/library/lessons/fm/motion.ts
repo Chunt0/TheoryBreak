@@ -36,9 +36,9 @@ export const motion: Lesson = {
     p('In the demo, each note starts high and drops in a few milliseconds onto a decaying FM tone — a synthetic tom. Without the pitch drop it is just a short tone; with a slower drop it becomes a laser-like zap.'),
     p('Finally, the **mod wheel** and **aftertouch** can be assigned to add vibrato or amplitude modulation by hand, so that the player controls the motion in real time — the FM equivalent of the mod-wheel vibrato in the modular lessons.'),
     example('Make a breathy flute', [
-      'A 1:1 pair with the modulator low (level 55): a soft, almost pure tone, with a medium attack on the carrier.',
-      'Add a fixed-frequency operator at about 3 kHz with feedback 7, at a low level, as a carrier: breath noise.',
-      'LFO sine at speed 34, delay 60, PMD 8: vibrato that blooms on long notes. This is roughly the factory SOFT FLUTE.',
+      'Algorithm 5. Pair 1–2 at 1:1 with the modulator low (level about 60) and a medium attack on the carrier: a soft, almost pure tone.',
+      'For breath, use the third pair. In algorithm 5, OP6 is the operator with feedback: set feedback 7 and give OP6 a high ratio (×9) at a high level, modulating OP5 (×4) kept quiet as a carrier. The result is a hiss of sidebands high above the note — breath noise that follows the pitch.',
+      'LFO sine at speed about 32, delay 55, PMD 6, with pitch mod sensitivity 3: vibrato that blooms on long notes. This is the factory SOFT FLUTE, which also adds an octave layer on OP3.',
     ]),
     tryIt('Take any static FM patch and add motion one step at a time: detune a second carrier, set a modulator 1 percent off its ratio, add a delayed vibrato, and finally a small scoop with the pitch envelope. Listen after each step. Then turn the pitch envelope into a fast drop and play a few low notes as drums.'),
     recap([

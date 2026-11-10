@@ -13,10 +13,10 @@ export const invention: Lesson = {
 
     h('Two voices, one idea'),
     p('An invention has two voices, one for each hand, and they are **equal partners**. Neither is simply melody or accompaniment; each takes turns presenting the main idea and supporting the other. The main idea is a **motive** — a short, distinctive figure, often only a bar or less — and nearly everything in the piece is derived from it.'),
-    p('The motive of Invention No. 1 in C major is a famous example: four notes rising by step (C D E F), then a little turn back (D E C), then a leap up to G. It is so compact that it fits in half a bar, yet the whole piece grows out of it.'),
+    p('The motive of Invention No. 1 in C major is a famous example: after a 16th rest, four notes rising by step (C D E F), then a little turn back (D E C), then a leap up to G. It is so compact that it fits in half a bar, yet the whole piece grows out of it.'),
     listen([
-      { label: 'Motive', music: { notes: ['C4', 'D4', 'E4', 'F4', 'D4', 'E4', 'C4', 'G4'], beat: 0.2 }, note: 'Invention No. 1' },
-      { label: 'Inverted', music: { notes: ['G4', 'F4', 'E4', 'D4', 'F4', 'E4', 'G4', 'C4'], beat: 0.2 }, note: 'every step turned upside down' },
+      { label: 'Motive', music: { notes: ['C4', 'D4', 'E4', 'F4', 'D4', 'E4', 'C4', 'G4'], at: [1, 2, 3, 4, 5, 6, 7, 8], len: [1, 1, 1, 1, 1, 1, 1, 2], bpm: 76 }, note: 'Invention No. 1: a 16th rest, seven 16ths, then the leap to G' },
+      { label: 'Inverted', music: { notes: ['G4', 'F4', 'E4', 'D4', 'F4', 'E4', 'G4', 'C4'], at: [1, 2, 3, 4, 5, 6, 7, 8], len: [1, 1, 1, 1, 1, 1, 1, 2], bpm: 76 }, note: 'every step turned upside down' },
     ]),
 
     h('Developing a motive'),

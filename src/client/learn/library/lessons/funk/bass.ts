@@ -40,13 +40,13 @@ export const funkBass: Lesson = {
     example('Write a one-bar line over E7', [
       'Beat 1: low E, held long enough to feel the One.',
       '"&" of 2: the octave E. "&" of 3: D, the ♭7.',
-      '"a" of 4: D♯, a half step under the root, leading up into the next E on the One.',
-    ], { notes: ['E2', 'E3', 'D3', 'D#2', 'E2'], beat: 0.3 }),
+      '"a" of 4: D♯, a half step under the root, leading up into the next E on the One. (The recording plays the bar twice, so you hear the pickup land.)',
+    ], { notes: ['E2', 'E3', 'D3', 'D#2', 'E2', 'E3', 'D3', 'D#2', 'E2'], at: [0, 6, 10, 15, 16, 22, 26, 31, 32], len: [3, 1, 1, 1, 3, 1, 1, 1, 4], bpm: 96 }),
     example('A Dorian line over Em7', [
       'Beat 1: E, the root, on the One. Leave the rest of beat 1 and beat 2 mostly empty — perhaps one ghost note.',
       '"&" of 2: the octave E for bounce. Beat 3: rest, so the line breathes.',
       'Beat 4: climb the minor pentatonic — G, A, B on the "e", "&" and "a" — and land back on E for the next One.',
-    ], { notes: ['E2', 'E3', 'G2', 'A2', 'B2', 'E2'], beat: 0.28 }),
+    ], { notes: ['E2', 'E3', 'G2', 'A2', 'B2', 'E2', 'E3', 'G2', 'A2', 'B2', 'E2'], at: [0, 6, 13, 14, 15, 16, 22, 29, 30, 31, 32], len: [3, 1, 1, 1, 1, 3, 1, 1, 1, 1, 4], bpm: 96 }),
     p('A good test of a funk line is to play it alone. It should still make you want to move, and the harmony should be clear from the root on the One. Then play it with a drum groove and check that it locks: the One together, the syncopations either doubling the kick or neatly filling its gaps.'),
 
     h('Synth bass'),

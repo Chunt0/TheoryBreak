@@ -40,6 +40,8 @@ export const ust: Lesson = {
       { label: 'A♭/C7', music: { notes: ['C2', 'E3', 'Bb3', 'Ab4', 'C5', 'Eb5'], mode: 'chord' }, note: 'altered: ♭13, ♯9' },
       { label: 'A/C7', music: { notes: ['C2', 'E3', 'Bb3', 'A4', 'C#5', 'E5'], mode: 'chord' }, note: 'diminished: 13, ♭9' },
       { label: 'F♯/C7', music: { notes: ['C2', 'E3', 'Bb3', 'F#4', 'A#4', 'C#5'], mode: 'chord' }, note: 'diminished: ♯11, ♭9' },
+      { label: 'E♭/C7', music: { notes: ['C2', 'E3', 'Bb3', 'Eb4', 'G4', 'Bb4'], mode: 'chord' }, note: 'gritty: the ♯9 against the 3rd' },
+      { label: 'B♭/C', music: { notes: ['C2', 'G3', 'Bb3', 'D4', 'F4', 'Bb4'], mode: 'chord' }, note: 'sus: 3rd left out, ♭7–9–11 on top' },
     ]),
 
     h('Choosing a triad'),

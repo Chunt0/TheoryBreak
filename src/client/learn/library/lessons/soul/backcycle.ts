@@ -48,7 +48,7 @@ export const backcycle: Lesson = {
     ], { prog: ['F#7', 'F7', 'E7', 'Am7'], key: 'C', beats: 2, style: 'ballad' }),
     example('A gospel ending with 3–6–2–5–1', [
       'The song arrives on C. Instead of stopping, the band plays E7 – A7 – D7 – G7, two beats each.',
-      'Colour the minor-bound link darker and the others brighter: E7♭13 – A13 – D9 – G13.',
+      'Colour the links: E7♭13 – A13 – D9 – G13. Strictly E7 now resolves to a dominant, but it points at A, the home of the key\'s minor vi, and the key itself supplies its ♭9 and ♭13 (F and C), so players keep it dark; the rest take bright 9ths and 13ths as they roll home.',
       'Land on Cmaj9 — or tag it: play the chain again, and again, before the final arrival.',
     ], { prog: ['Cmaj9', 'E7b13', 'A13', 'D9', 'G13', 'Cmaj9'], key: 'C', beats: [4, 2, 2, 2, 2, 4], style: 'ballad' }),
     onRecord('Listen for the 7–3–6 at the ends of gospel songs and in R&B ballads, where the band suddenly fills the last bars with a rolling chain of dominants before the final chord. It is also a favourite of gospel organists during a "shout", cycling the chain at high speed.'),

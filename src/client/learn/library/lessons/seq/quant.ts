@@ -31,7 +31,7 @@ export const quant: Lesson = {
     p('The table explains why pentatonic scales are so popular for generative patches: with no half steps, no two notes can clash, so random melodies always sound pleasant. Richer scales bring more character and more risk.'),
 
     h('One line, many modes'),
-    p('A quantizer has two main controls: its **root**, which sets the tonic, and its **scale**, which sets which notes are allowed. Changing the root transposes the music. Changing the scale **reharmonises** it — the melody keeps its contour, but each note snaps to a different set of pitches, so the mood changes. With a second sequencer driving the root, the rack can even play its own chord changes, moving the whole quantized melody from key to key.'),
+    p('A quantizer has two main controls: its **root**, which sets the tonic, and its **scale**, which sets which notes are allowed. Changing the root transposes the music. Changing the scale **recolours** it — the melody keeps its contour, but each note snaps to a different set of pitches, so the mood changes. With a second sequencer driving the root, the rack can even play its own chord changes, moving the whole quantized melody from key to key.'),
     { t: 'synth', demo: MODE_SWAP },
     p('In the demo, a chromatic climb from D — every semitone for 16 steps — is quantized to D Dorian, D Phrygian and D Lydian. The input voltages never change. Each mode keeps its own notes, and the steps in between snap to a neighbour, so you hear three different scales emerge from the same rising line. It is a vivid way to hear the characteristic notes from the modes lesson: the bright 6th of Dorian, the dark ♭2 of Phrygian, the raised 4th of Lydian.'),
     example('A generative melody in a key', [
@@ -45,7 +45,7 @@ export const quant: Lesson = {
       'A sample-and-hold grabs its input on each clock and holds it; with noise in, it makes random values.',
       'Scale random voltages to a sensible range, then quantize them for random melodies that stay in key.',
       'Pentatonic scales never clash; modes add character; chromatic sounds atonal.',
-      'The quantizer\'s root transposes; its scale reharmonises the same voltages.',
+      'The quantizer\'s root transposes; its scale recolours the same voltages.',
     ]),
   ],
   drills: [],

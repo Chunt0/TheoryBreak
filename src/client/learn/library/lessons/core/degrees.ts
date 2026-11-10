@@ -14,6 +14,7 @@ export const degrees: Lesson = {
     h('Numbers instead of letters'),
     p('Scale degrees number the notes of a key from its tonic: in C major, C is 1, D is 2, E is 3 and so on up to B, which is 7. In E♭ major the same numbers belong to E♭, F, G, A♭, B♭, C and D. The point of the numbers is that they stay the same when the key changes. A melody that goes 3–2–1 is the same melody in any key, and if you hear it as 3–2–1 you can play it in any key.'),
     p('Each degree also has a traditional name, worth knowing because Bach-style theory uses them constantly: 1 is the **tonic**, 2 the **supertonic**, 3 the **mediant**, 4 the **subdominant**, 5 the **dominant**, 6 the **submediant**, and 7 the **leading tone** (or the **subtonic** when it is lowered a half step, as in natural minor). Roman numerals for chords use the same numbering: a V chord is the chord built on degree 5.'),
+    p('You may also know movable-do **solfège** — do re mi fa sol la ti — which does exactly the same job with syllables: do is always the tonic, whatever the key. Numbers and syllables are interchangeable, and singers often find syllables easier to sing. This library uses numbers because they line up directly with chord symbols and Roman numerals: the ♭7 of a scale and the ♭VII chord are the same idea.'),
 
     h('Stable notes and restless ones'),
     p('The degrees are not equal. Three of them — **1, 3 and 5**, the notes of the tonic triad — sound stable. A melody can stop on any of them and feel like it has landed. The other four — **2, 4, 6 and 7** — sound unstable. They lean towards a stable neighbour, and the ear expects them to move.'),
@@ -37,11 +38,11 @@ export const degrees: Lesson = {
 
     h('How to hear a degree'),
     p('With practice you will recognise degrees directly, the way you recognise a friend\'s voice. Until then, a three-step method works every time.'),
-    p('1. **Fix the key.** Listen to the cadence and keep the tonic in your head — humming it quietly helps.\n2. **Feel the note.** Is it stable, or does it lean? If it leans, which way, and how hard? A strong upward pull suggests 7; a gentle sag suggests 6 or 4.\n3. **Walk it home.** Sing from the note to the nearest tonic by step, counting as you go. The number of steps tells you the degree.'),
+    p('1. **Fix the key.** Listen to the cadence and keep the tonic in your head — humming it quietly helps.\n2. **Feel the note.** Is it stable, or does it lean? If it leans, which way, and how hard? A strong upward pull suggests 7; a gentle sag suggests 6 or 4.\n3. **Walk it home.** Sing from the note to the nearest tonic by step, counting as you go. Walking down, count backwards and you arrive on 1: a note that takes four steps down to reach home (5–4–3–2–1) is 5. Walking up, count on towards 8, the tonic an octave higher: a note two steps below the upper tonic (6–7–8) is 6. Upper notes (5, 6, 7) usually walk up most easily, lower ones (2, 3, 4) down.'),
     example('Hear degree 6 in F major', [
       'The cadence ends on F: keep that F in your ear.',
       'The test note sounds unresolved but not tense. It is not 7 (too little upward pull) and not 4 (it does not sag by a half step).',
-      'Sing up to F: D – E – F, two steps, so the note is **6** (D).',
+      'Sing up to F: D – E – F. Counting back from the upper tonic (8), E is 7 and the starting note is **6** (D).',
     ], { notes: ['F4', 'D5', 'E5', 'F5'], beat: 0.5 }),
     example('Hear degree 4 in D major', [
       'Tonic D. The test note sounds suspended, as if something is hanging in the air.',

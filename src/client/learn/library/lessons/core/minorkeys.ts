@@ -43,6 +43,10 @@ export const minorkeys: Lesson = {
 
     h('How real minor keys work'),
     p('No piece in a minor key uses just one of these scales. A minor key is better thought of as a pool of notes with two flexible degrees, the 6th and the 7th, each available in a lowered and a raised form. Musicians pick whichever version does the job at that moment.'),
+    listen([
+      { label: 'Up raised, down lowered', music: { notes: ['E4', 'F#4', 'G#4', 'A4', 'C5', 'B4', 'A4', 'G4', 'F4', 'E4'], beat: 0.32 }, note: 'F♯ and G♯ climb into A; G and F sink back to E' },
+      { label: 'vii°7 – i', music: { prog: ['G#dim7', 'Am'], key: 'Am', beats: 2 }, note: 'the other harmonic-minor dominant: G♯ rises, F falls to E' },
+    ]),
     p('The **harmony** takes its dominant chords, V7 and vii°7, from harmonic minor, because they need the leading tone. The **melody** tends to use the raised forms going up and the lowered forms coming down. And **jazz soloists** choose a scale per chord: Dorian or melodic minor on the tonic minor chord, Locrian ♮2 on the half-diminished ii, and the altered scale or Phrygian dominant on the V7.'),
     example('Spot the minor key in a chord chart', [
       'The chart reads Gm7 – Am7♭5 – D7 – Gm7.',

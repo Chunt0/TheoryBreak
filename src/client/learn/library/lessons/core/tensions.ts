@@ -19,7 +19,7 @@ export const tensions: Lesson = {
     p('The **natural** tensions are the ones that come straight from the chord\'s scale: the 9th, 11th and 13th. The **altered** tensions are raised or lowered versions — ♭9, ♯9, ♯11 and ♭13. Altered tensions belong mainly to dominant chords, which can take almost any of them, while major and minor chords mostly stick to the natural ones. The one alteration that also appears on major 7th chords is the ♯11, for reasons that will become clear in a moment.'),
 
     h('The avoid-note rule'),
-    p('Not every scale note makes a good tension. The guiding principle is simple and worth memorising: **a tension sounds good when it sits at least a whole step above a chord tone. A note only a half step above a chord tone — a minor 9th above it — clashes.** Such a note is called an **avoid note**.'),
+    p('Not every scale note makes a good tension. The guiding principle is simple and worth memorising: **look at the chord tone just below the tension. If it is a whole step below, the tension sounds like colour. If it is only a half step below — so the tension forms a minor 9th with it — the two clash.** A note in that position is called an **avoid note**. (A half step *below* a chord tone is fine: the maj7 sits a half step under the root and sounds lovely. It is the half step *above* that grates.)'),
     p('The classic example is the 11th on a major 7th chord. Over Cmaj7 (C E G B), the 11th is F, which sits just a half step above E, the 3rd. Sustain them together and the F does not sound like a colour; it sounds like a suspension that wants to fall to E, or like a wrong note. Raise it to F♯ and the problem disappears: F♯ sits a whole step above E and floats above the chord. That is why the ♯11 — the Lydian sound — is the preferred "11th" on major 7th chords.'),
     p('"Avoid" does not mean "never play". An avoid note is perfectly fine as a passing note in a melody, and many great melodies lean on one before resolving. The rule is about notes you **sustain** in a chord voicing or land on for a long time. And there is one big exception: on dominant chords, a ♭9 above the root is not avoided at all. Its bite is the point, as the section on dominants explains.'),
     listen([
@@ -30,7 +30,7 @@ export const tensions: Lesson = {
     h('Chord by chord'),
     p('Apply the rule to each chord in its usual scale and a clear picture emerges.'),
     p('**Major 7th** (Ionian or Lydian): the 9th and 13th are always available. The natural 11th clashes with the 3rd, so it is replaced by ♯11.'),
-    p('**Minor 7th as ii** (Dorian): every tension works. Over Dm7, the 9th (E), 11th (G) and 13th (B) each sit a whole step above a chord tone. That is why Dm9, Dm11 and Dm13 all sound so natural, and why Dorian is the favourite minor sound in jazz.'),
+    p('**Minor 7th as ii** (Dorian): every tension works. Over Dm7, the 9th (E), 11th (G) and 13th (B) each sit a whole step above a chord tone. That is why Dm9, Dm11 and Dm13 all sound so natural, and why Dorian is the favourite minor sound in jazz. (Some teachers handle the 13th with a little care: B and F form a tritone, which can make a held Dm13 voicing lean towards G7. It is a real colour, not a clash — just one to place deliberately.)'),
     p('**Minor 7th as vi or iii**: here the scale changes and so do the tensions. As vi (Aeolian), the ♭13 sits a half step above the 5th, so it is avoided, but the 9th and 11th are fine. As iii (Phrygian), the ♭9 sits a half step above the root and the ♭13 a half step above the 5th; only the 11th is really safe.'),
     p('**Dominant 7th**: almost everything works — 9, ♭9, ♯9, ♯11, 13 and ♭13. The one note that clashes is the natural 11th, which sits a half step above the 3rd. The exception is the **sus** chord, where the 3rd is left out entirely and the 4th takes its place, so there is nothing for it to clash with.'),
     p('**Half-diminished (m7♭5)**: the 11th and ♭13 are available. The 9th depends on the scale: plain Locrian has a ♭9, which clashes with the root, while Locrian ♮2 (from melodic minor) has a natural 9th that works beautifully. **Diminished 7th**: any note a whole step above a chord tone works, which is exactly what the whole–half diminished scale supplies.'),
@@ -68,7 +68,7 @@ export const tensions: Lesson = {
     tryIt('Hold Cmaj7 and add D, then F, then F♯, one at a time, and listen to each against the E. Then hold G7 and compare A (9) with A♭ (♭9), resolving each to C major and then to C minor. You will hear which tension belongs to which target.'),
     recap([
       'Tensions are the 9th, 11th and 13th stacked above a 7th chord; they add colour without changing function.',
-      'A tension works when it sits a whole step or more above a chord tone; a note a half step above a chord tone is an avoid note.',
+      'A tension works when the chord tone just below it is a whole step away; a note a half step above a chord tone is an avoid note.',
       'maj7 avoids the 11 (use ♯11); m7 as ii takes everything; dominants take everything except the natural 11 unless sus.',
       'On dominants, natural tensions (9, 13, ♯11) float; altered ones (♭9, ♯9, ♭13) push harder.',
       'Altered tensions suit minor targets because they are notes of the minor key the chord resolves to.',

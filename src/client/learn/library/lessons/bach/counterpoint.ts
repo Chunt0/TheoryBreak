@@ -31,7 +31,7 @@ export const counterpoint: Lesson = {
     listen([
       { label: '4–3 suspension', music: { voicings: [['C3', 'E4', 'G4', 'C5'], ['G2', 'D4', 'G4', 'C5'], ['G2', 'D4', 'G4', 'B4'], ['C3', 'E4', 'G4', 'C5']], beat: 1.1 }, note: 'C held over the G bass, then falling to B' },
     ]),
-    p('Suspensions are named by the two intervals, above the bass, of the dissonance and its resolution. A **4–3** suspension has a 4th above the bass falling to a 3rd; a **7–6** has a 7th falling to a 6th; a **9–8** a 9th falling to an octave. When the bass itself is suspended and falls, the result is a **2–3** suspension, named from the upper voice\'s point of view.'),
+    p('Suspensions are named by the two intervals, above the bass, of the dissonance and its resolution. A **4–3** suspension has a 4th above the bass falling to a 3rd; a **7–6** has a 7th falling to a 6th; a **9–8** a 9th falling to an octave. When the bass itself is the suspended voice, the naming still counts the interval from the bass up: the held bass sits a 2nd below an upper note, then falls a step so that the interval opens to a 3rd — a **2–3** suspension. It is the one common suspension that resolves by the interval getting larger.'),
     table(['Suspension', 'Voice', 'Resolution'], [
       ['4–3', 'upper', 'the 4th above the bass falls to the 3rd'],
       ['7–6', 'upper', 'the 7th falls to the 6th (often chained over a falling bass)'],

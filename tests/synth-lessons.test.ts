@@ -28,6 +28,13 @@ describe('synth lesson demos', () => {
         }
         for (const [m, [type, params]] of Object.entries(d.rack.mods))
           for (const k of Object.keys(params ?? {})) expect(MODULES[type].params.some((x) => x.id === k), `${where}: ${m}.${k}`).toBe(true);
+        // a value the knob cannot reach would sound different once the patch is opened in the rack
+        const inRange = (mod: string, k: string, v: number) => {
+          const p: any = MODULES[d.rack!.mods[mod][0]].params.find((x) => x.id === k);
+          if (p && typeof p.min === 'number') expect(v >= p.min && v <= p.max, `${where}: ${mod}.${k} = ${v}`).toBe(true);
+        };
+        for (const [m, [, params]] of Object.entries(d.rack.mods)) for (const [k, v] of Object.entries(params ?? {})) inRange(m, k, v as number);
+        for (const t of d.tries) for (const [k, v] of Object.entries(t.set ?? {})) inRange(k.split('.')[0], k.split('.')[1], v as number);
       } else {
         const base = JSON.stringify(fmOf(d.fm ?? {}, d.name));
         for (const t of d.tries) {

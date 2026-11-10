@@ -24,7 +24,7 @@ export const audiorate: Lesson = {
     h('Ring modulation'),
     p('**Ring modulation** multiplies two signals together. The result contains neither of the original frequencies — only their **sum and difference**. A 440 Hz sine ring-modulated by a 100 Hz sine produces 340 Hz and 540 Hz, and nothing else. When the two frequencies are in a simple ratio, the sum and difference are harmonically related and the result sounds hollow and bell-like. When they are not, the result is clangorous and metallic — the sound of countless science-fiction robots and effects. **Amplitude modulation** (AM) is closely related: it is tremolo at audio rate, and it keeps the original carrier in the output along with the sidebands.'),
     { t: 'synth', demo: RING_MOD },
-    p('In the demo, a 220 Hz sine is ring-modulated at three frequencies. At 440 Hz the sidebands are 220 and 660 Hz, harmonically related, so the result is hollow but pitched. At 311 Hz they are 89 and 531 Hz, unrelated, so it clangs. At 30 Hz the modulator is barely in the audio range, and you hear a rough, buzzy tremolo.'),
+    p('In the demo, a 220 Hz sine is ring-modulated at three frequencies. At 440 Hz the sidebands are 220 and 660 Hz, harmonically related, so the result is hollow but pitched. At 311 Hz they are 91 and 531 Hz, unrelated, so it clangs. At 30 Hz the modulator is barely in the audio range, and you hear a rough, buzzy tremolo.'),
 
     h('Hard sync'),
     p('**Hard sync** links two oscillators in a different way. One, the **master**, sets the pitch; the other, the **slave**, is forced to restart its cycle every time the master starts a new one. The slave is therefore locked to the master\'s pitch — but its own tuning now controls its **waveform**. Tune the slave higher and more of its cycles squeeze into each master cycle before being cut off and restarted, so the shape of the combined wave, and its harmonics, change dramatically while the pitch stays the same.'),
@@ -38,7 +38,7 @@ export const audiorate: Lesson = {
       ['Hard sync', 'the slave\'s cycle restarts with the master', 'fixed pitch, changing waveform: the sync lead'],
     ]),
     example('Find a ring-mod bell', [
-      'Sine VCO → Ring In A; set Ring Freq to about 2.76 times the note you will play (an inharmonic ratio, like a bell\'s partials).',
+      'Sine VCO → Ring In. With nothing in its Carrier jack, the Ring module uses its own fixed-frequency carrier, so pick one note — A3, 220 Hz — and set Ring Freq to about 607 Hz, 2.76 times as high: an inharmonic ratio, like a bell\'s partials. (Other notes will give other ratios; for a bell that tracks the keyboard, patch a second VCO, tuned 2.76 times higher and following MIDI V/Oct, into the Carrier jack.)',
       'A pluck envelope on the VCA: instant attack, 1.5 s decay, no sustain.',
       'Sum and difference tones that are not harmonics of each other sound like struck metal; a little reverb finishes the bell.',
     ]),

@@ -17,7 +17,7 @@ export const chromatic: Lesson = {
 
     h('The Neapolitan sixth'),
     p('The **Neapolitan** is a major chord built on the lowered 2nd degree of the key — ♭II. In A minor that is B♭ major (B♭ D F). It is almost always used in first inversion, with its 3rd in the bass, which is why it is called the **Neapolitan sixth** (N6): B♭/D.'),
-    p('Its job is predominant. In first inversion its bass note is the same as the iv chord\'s — D in A minor — so it behaves like a darkened iv, leading to the dominant. Its striking feature is the ♭2 (B♭), which usually falls through the leading tone to the dominant, B♭ → G♯ → A — a diminished 3rd that sounds strange and expressive. The Neapolitan has a dark, plush, tragic quality, and it became a favourite of composers for moments of pathos. It often goes to V via a cadential 6/4.'),
+    p('Its job is predominant. In first inversion its bass note is the same as the iv chord\'s — D in A minor — so it behaves like a darkened iv, leading to the dominant. Its striking feature is the ♭2 (B♭). As the dominant arrives, B♭ usually falls a **diminished 3rd** to G♯, the leading tone — a strange, expressive interval — and G♯ then rises to A when the tonic returns: B♭ → G♯ → A. The Neapolitan has a dark, plush, tragic quality, and it became a favourite of composers for moments of pathos. It often goes to V via a cadential 6/4.'),
     { t: 'prog', key: 'Am', tokens: ['Am', 'Bb/D', 'E7', 'Am'], caption: 'N6 – V7 – i: the Neapolitan in A minor' },
 
     h('Augmented sixth chords'),
@@ -45,7 +45,7 @@ export const chromatic: Lesson = {
     example('The Neapolitan in D minor', [
       '♭2 of D minor is E♭; the Neapolitan is E♭ major (E♭ G B♭), in first inversion over G: E♭/G.',
       'The bass G is the same as iv (G minor), so N6 works as a darker iv leading to the dominant.',
-      'E♭ falls to C♯, the leading tone, and on to D or to the A chord: E♭/G – A7 – Dm.',
+      'E♭ falls a diminished 3rd to C♯, the leading tone in the A7 chord, and C♯ rises to D as the tonic arrives: E♭/G – A7 – Dm.',
     ], { prog: ['Dm', 'Eb/G', 'A7', 'Dm'], key: 'Dm', beats: 2 }),
     listen([
       { label: 'Applied °7', music: { prog: ['Am', 'D#dim7', 'E', 'Am'], key: 'Am', beats: 2 }, note: 'D♯°7 leading into V' },
@@ -57,7 +57,7 @@ export const chromatic: Lesson = {
     tryIt('In A minor, play Am – D♯°7 – E – Am, then Am – B♭/D – E7 – Am, then Am – F7 – Am/E – E7 – Am. In the last one, hold F in the bass and D♯ (as E♭) on top, and feel them expand outward to E. Then play B7 – E and F7 – E one after the other, and notice that the German sixth is the tritone sub of V of V.'),
     recap([
       'Applied diminished 7ths (vii°7/V) lead into a chord from a half step below; they are rootless secondary dominants.',
-      'The Neapolitan sixth is ♭II in first inversion: a dark predominant whose ♭2 falls to the leading tone.',
+      'The Neapolitan sixth is ♭II in first inversion: a dark predominant whose ♭2 falls a diminished 3rd to the leading tone.',
       'Augmented sixth chords (Italian, French, German) contain ♭6 and ♯4, which expand outward to the dominant.',
       'The German sixth resolves via i6/4 to avoid parallel 5ths; it sounds exactly like a dominant 7th.',
       'The German sixth is the tritone substitute of V of V — the same move as subV7/V → V in jazz.',

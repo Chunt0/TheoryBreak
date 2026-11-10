@@ -26,9 +26,10 @@ export const syncopation: Lesson = {
     p('This is the normal way jazz, pop and R&B phrase chord changes and melodies: a singer\'s line that "pushes" into a new bar, a comping pattern that hits each new chord on the "&" before it. Played exactly on the beat, the same changes would sound stiff. It is closely related to the anticipation in classical counterpoint, where a melody note of the next chord sounds early; here the whole chord does.'),
     example('Count a push over the bar line', [
       'Count 8ths: "1 & 2 & 3 & 4 &".',
-      'Play on 1, then on the "&" of 4, and hold it through the next 1.',
+      'Play on beat 2, then on the "&" of 4 — and hold that note through the next bar\'s beat 1 instead of striking it.',
       'The next bar\'s chord now arrives an 8th early: an anticipation, the usual way jazz and pop phrase a chord change.',
     ]),
+    { t: 'rhythm', cells: ['00', '10', '00', '01'], per: 2, bpm: 90, caption: 'Beat 2, then the "&" of 4 pushed over the bar line. Loop it: beat 1 is never struck — it is felt, because the note that belongs to it arrived half a beat early.' },
 
     h('Displacement'),
     p('A more advanced kind of syncopation takes a whole figure and shifts it by an 8th or a 16th. The notes and their spacing stay the same, but every accent lands in a new place relative to the beat, and the figure takes on a completely different character. This is called **rhythmic displacement**. Drummers and improvisers use it to play with the listener\'s sense of where the beat is — a phrase that starts on the "&" instead of the beat can sound as if it has been turned inside out.'),
@@ -44,6 +45,8 @@ export const syncopation: Lesson = {
       'Shift every note an 8th later: hits on the "&" of 1, the "&" of 2 and the "&" of 3.',
       'The spacing is identical, but now every hit is off the beat and beat 1 is empty — the same idea sounds restless and syncopated.',
     ]),
+    { t: 'rhythm', cells: ['10', '10', '10', '00'], per: 2, bpm: 90, caption: 'The figure on the beats: 1, 2, 3.' },
+    { t: 'rhythm', cells: ['01', '01', '01', '00'], per: 2, bpm: 90, caption: 'The same figure displaced by an 8th: the "&" of 1, 2 and 3.' },
 
     h('Keeping the pulse'),
     p('All syncopation depends on one thing: the pulse must stay absolutely steady underneath it. If you rush the off-beat notes, or let the silent beats shrink, the syncopation collapses into a confused rhythm. That is why counting matters so much when learning syncopated parts, and why it helps to keep the beat physically — a foot, a nod — while playing. The steadier the pulse, the more the syncopation can pull against it.'),

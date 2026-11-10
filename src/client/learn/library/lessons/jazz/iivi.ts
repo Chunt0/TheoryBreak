@@ -49,16 +49,16 @@ export const iivi: Lesson = {
       ['Cmaj9', 'E G B D', 'B D E G'],
     ]),
     { t: 'prog', key: 'C', tokens: ['ii9', 'V13', 'Imaj9', 'Imaj9'], style: 'swing', beats: 4, caption: 'Dm9 – G13 – Cmaj9 (rootless voicings, walking bass)' },
-    onRecord('Dm9 in A form, G13 in B form and Cmaj9 in A form move every voice by a step or a common tone. That smooth, almost static top with changing harmony underneath is the sound of jazz piano comping on countless records.'),
+    onRecord('Dm9 in A form, G13 in B form and Cmaj9 in A form move every voice by a step or a common tone. That smooth, almost static top with changing harmony underneath is the sound Bill Evans, Wynton Kelly and Red Garland made standard in the late 1950s — listen to the piano behind the horns on Miles Davis\'s records of that period and you will hear these shapes, chord after chord.'),
 
     h('Guide tones in a solo'),
     p('Guide tones are just as useful for improvising. The most reliable way to make a line sound like it is following the changes is to land on the **3rd of each new chord** at the moment the chord arrives, often approached from the 7th of the previous chord a step above. You can sketch a whole solo this way: a slow guide-tone line as the skeleton, then fill in the space between the skeleton notes with scale tones, arpeggios and chromatic approaches.'),
     p('Many classic bebop phrases are built exactly like this. Strip away the decoration and you find a line that falls from the 7th of the ii to the 3rd of the V, then from the 7th of the V to the 3rd of the I. The decoration is what makes it sound fluent; the guide tones are what make it sound right.'),
     example('A guide-tone skeleton over ii–V–I in C', [
       'Write the skeleton one note per chord: C (7th of Dm7) → B (3rd of G7) → B (7th of Cmaj7) — or, starting higher, F → F → E.',
-      'Fill in: arpeggiate Dm7 down from its 7th (C, A, F, D), then land on B, the 3rd of G7, as the chord changes.',
+      'Fill in, one bar per chord: arpeggiate Dm7 down from its 7th (C, A, F, D), then land on B, the 3rd of G7, on the downbeat where the chord changes.',
       'Climb through G7 (B, D, F, A), turn on G, and land on E, the 3rd of Cmaj7, on the downbeat. The decoration can change every chorus; the landing notes stay.',
-    ], { notes: ['C5', 'A4', 'F4', 'D4', 'B3', 'D4', 'F4', 'A4', 'G4', 'E4'], beat: 0.3 }),
+    ], { notes: ['C5', 'A4', 'F4', 'D4', 'B3', 'D4', 'F4', 'A4', 'G4', 'E4'], at: [0, 4, 8, 12, 16, 20, 24, 28, 30.67, 32], len: [3, 3, 3, 3, 3, 3, 3, 2, 1, 8], bpm: 120 }),
     ear('To hear a ii–V–I, listen first for the bass moving up a 4th twice, then for the moment of tension on V and its release on I. Then try to follow one guide-tone line through it — usually the top voice of the piano — and hear it fall by half step at each change.'),
     tryIt('Play the guide tones of ii–V–I in C, then move down a whole step and play them in B♭ (Cm7 – F7 – B♭maj7), then A♭, and so on through all the keys. Keep the lines in the same register so that each key flows into the next, and say the 3rd and 7th of each chord as you go.'),
     recap([

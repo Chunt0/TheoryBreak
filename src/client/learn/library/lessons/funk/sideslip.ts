@@ -21,10 +21,10 @@ export const sideslip: Lesson = {
       { label: 'In → out → in', music: { notes: ['D4', 'F4', 'G4', 'A4', 'C5', 'Eb4', 'Gb4', 'Ab4', 'Bb4', 'Db5', 'D4', 'F4', 'A4'], beat: 0.2 }, note: 'D, then E♭, then D minor pentatonic' },
     ]),
     example('Side-slip a Dm7 vamp', [
-      'Play a D minor pentatonic idea for a bar.',
-      'Repeat the same shape a half step up, in E♭ minor pentatonic, on beats 3 and 4: every note rubs against the vamp.',
+      'Play a four-note D minor pentatonic idea — A G F D — in eighths on beats 1 and 2.',
+      'Repeat the same shape a half step up on beats 3 and 4 — B♭ A♭ G♭ E♭, E♭ minor pentatonic: every note rubs against the vamp.',
       'Drop it back down onto the One of the next bar. The ear hears tension and release, not a wrong note.',
-    ], { notes: ['A4', 'G4', 'F4', 'D4', 'Bb4', 'Ab4', 'Gb4', 'Eb4', 'A4', 'F4', 'D4'], beat: 0.25 }),
+    ], { notes: ['D3', 'A4', 'G4', 'F4', 'D4', 'Bb4', 'Ab4', 'Gb4', 'Eb4', 'D3', 'A4', 'F4', 'D4'], at: [0, 0, 2, 4, 6, 8, 10, 12, 14, 16, 16, 18, 20], len: [14, 2, 2, 2, 2, 2, 2, 2, 2, 12, 2, 2, 10], bpm: 100 }),
     p('Slipping **up** sounds tense and edgy, like the music has been knocked off balance until it falls back. Slipping **down** a half step has a different feel: the outside notes sit just below the home notes and pull upward into them, like a row of leading tones. Both are common; try each and notice the difference.'),
 
     h('Slipping chords'),
@@ -52,7 +52,7 @@ export const sideslip: Lesson = {
 
     h('Further out'),
     p('The half step is the most common distance, but not the only one. Players also superimpose ideas a tritone away — the most distant key of all, which echoes the logic of tritone substitution — or move a motif through a symmetrical sequence, such as up in minor 3rds, before returning. These are bolder sounds, and they follow the same rules: a clear shape, total conviction, and an unmistakable return.'),
-    onRecord('Jazz-funk keyboard players and saxophonists from the 1970s onwards side-slip constantly over long vamps. Listen for the moments when a solo suddenly sounds "wrong" for a beat or two and then snaps back into place, usually right on the One.'),
+    onRecord('Jazz-funk keyboard players and saxophonists from the 1970s onwards side-slip constantly over long vamps — Herbie Hancock\'s synth and Rhodes solos on *Head Hunters* are a good place to start. Listen for the moments when a solo suddenly sounds "wrong" for a beat or two and then snaps back into place, usually right on the One.'),
     ear('A side-slip sounds like the whole line has briefly shifted into a different key and then dropped back. If you can hear that the outside phrase is the same shape as the phrase before it, just moved, it is almost certainly a deliberate slip.'),
     tryIt('Over a Dm7 vamp, play a short D minor pentatonic riff for a bar, the same riff in E♭ minor pentatonic for two beats, then land back on D on the One. Then try slipping down to C♯ instead. Finally, comp the vamp with an E♭m7 on the last 8th of every second bar, resolving to Dm7 on the downbeat.'),
     recap([

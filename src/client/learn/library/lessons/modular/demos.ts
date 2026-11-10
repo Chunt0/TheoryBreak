@@ -213,7 +213,7 @@ export const RING_MOD: SynthDemo = {
         rack: { mods: { midi: ['midi', { voices: 0 }], osc: ['vco'], rm: ['ring', { freq: 440, mix: 1 }], env: ['adsr', { a: 0.005, d: 0.8, s: 0.4, r: 0.4 }], amp: ['vca'], out: ['out'] },
           wires: ['midi.voct>osc.voct', 'osc.sin>rm.a', 'rm.out>amp.in', 'midi.gate>env.gate', 'env.env>amp.cv', 'amp.out>out.l', 'amp.out>out.r'] },
         play: [['A3', 0, 1.6]], hz: 1400,
-        caption: 'A 220 Hz sine ringed with the module\'s own carrier: at 440 Hz (sidebands 220 and 660: harmonic), 311 Hz (89 and 531: clangorous), and 30 Hz (a rough, buzzy tremolo).',
+        caption: 'A 220 Hz sine ringed with the module\'s own carrier: at 440 Hz (sidebands 220 and 660: harmonic), 311 Hz (91 and 531: clangorous), and 30 Hz (a rough, buzzy tremolo).',
         tries: [{ label: '× 440 Hz' }, { label: '× 311 Hz', set: { 'rm.freq': 311 } }, { label: '× 30 Hz', set: { 'rm.freq': 30 } }],
       };
 
