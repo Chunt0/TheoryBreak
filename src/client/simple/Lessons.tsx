@@ -5,7 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { createStore, useMini } from '../app/createStore';
 import { store } from '../app/store';
-import { LEVEL_NAMES, pathOf, renderMusic, staffFromStrings, TAG_NAMES, TAG_ORDER, TOPIC_BY_ID, TOPICS, type Block } from '../learn/library';
+import { LEVEL_NAMES, PATHS, pathOf, renderMusic, staffFromStrings, TAG_NAMES, TAG_ORDER, TOPIC_BY_ID, TOPICS, type Block } from '../learn/library';
 import { chordEvents, parsePitch } from '../learn/music';
 import { patternFromCells, type RhythmPattern } from '../theory/rhythm';
 import { Keyboard } from '../ui/Keyboard';
@@ -65,15 +65,12 @@ export function Lessons() {
     });
   }, [open, topic]);
 
-  const ids = TOPICS.map((t) => t.id);
-  const step = (d: number) => {
-    const i = topic ? ids.indexOf(topic) : -1;
-    showTopic(ids[(i + d + ids.length) % ids.length]);
-  };
-  // the drill's topics, then whatever lesson you wandered off to
-  const strip = topic && !help.topics.includes(topic) ? [...help.topics, topic] : help.topics;
   const t = topic ? TOPIC_BY_ID[topic] : null;
   const where = topic ? pathOf(topic) : null;
+  // reading a lesson: every lesson of its area, in reading order, so you can see where
+  // you are and the arrows never leave the area; on the index: the drill's own lessons
+  const strip = where ? PATHS[where.tag] : help.topics;
+  const area = where ? TAG_NAMES[where.tag] : null;
 
   return (
     <div
@@ -87,15 +84,18 @@ export function Lessons() {
       <div className="rk-g-head">
         <strong>Lessons</strong>
         <span className="rk-g-step">
-          <button type="button" onClick={() => step(-1)} aria-label="Previous lesson">‹</button>
-          <button type="button" onClick={() => step(1)} aria-label="Next lesson">›</button>
+          <button type="button" disabled={!where?.prev} onClick={() => where?.prev && showTopic(where.prev.id)} aria-label={`Previous ${area ?? ''} lesson`}>‹</button>
+          <button type="button" disabled={!where?.next} onClick={() => where?.next && showTopic(where.next.id)} aria-label={`Next ${area ?? ''} lesson`}>›</button>
           <button type="button" onClick={closeLessons} aria-label="Close lessons">×</button>
         </span>
       </div>
-      <nav className="rk-g-topics" aria-label="Lessons for this drill">
+      <nav className="rk-g-topics" aria-label={area ? `${area} lessons` : 'Lessons for this drill'}>
         <button type="button" className={topic === null ? 'on' : ''} onClick={() => showTopic(null)}>All lessons</button>
-        {strip.map((id) => (
-          <button key={id} type="button" className={id === topic ? 'on' : ''} onClick={() => showTopic(id)}>{short(TOPIC_BY_ID[id]?.title ?? id)}</button>
+        {area ? <span className="rk-g-area">{area}</span> : null}
+        {strip.map((id, i) => (
+          <button key={id} type="button" className={id === topic ? 'on' : ''} onClick={() => showTopic(id)}>
+            {area ? `${i + 1}. ` : ''}{short(TOPIC_BY_ID[id]?.title ?? id)}
+          </button>
         ))}
       </nav>
       <div className="rk-g-body" ref={body}>
@@ -112,7 +112,7 @@ export function Lessons() {
                 {where.prev ? <button type="button" className="btn small ghost" onClick={() => showTopic(where.prev!.id)}>‹ {where.prev.title}</button> : <span />}
                 {where.next
                   ? <button type="button" className="btn small" onClick={() => showTopic(where.next!.id)}>Next: {where.next.title} ›</button>
-                  : <button type="button" className="btn small" onClick={() => showTopic(null)}>All lessons</button>}
+                  : <button type="button" className="btn small" onClick={() => showTopic(null)}>End of {TAG_NAMES[where.tag]} · all lessons</button>}
               </nav>
             ) : null}
           </>

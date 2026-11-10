@@ -676,6 +676,9 @@ a.s-sec:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6
 /* lessons: the rack guide's side panel, a little wider for prose */
 .rk-guide.s-lessons { width: min(560px, 100vw); }
 .s-lessons .rk-g-topics button { letter-spacing: 0; font-weight: 600; font-size: 12px; }
+/* "All lessons" stays in reach however far along the area's strip you are */
+.s-lessons .rk-g-topics > button:first-child { position: sticky; left: 0; z-index: 1; box-shadow: -16px 0 0 0 var(--bg-elev), 10px 0 8px -6px var(--bg-elev); }
+.s-lessons .rk-g-topics > button:first-child:not(.on) { background: var(--bg-elev); }
 .s-lessons .rk-g-body .block { margin: 12px 0; }
 .s-lessons .rk-g-body ul { margin: 0 0 8px; padding-left: 1.2em; }
 .s-lessons .card { padding: 12px; }
@@ -1403,6 +1406,8 @@ body { overscroll-behavior: none; }
 .rk-g-head strong { font-size: 15px; }
 .rk-g-step { display: inline-flex; gap: 4px; }
 .rk-g-step button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-elev2); color: var(--text); font: 600 16px/1 var(--font); cursor: pointer; }
+.rk-g-step button:disabled { opacity: 0.35; cursor: default; }
+.rk-g-area { flex: none; align-self: center; padding: 0 2px 0 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); white-space: nowrap; }
 .rk-g-topics { display: flex; gap: 4px; padding: 4px 14px 10px 16px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); flex: none; }
 .rk-g-topics button {
   flex: none; height: 28px; padding: 0 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;
