@@ -4,6 +4,7 @@ import { BACH } from './bach';
 import { CORE } from './core';
 import { FUNK } from './funk';
 import { JAZZ } from './jazz';
+import { RHYTHM } from './rhythm';
 import { SOUL } from './soul';
 
-export const LESSONS: Lesson[] = [...CORE, ...JAZZ, ...FUNK, ...SOUL, ...BACH];
+export const LESSONS: Lesson[] = [...CORE, ...JAZZ, ...FUNK, ...SOUL, ...BACH, ...RHYTHM];
