@@ -89,6 +89,21 @@ describe('library', () => {
     }
   });
 
+  test('every lesson teaches in full: sections, real explanation, and a recap to finish', () => {
+    for (const t of TOPICS) {
+      const prose = t.blocks
+        .map((b) => (b.t === 'p' || b.t === 'h' || b.t === 'note' ? b.md : b.t === 'example' ? b.steps.join(' ') : ''))
+        .join(' ').split(/\s+/).filter(Boolean).length;
+      expect(prose, `${t.id}: words`).toBeGreaterThanOrEqual(600);
+      expect(t.blocks.filter((b) => b.t === 'h').length, `${t.id}: headings`).toBeGreaterThanOrEqual(2);
+      const recaps = t.blocks.filter((b) => b.t === 'note' && b.kind === 'recap');
+      expect(recaps.length, `${t.id}: recap`).toBe(1);
+      const last = t.blocks.filter((b) => b.t !== 'drill').at(-1)!;
+      expect(last.t === 'note' && last.kind === 'recap', `${t.id}: ends with its recap`).toBe(true);
+      expect(t.minutes).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   test('every drill has a lesson that teaches it and a method', () => {
     const taught = new Set(TOPICS.flatMap((t) => t.drills));
     for (const sk of SKILLS) {

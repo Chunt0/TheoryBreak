@@ -147,7 +147,7 @@ function Index({ help }: { help: Help }) {
   return (
     <>
       <h2>Lessons</h2>
-      <p className="rk-g-what">Short, dense reads with examples you can hear. Each category runs from basics to advanced; jump in anywhere, or follow one through.</p>
+      <p className="rk-g-what">Each idea explained properly, with examples you can hear and play and a short recap at the end. Each category runs from basics to advanced; jump in anywhere, or follow one through.</p>
       {help.method?.length ? <Method steps={help.method} /> : null}
       {help.topics.length ? (
         <section>

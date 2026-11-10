@@ -24,7 +24,7 @@ export function LibraryPage({ topicId }: { topicId?: string }) {
         <h1>Library</h1>
         <input type="text" placeholder="Search topics…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search topics" />
       </div>
-      <p className="muted">Dense reference cards with audio and drills. Open anything, in any order.</p>
+      <p className="muted">Full lessons with audio, examples and drills. Open anything, in any order.</p>
       <div className="row" style={{ margin: '10px 0 16px' }}>
         <button type="button" className={`btn small ${tag === 'all' ? 'active' : ''}`} onClick={() => setTag('all')}>All</button>
         {TAGS.map((t) => <button key={t} type="button" className={`btn small ${tag === t ? 'active' : ''}`} onClick={() => setTag(t)}>{TAG_NAMES[t]}</button>)}
