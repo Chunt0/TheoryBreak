@@ -45,7 +45,7 @@ export const groove: Lesson = {
     ]),
     onRecord('Clyde Stubblefield\'s drumming on James Brown\'s "Funky Drummer" is a masterclass in ghost notes and the One. The Meters\' "Cissy Strut" shows how sparse interlocking parts can be, and Tower of Power\'s rhythm section shows how tight a straight 16th-note grid can sound with a full band.'),
     ear('To find your way into a funk groove, first find the grid — usually in the hi-hat or the guitar scratch. Then find the One: where does everybody land together? Then pick out one instrument and listen to which slots it plays and which it leaves empty.'),
-    tryIt('Tap the two rhythms above while counting every 16th out loud. Then tap the One with one hand and keep the 16ths going softly with the other, adding accents on the "e" and "a" slots. The Rhythm drill under Ear has funk patterns to tap and to recognise by ear.'),
+    tryIt('Tap the two rhythms above while counting every 16th out loud. Then tap the One with one hand and keep the 16ths going softly with the other, adding accents on the "e" and "a" slots. The Rhythm drill under Ear has 16th-note patterns to tap and to recognise by ear.'),
     recap([
       'Funk is built on a continuous 16th-note grid, counted "1 e & a".',
       'The One — beat 1 — is the anchor everyone lands on; syncopation is measured against it.',
