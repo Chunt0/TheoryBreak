@@ -121,7 +121,7 @@ function layout(w: number, h: number): { win: Win; s: number } {
   return { win: { xHalf, rows }, s };
 }
 
-function useSize(): [RefObject<HTMLDivElement | null>, { w: number; h: number }] {
+export function useSize(): [RefObject<HTMLDivElement | null>, { w: number; h: number }] {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 720, h: 380 });
   useLayoutEffect(() => {

@@ -20,7 +20,7 @@ const sw = self as unknown as {
   location: Location;
 };
 
-const CACHE = 'app-v3';
+const CACHE = 'app-v4';
 const TIMEOUT_MS = 3000;
 const SHELL = [
   '/', '/main.js', '/styles.css', '/themes.css', '/dx7-processor.js', '/rack-processor.js',

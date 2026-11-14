@@ -1,5 +1,6 @@
 import type { Lesson } from '../../types';
 import { chordscale } from './chordscale';
+import { compass } from './compass';
 import { cskey } from './cskey';
 import { degrees } from './degrees';
 import { diatonic } from './diatonic';
@@ -20,4 +21,4 @@ import { tonnetz } from './tonnetz';
 import { triads } from './triads';
 
 /** Core harmony, in reading order. */
-export const CORE: Lesson[] = [intervals, triads, sevenths, keys, degrees, diatonic, minorkeys, modes, fn, rootmotion, tonnetz, tensions, chordscale, cskey, melodic, symmetric, plr, modulation, negative];
+export const CORE: Lesson[] = [intervals, triads, sevenths, keys, degrees, diatonic, minorkeys, modes, compass, fn, rootmotion, tonnetz, tensions, chordscale, cskey, melodic, symmetric, plr, modulation, negative];

@@ -274,6 +274,15 @@ export const SKILL_HELP: Record<string, Help> = {
       'For a compound move, apply the letters left to right: N = R L P, S = L P R, H = P L P.',
     ],
   },
+  'gym.compass': {
+    lesson: 'core.compass',
+    method: [
+      'Say the ring bright to dark: Lydian, Ionian, Mixolydian, Dorian, Aeolian, Phrygian, Locrian. Past Locrian you are back in Lydian a half step lower.',
+      'Each step darker lowers one note, in this order from Lydian: ♯4, 7, 3, 6, 2, 5, then the root. Brighter raises them in reverse.',
+      'Mirror pairs sit either side of Dorian: Ionian and Phrygian, Mixolydian and Aeolian, Lydian and Locrian.',
+      'For a relative mode, count up the parent major scale to the new root: 1 Ionian, 2 Dorian, 3 Phrygian, 4 Lydian, 5 Mixolydian, 6 Aeolian, 7 Locrian.',
+    ],
+  },
   'gym.interchange': {
     lesson: 'jazz.backdoor',
     method: [

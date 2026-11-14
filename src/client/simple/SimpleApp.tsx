@@ -24,6 +24,7 @@ import { ProgressionsMode } from './ProgressionsMode';
 import { KeysMode } from './KeysMode';
 import { CircleMode } from './CircleMode';
 import { TonnetzMode } from './TonnetzMode';
+import { CompassMode } from './CompassMode';
 import { EarMode } from './EarMode';
 import { ChangesMode } from './ChangesMode';
 import { RhythmMode } from './RhythmMode';
@@ -45,10 +46,11 @@ const SECTIONS = [
     { id: 'progressions', label: 'Progressions', View: ProgressionsMode },
     { id: 'changes', label: 'Changes', View: ChangesMode },
   ] },
-  { id: 'keys', label: 'Keys', icon: 'target', about: 'Key signatures, relatives, modes, the circle of fifths and the Tonnetz', modes: [
+  { id: 'keys', label: 'Keys', icon: 'target', about: 'Key signatures, relatives, modes, the circle of fifths, the Tonnetz and the modal compass', modes: [
     { id: 'keys', label: 'Signatures', View: KeysMode },
     { id: 'circle', label: 'Circle', View: CircleMode },
     { id: 'tonnetz', label: 'Tonnetz', View: TonnetzMode },
+    { id: 'compass', label: 'Compass', View: CompassMode },
   ] },
   { id: 'ear', label: 'Ear', icon: 'ear', about: 'Hearing degrees, melodies, cadences and rhythm', modes: [
     { id: 'ear', label: 'Melody', View: EarMode },

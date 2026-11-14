@@ -13,6 +13,7 @@ import { chromaticChordQ, figuredBassQ, voiceLeadingQ } from './gen/bach';
 import { claveEar, rhythmEar, rhythmTap } from './gen/rhythm';
 import { conceptQ } from './gen/concepts';
 import { plrQ } from './gen/tonnetz';
+import { compassQ } from './gen/compass';
 import { SKILL_HELP } from './help';
 
 type Gen = (ctx: GenContext) => Question;
@@ -60,6 +61,7 @@ export const SKILLS: Skill[] = [
   S('gym.scales.play', 'Play jazz scales', 'harmony', ['keys'], 'Modes, melodic-minor modes, symmetric scales.', scalePlay('gym.scales.play', ['dorian', 'lydian', 'mixolydian', 'phrygian', 'melodic_minor', 'lydian_dom', 'altered', 'locrian_n2', 'dim_hw', 'whole_tone', 'bebop_dom'])),
   S('gym.secondary', 'Secondary dominants', 'harmony', ['recall'], 'V7/x in any key, both directions.', secondaryQ('gym.secondary')),
   S('gym.plr', 'Tonnetz moves', 'harmony', ['recall'], 'P, L, R, two in a row, and N S H from any triad.', plrQ('gym.plr')),
+  S('gym.compass', 'Modal compass', 'harmony', ['recall'], 'Modes bright to dark: steps, the note that changes, mirrors, relatives.', compassQ('gym.compass')),
   S('gym.interchange', 'Modal interchange', 'harmony', ['recall'], 'Which mode lends ♭VI, iv, ♭VII7, ♭II…', interchangeQ('gym.interchange')),
 
   // ---------------------------------------------------------------- jazz vocabulary
