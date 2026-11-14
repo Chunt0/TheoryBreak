@@ -935,6 +935,70 @@ a.s-sec:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6
   .s-cof-info { height: 30px; padding: 0 10px; font-size: 13px; }
 }
 
+/* the Tonnetz tab: the lattice fills the stage, (Info) the words beside it */
+.s-tz { flex: 1 1 0; min-height: 0; align-self: stretch; display: flex; align-items: stretch; justify-content: center; gap: clamp(16px, 3vw, 40px); }
+.s-tz-side { align-self: center; }
+.s-tz-wrap { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.s-tz-top { flex: none; height: 56px; display: flex; align-items: flex-start; justify-content: center; }
+.s-tz-board { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; }
+.s-tz-svg { position: absolute; inset: 0; display: block; touch-action: none; -webkit-user-select: none; user-select: none; }
+.s-tz-svg text { text-anchor: middle; dominant-baseline: central; pointer-events: none; font-family: var(--font); }
+/* triangles: up major, down minor; the key's triads tinted, sounding ones in their root's colour */
+.s-tz-svg .tri { fill: transparent; cursor: pointer; transition: fill 0.8s ease-out, filter 0.8s ease-out; }
+.s-tz-svg .tri.down { fill: color-mix(in oklab, var(--text) 2.5%, transparent); }
+.s-tz-svg .tri.in { fill: color-mix(in oklab, var(--c) 9%, transparent); }
+.s-tz-svg .tri.lit { fill: color-mix(in oklab, var(--c) 52%, transparent); filter: drop-shadow(0 0 10px color-mix(in oklab, var(--c) 70%, transparent)); transition-duration: 0.04s; }
+.s-tz-svg .tri.echo { fill: color-mix(in oklab, var(--c) 22%, transparent); filter: none; }
+.s-tz-svg .tri.start { fill: color-mix(in oklab, var(--c) 36%, transparent); stroke: var(--heading); stroke-width: 2; }
+.s-tz-svg .tri.ok { fill: color-mix(in oklab, var(--good) 22%, transparent); stroke: var(--good); stroke-width: 2.5; }
+.s-tz-svg .tri.target { stroke: var(--heading); stroke-width: 2.5; stroke-dasharray: 7 5; }
+.s-tz-svg .edge { stroke: var(--line); stroke-width: 1.2; pointer-events: none; }
+.s-tz-svg .edge.on { stroke: color-mix(in oklab, var(--text) 70%, transparent); stroke-width: 3.5; stroke-linecap: round; }
+.s-tz-svg .path line { stroke: var(--heading); stroke-width: 2.5; stroke-linecap: round; opacity: 0.75; }
+.s-tz-svg .path line.jump { stroke-dasharray: 2 6; opacity: 0.35; }
+.s-tz-svg .path circle { fill: var(--heading); }
+.s-tz-svg .path { pointer-events: none; }
+.s-tz-svg .t-tri { font-weight: 600; fill: var(--text-faint); }
+.s-tz-svg .t-tri.lit { fill: var(--heading); font-weight: 700; }
+/* notes: the Circle tab's degree colours, faint at rest and full while they sound */
+.s-tz-svg .node { cursor: pointer; }
+.s-tz-svg .node circle { fill: color-mix(in oklab, var(--c) 24%, var(--bg-elev)); stroke: color-mix(in oklab, var(--c) 45%, var(--line)); stroke-width: 1.2; transition: fill 0.9s ease-out, filter 0.9s ease-out; }
+.s-tz-svg .node.out circle { fill: color-mix(in oklab, var(--c) 7%, var(--bg-elev)); stroke: var(--line); }
+.s-tz-svg .node text { font-weight: 700; fill: color-mix(in oklab, var(--c) 50%, var(--heading)); letter-spacing: -0.02em; }
+.s-tz-svg .node.out text { font-weight: 500; fill: color-mix(in oklab, var(--c) 25%, var(--text-faint)); }
+.s-tz-svg .node.tonic circle { stroke: var(--c); stroke-width: 2.5; }
+.s-tz-svg .node.lit circle { fill: var(--c); filter: drop-shadow(0 0 8px var(--c)); transition-duration: 0.04s; }
+.s-tz-svg .node.lit text { fill: var(--ink); }
+.s-tz-svg .node.wrong circle { stroke: var(--bad); stroke-width: 3.5; }
+.s-tz-svg.drone .node.tonic:not(.lit) circle { animation: s-cof-breathe-node 4.5s ease-in-out infinite; }
+@keyframes s-cof-breathe-node { 50% { fill: color-mix(in oklab, var(--c) 55%, var(--bg-elev)); } }
+.s-tz-badge { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 120px; max-width: 92%; padding: 6px 16px 7px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in oklab, var(--bg-elev) 90%, transparent); color: var(--heading); font-family: var(--font); backdrop-filter: blur(6px); cursor: default; }
+.s-tz-badge.tap { cursor: pointer; }
+.s-tz-badge.tap:hover { border-color: var(--line-strong); }
+.s-tz-badge:disabled { opacity: 1; }
+.s-tz-badge .big { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.s-tz-badge .small { font-size: 12.5px; font-weight: 600; color: var(--accent); }
+.s-tz-badge.good { border-color: var(--good); }
+.s-tz-badge.good .big { color: var(--good); }
+.s-tz-badge.bad { border-color: var(--bad); }
+.s-tz-badge.bad .big { color: var(--bad); }
+.s-tz-badge.rest { opacity: 0.6; }
+.s-tz-legend { position: absolute; left: 6px; bottom: 4px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--text-faint); pointer-events: none; }
+.s-tz-desc { line-height: 1.45; }
+.s-tz-moves { display: inline-flex; gap: 6px; }
+.s-tz-moves .btn { min-width: 34px; font-weight: 700; }
+@media (max-width: 760px) {
+  .s-tz { flex-direction: column; gap: 10px; }
+  .s-tz-side { flex: none; }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+  .s-tz { gap: 14px; }
+  .s-tz-top { height: 40px; }
+  .s-tz-badge { flex-direction: row; align-items: baseline; gap: 10px; padding: 3px 12px 4px; }
+  .s-tz-badge .big { font-size: 18px; }
+  .s-tz-badge .small { font-size: 11.5px; }
+}
+
 /* the keyboard dock */
 .s-dock { padding: 0 16px 10px; border-top: 1px solid var(--line); background: var(--bg-elev); }
 .s-dock-info { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 36px; max-width: 1480px; margin: 0 auto; font-size: 12.5px; color: var(--text-faint); }

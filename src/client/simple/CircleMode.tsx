@@ -96,7 +96,7 @@ const RAINBOW: { c: string; ink: string }[] = [
   ['0.76 0.15 10', 0], // 4  rose
 ].map(([c, light]) => ({ c: `oklch(${c})`, ink: light ? '#fff' : '#141414' }));
 export const degreeColor = (semis: number): string => RAINBOW[slotOf(semis)].c;
-const degreeInk = (semis: number): string => RAINBOW[slotOf(semis)].ink;
+export const degreeInk = (semis: number): string => RAINBOW[slotOf(semis)].ink;
 
 /** The register the circle's notes play in: tonic from G3 up to F♯4. */
 const tonicMidiOf = (p: number): number => 55 + mod(p - 7, 12);

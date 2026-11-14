@@ -266,6 +266,14 @@ export const SKILL_HELP: Record<string, Help> = {
       'Its 3rd is the temporary leading tone (A7 → Dm: C♯ → D).',
     ],
   },
+  'gym.plr': {
+    lesson: 'core.plr',
+    method: [
+      'Spell the start triad: root, 3rd, 5th.',
+      'P moves the 3rd a half step; R moves the major chord\'s 5th up a whole step (the minor chord\'s root down one); L moves the major chord\'s root down a half step (the minor chord\'s 5th up one).',
+      'For a compound move, apply the letters left to right: N = R L P, S = L P R, H = P L P.',
+    ],
+  },
   'gym.interchange': {
     lesson: 'jazz.backdoor',
     method: [
