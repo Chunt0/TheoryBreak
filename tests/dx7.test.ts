@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { ALGORITHMS, compileAlgorithm, layoutAlgorithm } from '../src/client/audio/dx7/algorithms';
-import { Part, lfoHz } from '../src/client/audio/dx7/dsp';
+import { Part, evalModMatrix, lfoHz, type ModSources } from '../src/client/audio/dx7/dsp';
+import { PartFx } from '../src/client/audio/dx7/fx';
 import { PRESETS } from '../src/client/audio/dx7/presets';
 import { buildBank, parseSysex, packVoice, unpackVoice } from '../src/client/audio/dx7/sysex';
-import { initPatch, modIndex, normalizePatch } from '../src/client/audio/dx7/patch';
+import { initPatch, modIndex, normalizePatch, type ModSlot, type OpShape } from '../src/client/audio/dx7/patch';
 
 const SR = 48000;
 
@@ -115,6 +116,99 @@ describe('voice rendering', () => {
     expect(modIndex(99)).toBeCloseTo(4 * Math.PI, 0);
     expect(modIndex(70)).toBeLessThan(modIndex(80));
     expect(modIndex(0)).toBe(0);
+  });
+
+  test('every oscillator shape renders finite, audible audio', () => {
+    for (let shape = 0; shape <= 4; shape++) {
+      const patch = initPatch();
+      patch.ops[0].shape = shape as OpShape;
+      const part = new Part(SR, patch);
+      part.noteOn(69, 100);
+      const buf = render(part, 0.1);
+      expect(buf.every(Number.isFinite)).toBe(true);
+      expect(peak(buf)).toBeGreaterThan(0.01);
+    }
+  });
+
+  test('unison stacks one voice per configured count, poly and mono', () => {
+    const patch = initPatch();
+    patch.unison.voices = 4;
+    const poly = new Part(SR, patch);
+    poly.noteOn(60, 100);
+    render(poly, 0.01);
+    expect(poly.status().activeVoices).toBe(4);
+    poly.noteOff(60);
+    render(poly, 1);
+    expect(poly.status().activeVoices).toBe(0);
+
+    const mono = new Part(SR, patch);
+    mono.setConfig({ mono: true });
+    mono.noteOn(60, 100);
+    render(mono, 0.01);
+    expect(mono.status().activeVoices).toBe(4);
+  });
+});
+
+describe('mod matrix', () => {
+  const neutral: ModSources = { wheel: 0, aftertouch: 0, velocity: 0, keyFollow: 0, lfo2: 0, macros: [0, 0, 0, 0] };
+
+  test('empty slot list leaves every output neutral', () => {
+    const outLevel = new Float64Array(6);
+    const outPitchOct = new Float64Array(6);
+    const [fb, pan] = evalModMatrix([], neutral, outLevel, outPitchOct);
+    expect(Array.from(outLevel)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(Array.from(outPitchOct)).toEqual([0, 0, 0, 0, 0, 0]);
+    expect(fb).toBe(0);
+    expect(pan).toBe(0);
+  });
+
+  test('an active slot nudges its destination; an off slot is ignored', () => {
+    const outLevel = new Float64Array(6);
+    const outPitchOct = new Float64Array(6);
+    const slots: ModSlot[] = [
+      { on: true, source: 'velocity', dest: 'op1Level', depth: 99 },
+      { on: true, source: 'wheel', dest: 'feedback', depth: 50 },
+      { on: false, source: 'wheel', dest: 'pan', depth: 99 },
+    ];
+    const [fb, pan] = evalModMatrix(slots, { ...neutral, wheel: 1, velocity: 1 }, outLevel, outPitchOct);
+    expect(outLevel[0]).toBeCloseTo(2, 5); // 1 + velocity(1) * depth(99/99)
+    expect(fb).toBeCloseTo(50 / 99, 5);
+    expect(pan).toBe(0);
+  });
+});
+
+describe('part fx chain', () => {
+  test('every effect off bypasses the block unchanged', () => {
+    const fx = new PartFx(SR);
+    const l = Float32Array.from({ length: 64 }, (_, i) => Math.sin(i));
+    const r = Float32Array.from({ length: 64 }, (_, i) => Math.cos(i));
+    const l0 = l.slice();
+    const r0 = r.slice();
+    fx.processBlock(l, r, 0, 64);
+    expect(l).toEqual(l0);
+    expect(r).toEqual(r0);
+  });
+
+  test('chorus, delay, drive and reverb together stay finite and bounded', () => {
+    const fx = new PartFx(SR);
+    fx.setPatch({
+      chorus: { on: true, rate: 40, depth: 30, mix: 50 },
+      delay: { on: true, time: 30, feedback: 35, mix: 50, sync: false },
+      drive: { on: true, amount: 50, tone: 50, mix: 100 },
+      reverb: { on: true, size: 50, damp: 40, mix: 50 },
+    });
+    const n = SR;
+    const l = new Float32Array(n);
+    const r = new Float32Array(n);
+    for (let i = 0; i < 100; i++) {
+      l[i] = Math.sin(i * 0.3);
+      r[i] = Math.sin(i * 0.3);
+    }
+    for (let off = 0; off < n; off += 128) fx.processBlock(l, r, off, Math.min(128, n - off));
+    expect(l.every(Number.isFinite)).toBe(true);
+    expect(r.every(Number.isFinite)).toBe(true);
+    expect(peak(l)).toBeGreaterThan(0);
+    expect(peak(l)).toBeLessThan(5);
   });
 });
 

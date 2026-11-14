@@ -27,6 +27,11 @@ export const MAPPABLE: ParamTarget[] = [
   { id: 'lfo.amd', label: 'LFO amp depth', min: 0, max: 99 },
   { id: 'transpose', label: 'Transpose', min: 0, max: 48 },
   { id: 'master', label: 'Master volume', min: 0, max: 100 },
+  ...[1, 2, 3, 4].map((n) => ({ id: `macros.${n - 1}`, label: `Macro ${n}`, min: 0, max: 99 })),
+  { id: 'fx.chorus.mix', label: 'Chorus mix', min: 0, max: 99 },
+  { id: 'fx.delay.mix', label: 'Delay mix', min: 0, max: 99 },
+  { id: 'fx.drive.mix', label: 'Drive mix', min: 0, max: 99 },
+  { id: 'fx.reverb.mix', label: 'Reverb2 mix', min: 0, max: 99 },
 ];
 
 export const TARGET_BY_ID: Record<string, ParamTarget> = Object.fromEntries(MAPPABLE.map((t) => [t.id, t]));

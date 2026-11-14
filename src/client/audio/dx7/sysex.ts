@@ -40,6 +40,7 @@ export function unpackVoice(d: Uint8Array): Patch {
       coarse: (o[15] >> 1) & 31,
       fine: o[16] & 127,
       enabled: true,
+      shape: 0,
     });
   }
   return normalizePatch({
@@ -115,6 +116,7 @@ function unpackSingle(d: Uint8Array): Patch {
       fine: o[19],
       detune: o[20],
       enabled: true,
+      shape: 0,
     });
   }
   return normalizePatch({

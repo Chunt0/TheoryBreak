@@ -4,6 +4,60 @@
 export type Curve = 0 | 1 | 2 | 3; // -LIN, -EXP, +EXP, +LIN
 export type LfoWave = 0 | 1 | 2 | 3 | 4 | 5; // tri, saw down, saw up, square, sine, S&H
 
+// Extra per-operator oscillator shapes, in the spirit of (not a reproduction
+// of) Yamaha's later FM chips: all derived cheaply from the same sine table
+// the DX7 uses, so a shape of 0 is byte-identical to the original engine.
+export type OpShape = 0 | 1 | 2 | 3 | 4; // sine, half sine, full (rectified) sine, square, triangle-warped sine
+export const SHAPE_NAMES = ['Sine', 'Half sine', 'Full sine', 'Square', 'Triangle-warp'] as const;
+
+/** Modulation matrix sources. "macro1-4" are the four user knobs. */
+export type ModSource = 'wheel' | 'aftertouch' | 'velocity' | 'keyFollow' | 'lfo2' | 'macro1' | 'macro2' | 'macro3' | 'macro4';
+export const MOD_SOURCES: { id: ModSource; label: string }[] = [
+  { id: 'wheel', label: 'Mod wheel' },
+  { id: 'aftertouch', label: 'Aftertouch' },
+  { id: 'velocity', label: 'Velocity' },
+  { id: 'keyFollow', label: 'Key follow' },
+  { id: 'lfo2', label: 'LFO 2 (free)' },
+  { id: 'macro1', label: 'Macro 1' },
+  { id: 'macro2', label: 'Macro 2' },
+  { id: 'macro3', label: 'Macro 3' },
+  { id: 'macro4', label: 'Macro 4' },
+];
+
+/** Modulation matrix destinations: nudges applied on top of the normal voice math. */
+export type ModDest =
+  | 'op1Level' | 'op2Level' | 'op3Level' | 'op4Level' | 'op5Level' | 'op6Level'
+  | 'op1Pitch' | 'op2Pitch' | 'op3Pitch' | 'op4Pitch' | 'op5Pitch' | 'op6Pitch'
+  | 'feedback' | 'pan';
+export const MOD_DESTS: { id: ModDest; label: string }[] = [
+  ...([1, 2, 3, 4, 5, 6] as const).map((n) => ({ id: `op${n}Level` as ModDest, label: `OP${n} level` })),
+  ...([1, 2, 3, 4, 5, 6] as const).map((n) => ({ id: `op${n}Pitch` as ModDest, label: `OP${n} pitch` })),
+  { id: 'feedback', label: 'Feedback' },
+  { id: 'pan', label: 'Pan' },
+];
+const MOD_SOURCE_IDS = new Set(MOD_SOURCES.map((s) => s.id));
+const MOD_DEST_IDS = new Set(MOD_DESTS.map((d) => d.id));
+
+export interface ModSlot {
+  on: boolean;
+  source: ModSource;
+  dest: ModDest;
+  depth: number; // -99..99
+}
+
+/** Stacked/unison voices per note: classic detuned-and-spread thickening. */
+export interface UnisonConfig {
+  voices: number; // 1-8, 1 = off (today's single-voice behaviour)
+  detune: number; // 0-99 spread in cents across the stack
+  spread: number; // 0-99 stereo spread across the stack
+}
+
+export interface ChorusFx { on: boolean; rate: number; depth: number; mix: number }
+export interface DelayFx { on: boolean; time: number; feedback: number; mix: number; sync: boolean }
+export interface DriveFx { on: boolean; amount: number; tone: number; mix: number }
+export interface ReverbFx { on: boolean; size: number; damp: number; mix: number }
+export interface FxConfig { chorus: ChorusFx; delay: DelayFx; drive: DriveFx; reverb: ReverbFx }
+
 export interface Operator {
   rates: [number, number, number, number]; // 0-99
   levels: [number, number, number, number]; // 0-99
@@ -21,6 +75,7 @@ export interface Operator {
   fine: number; // 0-99
   detune: number; // 0-14, 7 = centre
   enabled: boolean; // editor-only operator switch
+  shape: OpShape; // oscillator shape; 0 = sine (the original DX7 behaviour)
 }
 
 export interface Patch {
@@ -34,6 +89,14 @@ export interface Patch {
   lfo: { speed: number; delay: number; pmd: number; amd: number; sync: boolean; wave: LfoWave };
   pitchModSens: number; // 0-7
   transpose: number; // 0-48, 24 = no transpose
+
+  // --- modern extensions. Not part of the DX7 sysex format: they default to
+  // today's behaviour and are simply dropped on .syx export, same as any
+  // hardware-unrepresentable value would be.
+  unison: UnisonConfig;
+  fx: FxConfig;
+  modMatrix: ModSlot[];
+  macros: [number, number, number, number]; // 0-99 each
 }
 
 /** Performance settings that live outside the voice (like the DX7 "function" section). */
@@ -82,8 +145,17 @@ export function initOperator(carrier = false): Operator {
     fine: 0,
     detune: 7,
     enabled: true,
+    shape: 0,
   };
 }
+
+export const initUnison = (): UnisonConfig => ({ voices: 1, detune: 20, spread: 50 });
+export const initFx = (): FxConfig => ({
+  chorus: { on: false, rate: 40, depth: 30, mix: 35 },
+  delay: { on: false, time: 30, feedback: 35, mix: 25, sync: false },
+  drive: { on: false, amount: 20, tone: 50, mix: 100 },
+  reverb: { on: false, size: 50, damp: 40, mix: 25 },
+});
 
 /** The DX7 "INIT VOICE": one sine carrier, everything else off. */
 export function initPatch(): Patch {
@@ -97,6 +169,10 @@ export function initPatch(): Patch {
     lfo: { speed: 35, delay: 0, pmd: 0, amd: 0, sync: true, wave: 0 },
     pitchModSens: 3,
     transpose: 24,
+    unison: initUnison(),
+    fx: initFx(),
+    modMatrix: [],
+    macros: [0, 0, 0, 0],
   };
 }
 
@@ -131,10 +207,31 @@ export function normalizePatch(raw: unknown): Patch {
       fine: clampInt(o.fine, 0, 99, d.fine),
       detune: clampInt(o.detune, 0, 14, d.detune),
       enabled: o.enabled !== false,
+      shape: clampInt(o.shape, 0, 4, d.shape) as OpShape,
     };
   });
   const peg = src.pitchEg ?? base.pitchEg;
   const lfo = (src.lfo ?? {}) as Partial<Patch['lfo']>;
+  const unison = (src.unison ?? {}) as Partial<UnisonConfig>;
+  const fx = (src.fx ?? {}) as Partial<FxConfig>;
+  const chorus = fx.chorus ?? ({} as Partial<ChorusFx>);
+  const delay = fx.delay ?? ({} as Partial<DelayFx>);
+  const drive = fx.drive ?? ({} as Partial<DriveFx>);
+  const reverb = fx.reverb ?? ({} as Partial<ReverbFx>);
+  const bDflt = base.unison;
+  const fDflt = base.fx;
+  const modMatrix = Array.isArray(src.modMatrix)
+    ? src.modMatrix.slice(0, 8).map((s) => {
+        const slot = (s ?? {}) as Partial<ModSlot>;
+        return {
+          on: slot.on === true,
+          source: MOD_SOURCE_IDS.has(slot.source as ModSource) ? (slot.source as ModSource) : 'wheel',
+          dest: MOD_DEST_IDS.has(slot.dest as ModDest) ? (slot.dest as ModDest) : 'op1Level',
+          depth: clampInt(slot.depth, -99, 99, 0),
+        };
+      })
+    : [];
+  const macrosSrc = Array.isArray(src.macros) ? src.macros : [];
   return {
     name: String(src.name ?? base.name).slice(0, 10),
     ops,
@@ -155,6 +252,19 @@ export function normalizePatch(raw: unknown): Patch {
     },
     pitchModSens: clampInt(src.pitchModSens, 0, 7, 3),
     transpose: clampInt(src.transpose, 0, 48, 24),
+    unison: {
+      voices: clampInt(unison.voices, 1, 8, bDflt.voices),
+      detune: clampInt(unison.detune, 0, 99, bDflt.detune),
+      spread: clampInt(unison.spread, 0, 99, bDflt.spread),
+    },
+    fx: {
+      chorus: { on: chorus.on === true, rate: clampInt(chorus.rate, 0, 99, fDflt.chorus.rate), depth: clampInt(chorus.depth, 0, 99, fDflt.chorus.depth), mix: clampInt(chorus.mix, 0, 99, fDflt.chorus.mix) },
+      delay: { on: delay.on === true, time: clampInt(delay.time, 0, 99, fDflt.delay.time), feedback: clampInt(delay.feedback, 0, 99, fDflt.delay.feedback), mix: clampInt(delay.mix, 0, 99, fDflt.delay.mix), sync: delay.sync === true },
+      drive: { on: drive.on === true, amount: clampInt(drive.amount, 0, 99, fDflt.drive.amount), tone: clampInt(drive.tone, 0, 99, fDflt.drive.tone), mix: clampInt(drive.mix, 0, 99, fDflt.drive.mix) },
+      reverb: { on: reverb.on === true, size: clampInt(reverb.size, 0, 99, fDflt.reverb.size), damp: clampInt(reverb.damp, 0, 99, fDflt.reverb.damp), mix: clampInt(reverb.mix, 0, 99, fDflt.reverb.mix) },
+    },
+    modMatrix,
+    macros: [0, 1, 2, 3].map((i) => clampInt(macrosSrc[i], 0, 99, 0)) as [number, number, number, number],
   };
 }
 

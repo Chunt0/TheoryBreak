@@ -36,6 +36,9 @@ class AudioEngine {
   state: EngineState = 'idle';
   error = '';
   status: PartStatus[] = [];
+  /** most recent stereo peak (0..1ish) from the dx7 worklet, for a master meter */
+  peakL = 0;
+  peakR = 0;
 
   private node: AudioWorkletNode | null = null;
   private rackNode: AudioWorkletNode | null = null;
@@ -103,6 +106,8 @@ class AudioEngine {
     node.port.onmessage = (e: MessageEvent<WorkletOut>) => {
       if (e.data.t === 'status') {
         this.status = e.data.parts;
+        this.peakL = e.data.peakL;
+        this.peakR = e.data.peakR;
         this.statusListeners.forEach((l) => l(this.status));
       }
     };

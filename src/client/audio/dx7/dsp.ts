@@ -4,7 +4,7 @@
 // of amplitude (6.02 dB); amplitude = 2^(L/256 - 14), so L = 3840 gives 2.0.
 
 import { compileAlgorithm, type CompiledAlgorithm } from './algorithms';
-import type { ModRouting, Operator, Patch, PartConfig } from './patch';
+import type { ModRouting, ModSlot, Operator, Patch, PartConfig } from './patch';
 import { defaultPartConfig } from './patch';
 
 // ---------------------------------------------------------------------------
@@ -80,6 +80,25 @@ function sinCycles(phase: number): number {
   const j = i & SIN_MASK;
   return SIN[j] + f * (SIN[j + 1] - SIN[j]);
 }
+
+// Extra oscillator shapes (OpShape 1-4), all derived from the same sine table
+// so they stay cheap and phase-continuous with feedback. Shape 0 (sine) uses
+// sinCycles directly and is untouched by any of this.
+function halfSineCycles(phase: number): number {
+  const p = phase - Math.floor(phase);
+  return p < 0.5 ? sinCycles(phase) : 0;
+}
+function fullSineCycles(phase: number): number {
+  return Math.abs(sinCycles(phase));
+}
+function squareCycles(phase: number): number {
+  return Math.tanh(sinCycles(phase) * 4);
+}
+function triangleWarpCycles(phase: number): number {
+  const s = Math.max(-1, Math.min(1, sinCycles(phase)));
+  return (2 / Math.PI) * Math.asin(s);
+}
+const SHAPE_FNS: ((phase: number) => number)[] = [sinCycles, halfSineCycles, fullSineCycles, squareCycles, triangleWarpCycles];
 
 // ---------------------------------------------------------------------------
 // Operator envelope
@@ -354,6 +373,20 @@ export class Voice {
   glideStep = 0; // semitones per sample
   ampLevel = new Float64Array(6); // last computed amplitudes (for UI meters)
 
+  // --- modern extensions, all no-ops at their defaults ---
+  /** stereo pan tag for renderStereo, -1..1; unused by the mono render() path */
+  pan = 0;
+  /** unison spread, added to every operator's pitch in opPitch */
+  detuneCents = 0;
+  /** unison gain compensation, applied to the final mix */
+  levelScale = 1;
+  /** mod-matrix nudges, written by Part before each render() / renderStereo() call */
+  modLevel = new Float64Array(6).fill(1);
+  modPitchOct = new Float64Array(6);
+  modFeedback = 0;
+  modPan = 0;
+  private shapeFn: ((phase: number) => number)[] = new Array(6).fill(sinCycles);
+
   constructor(private sr: number) {
     const mul = 44100 / sr;
     this.envs = Array.from({ length: 6 }, () => new Env(mul));
@@ -362,16 +395,18 @@ export class Voice {
 
   private opPitch(cp: CompiledPatch, midinote: number, i: number): number {
     const op = cp.patch.ops[i];
+    let logf: number;
     if (op.oscMode === 1) {
-      let logf = Math.log2(10) * ((op.coarse & 3) + op.fine / 100);
+      logf = Math.log2(10) * ((op.coarse & 3) + op.fine / 100);
       if (op.detune > 7) logf += (13457 * (op.detune - 7)) / 16777216;
-      return logf;
+    } else {
+      logf = Math.log2(440) + (midinote - 69) / 12;
+      const detuneRatio = (0.0209 * Math.exp(-0.396 * logf)) / 7;
+      logf += detuneRatio * logf * (op.detune - 7);
+      logf += op.coarse === 0 ? -1 : Math.log2(op.coarse);
+      if (op.fine) logf += Math.log2(1 + 0.01 * op.fine);
     }
-    let logf = Math.log2(440) + (midinote - 69) / 12;
-    const detuneRatio = (0.0209 * Math.exp(-0.396 * logf)) / 7;
-    logf += detuneRatio * logf * (op.detune - 7);
-    logf += op.coarse === 0 ? -1 : Math.log2(op.coarse);
-    if (op.fine) logf += Math.log2(1 + 0.01 * op.fine);
+    if (this.detuneCents !== 0) logf += this.detuneCents / 1200;
     return logf;
   }
 
@@ -474,9 +509,12 @@ export class Voice {
     ampMod = Math.max(1 - ctl.egBias, ampMod);
 
     let anyCarrier = false;
+    const shapeFn = this.shapeFn;
     for (let i = 0; i < 6; i++) {
       const op = p.ops[i];
-      const logf = this.baseLog[i] + (op.oscMode === 1 ? ctl.bendOctaves : pitchOct);
+      shapeFn[i] = SHAPE_FNS[op.shape] ?? sinCycles;
+      let logf = this.baseLog[i] + (op.oscMode === 1 ? ctl.bendOctaves : pitchOct);
+      if (this.modPitchOct[i] !== 0) logf += this.modPitchOct[i];
       this.phaseInc[i] = Math.pow(2, logf) / this.sr;
       let level = this.envs[i].step(n);
       if (op.ampModSens > 0) {
@@ -486,6 +524,7 @@ export class Voice {
       }
       let amp = level <= 16 ? 0 : Math.pow(2, level / 256 - 14);
       if (!op.enabled) amp = 0;
+      if (this.modLevel[i] !== 1) amp *= this.modLevel[i];
       this.ampLevel[i] = amp;
       this.gainInc[i] = (amp - this.gain[i]) / n;
       if (algo.isCarrier[i] && amp > 0.00005) anyCarrier = true;
@@ -500,7 +539,8 @@ export class Voice {
     const isC = algo.isCarrier;
     const fbFrom = algo.fbFrom;
     const fbTo = algo.fbTo;
-    const fbScale = cp.fbScale * 0.5;
+    const fbScale = this.modFeedback !== 0 ? cp.fbScale * 0.5 * (1 + this.modFeedback) : cp.fbScale * 0.5;
+    const outScale = this.levelScale !== 1 ? OUT_SCALE * this.levelScale : OUT_SCALE;
     const ph = this.phase;
     const inc = this.phaseInc;
     const g = this.gain;
@@ -516,7 +556,7 @@ export class Voice {
         for (let k = 0; k < src.length; k++) mod += out[src[k]];
         if (i === fbTo && fbScale !== 0) mod += (fb0 + fb1) * fbScale;
         g[i] += gi[i];
-        const y = g[i] * sinCycles(ph[i] + mod);
+        const y = g[i] * shapeFn[i](ph[i] + mod);
         out[i] = y;
         if (i === fbFrom) {
           fb0 = fb1;
@@ -527,12 +567,71 @@ export class Voice {
         if (np >= 1) np -= 1;
         ph[i] = np;
       }
-      buf[offset + s] += sum * OUT_SCALE;
+      buf[offset + s] += sum * outScale;
     }
     this.fb0 = fb0;
     this.fb1 = fb1;
     return true;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Modulation matrix: a handful of assignable nudges layered on top of the
+// hardware-accurate wheel/aftertouch routing above. Pure function so it's
+// easy to test in isolation; an empty slot list leaves every output neutral.
+
+export interface ModSources {
+  wheel: number; // 0..1
+  aftertouch: number; // 0..1
+  velocity: number; // 0..1
+  keyFollow: number; // -1..1
+  lfo2: number; // -1..1
+  macros: readonly [number, number, number, number]; // 0..1 each
+}
+
+/** Evaluates `slots` against `src`, writing per-op nudges into `outLevel`/`outPitchOct`
+ * (level is a multiplier around 1, pitch is additive octaves) and returning [feedback, pan]
+ * nudges. Leaves everything neutral (level=1, pitch/feedback/pan=0) when `slots` is empty. */
+export function evalModMatrix(slots: ModSlot[], src: ModSources, outLevel: Float64Array, outPitchOct: Float64Array): [number, number] {
+  outLevel.fill(1);
+  outPitchOct.fill(0);
+  let feedback = 0;
+  let pan = 0;
+  for (let k = 0; k < slots.length; k++) {
+    const slot = slots[k];
+    if (!slot.on || slot.depth === 0) continue;
+    let srcVal: number;
+    switch (slot.source) {
+      case 'wheel': srcVal = src.wheel; break;
+      case 'aftertouch': srcVal = src.aftertouch; break;
+      case 'velocity': srcVal = src.velocity; break;
+      case 'keyFollow': srcVal = src.keyFollow; break;
+      case 'lfo2': srcVal = src.lfo2; break;
+      case 'macro1': srcVal = src.macros[0]; break;
+      case 'macro2': srcVal = src.macros[1]; break;
+      case 'macro3': srcVal = src.macros[2]; break;
+      case 'macro4': srcVal = src.macros[3]; break;
+      default: srcVal = 0;
+    }
+    const amt = srcVal * (slot.depth / 99);
+    switch (slot.dest) {
+      case 'op1Level': outLevel[0] *= 1 + amt; break;
+      case 'op2Level': outLevel[1] *= 1 + amt; break;
+      case 'op3Level': outLevel[2] *= 1 + amt; break;
+      case 'op4Level': outLevel[3] *= 1 + amt; break;
+      case 'op5Level': outLevel[4] *= 1 + amt; break;
+      case 'op6Level': outLevel[5] *= 1 + amt; break;
+      case 'op1Pitch': outPitchOct[0] += amt / 6; break;
+      case 'op2Pitch': outPitchOct[1] += amt / 6; break;
+      case 'op3Pitch': outPitchOct[2] += amt / 6; break;
+      case 'op4Pitch': outPitchOct[3] += amt / 6; break;
+      case 'op5Pitch': outPitchOct[4] += amt / 6; break;
+      case 'op6Pitch': outPitchOct[5] += amt / 6; break;
+      case 'feedback': feedback += amt; break;
+      case 'pan': pan += amt; break;
+    }
+  }
+  return [feedback, pan];
 }
 
 // ---------------------------------------------------------------------------
@@ -559,6 +658,9 @@ export class Part {
   private clock = 0;
   private lfoOut = new Float64Array(2);
   private ctl: Controllers = { bendOctaves: 0, pitchMod: 0, ampMod: 0, egBias: 1, lfo: 0.5, lfoDelay: 0 };
+  private lfo2Phase = 0;
+  private readonly lfo2Rate = 4.3; // Hz; free-running mod source, independent of the hardware LFO
+  private scratchBuf = new Float32Array(128);
 
   constructor(private sr: number, patch: Patch, maxVoices = 16) {
     this.cp = compilePatch(patch);
@@ -583,6 +685,45 @@ export class Part {
     return t * t * 1.5;
   }
 
+  /** How many unison voices to stack per note-on, clamped to what this part actually has. */
+  private unisonCount(): number {
+    return Math.max(1, Math.min(this.voices.length, this.cp.patch.unison.voices));
+  }
+
+  /** Sets pan/detune/gain-compensation for unison member `k` of `count`; (k=0, count<=1) resets to plain-voice defaults. */
+  private tagUnison(v: Voice, k: number, count: number): void {
+    if (count <= 1) {
+      v.pan = 0;
+      v.detuneCents = 0;
+      v.levelScale = 1;
+      return;
+    }
+    const u = this.cp.patch.unison;
+    const centered = (k / (count - 1)) * 2 - 1; // -1..1, one voice lands on 0 for odd counts
+    v.detuneCents = centered * (u.detune / 99) * 25;
+    v.pan = centered * (u.spread / 99);
+    v.levelScale = 1 / Math.sqrt(count);
+  }
+
+  /** Picks `count` voices from `pool` for a new unison group: reuse same-note voices first, then free voices, then steal. */
+  private allocateUnisonGroup(pool: Voice[], note: number, count: number): Voice[] {
+    const chosen = pool.filter((x) => x.active && x.note === note).slice(0, count);
+    const used = new Set(chosen);
+    while (chosen.length < count) {
+      let v = pool.find((x) => !x.active && !used.has(x));
+      if (!v) {
+        const candidates = pool.filter((x) => !used.has(x));
+        if (!candidates.length) break;
+        const released = candidates.filter((x) => !x.keyIsDown && !x.sustained);
+        const cands = released.length ? released : candidates;
+        v = cands.reduce((a, b) => (a.startedAt <= b.startedAt ? a : b));
+      }
+      used.add(v);
+      chosen.push(v);
+    }
+    return chosen;
+  }
+
   noteOn(note: number, velocity: number): void {
     if (velocity <= 0) return this.noteOff(note);
     this.clock++;
@@ -591,25 +732,41 @@ export class Part {
     if (this.config.mono) {
       this.held = this.held.filter((n) => n !== note);
       this.held.push(note);
-      const v = this.voices[0];
-      if (v.active && (v.keyIsDown || v.sustained)) v.legato(this.cp, note, glideFrom, this.glideTime());
-      else v.start(this.cp, note, velocity, this.clock, glideFrom, this.glideTime());
-      v.keyIsDown = true;
-      v.sustained = false;
+      const count = this.unisonCount();
+      const members = this.voices.slice(0, count);
+      for (let k = 0; k < members.length; k++) {
+        const v = members[k];
+        this.tagUnison(v, k, members.length);
+        if (v.active && (v.keyIsDown || v.sustained)) v.legato(this.cp, note, glideFrom, this.glideTime());
+        else v.start(this.cp, note, velocity, this.clock, glideFrom, this.glideTime());
+        v.keyIsDown = true;
+        v.sustained = false;
+      }
       this.lastNote = note;
       return;
     }
     const limit = Math.min(this.voices.length, Math.max(1, this.config.polyphony));
     const pool = this.voices.slice(0, limit);
-    let v = pool.find((x) => x.active && x.note === note);
-    if (!v) v = pool.find((x) => !x.active);
-    if (!v) {
-      // steal: oldest released voice, else oldest overall
-      const released = pool.filter((x) => !x.keyIsDown && !x.sustained);
-      const cands = released.length ? released : pool;
-      v = cands.reduce((a, b) => (a.startedAt <= b.startedAt ? a : b));
+    const count = this.unisonCount();
+    if (count <= 1) {
+      let v = pool.find((x) => x.active && x.note === note);
+      if (!v) v = pool.find((x) => !x.active);
+      if (!v) {
+        // steal: oldest released voice, else oldest overall
+        const released = pool.filter((x) => !x.keyIsDown && !x.sustained);
+        const cands = released.length ? released : pool;
+        v = cands.reduce((a, b) => (a.startedAt <= b.startedAt ? a : b));
+      }
+      this.tagUnison(v, 0, 1);
+      v.start(this.cp, note, velocity, this.clock, glideFrom, this.glideTime());
+      this.lastNote = note;
+      return;
     }
-    v.start(this.cp, note, velocity, this.clock, glideFrom, this.glideTime());
+    const members = this.allocateUnisonGroup(pool, note, count);
+    for (let k = 0; k < members.length; k++) {
+      this.tagUnison(members[k], k, members.length);
+      members[k].start(this.cp, note, velocity, this.clock, glideFrom, this.glideTime());
+    }
     this.lastNote = note;
   }
 
@@ -617,16 +774,19 @@ export class Part {
     if (this.config.mono) {
       const wasTop = this.held[this.held.length - 1] === note;
       this.held = this.held.filter((n) => n !== note);
-      const v = this.voices[0];
-      if (!v.active) return;
+      const count = this.unisonCount();
+      const members = this.voices.slice(0, count);
+      if (!members[0]?.active) return;
       if (this.held.length && wasTop) {
         const back = this.held[this.held.length - 1];
-        v.legato(this.cp, back, this.config.portaTime > 0 ? note : null, this.glideTime());
+        for (const v of members) v.legato(this.cp, back, this.config.portaTime > 0 ? note : null, this.glideTime());
         this.lastNote = back;
       } else if (!this.held.length) {
-        if (this.sustain) v.sustained = true;
-        else v.release();
-        v.keyIsDown = false;
+        for (const v of members) {
+          if (this.sustain) v.sustained = true;
+          else v.release();
+          v.keyIsDown = false;
+        }
       }
       return;
     }
@@ -671,7 +831,8 @@ export class Part {
     return r[kind] ? value * (r.range / 99) : 0;
   }
 
-  render(buf: Float32Array, offset: number, n: number): void {
+  /** Shared controller setup for render()/renderStereo(): hardware wheel/aftertouch routing plus the free LFO2 clock. */
+  private updateControllers(n: number): void {
     this.lfo.step(n, this.lfoOut);
     const c = this.ctl;
     const cfg = this.config;
@@ -684,7 +845,60 @@ export class Part {
     c.egBias = egAssigned
       ? Math.max(this.routed(cfg.wheel, this.wheel, 'eg'), this.routed(cfg.aftertouch, this.aftertouch, 'eg'))
       : 1;
-    for (const v of this.voices) if (v.active) v.render(this.cp, c, buf, offset, n);
+    this.lfo2Phase = (this.lfo2Phase + (this.lfo2Rate / this.sr) * n) % 1;
+  }
+
+  /** Evaluates the patch's mod matrix for voice `v`, writing its per-voice nudges. No-op (all neutral) when the matrix is empty. */
+  private applyMod(v: Voice): void {
+    const macros = this.cp.patch.macros;
+    const src: ModSources = {
+      wheel: this.wheel,
+      aftertouch: this.aftertouch,
+      velocity: v.velocity / 127,
+      keyFollow: Math.max(-1, Math.min(1, (v.note - 60) / 48)),
+      lfo2: Math.sin(2 * Math.PI * this.lfo2Phase),
+      macros: [macros[0] / 99, macros[1] / 99, macros[2] / 99, macros[3] / 99],
+    };
+    const [feedback, pan] = evalModMatrix(this.cp.patch.modMatrix, src, v.modLevel, v.modPitchOct);
+    v.modFeedback = feedback;
+    v.modPan = pan;
+  }
+
+  private ensureScratch(n: number): Float32Array {
+    if (this.scratchBuf.length < n) this.scratchBuf = new Float32Array(n);
+    return this.scratchBuf;
+  }
+
+  render(buf: Float32Array, offset: number, n: number): void {
+    this.updateControllers(n);
+    for (const v of this.voices) {
+      if (!v.active) continue;
+      this.applyMod(v);
+      v.render(this.cp, this.ctl, buf, offset, n);
+    }
+  }
+
+  /** Stereo counterpart of render(): renders each voice via the same Voice.render into a scratch
+   * mono buffer, then pan-mixes it into left/right with an equal-power law. Used by the live
+   * instrument only — render() stays the byte-identical path lessons/tests depend on. */
+  renderStereo(left: Float32Array, right: Float32Array, offset: number, n: number): void {
+    this.updateControllers(n);
+    const scratch = this.ensureScratch(n);
+    for (const v of this.voices) {
+      if (!v.active) continue;
+      this.applyMod(v);
+      scratch.fill(0, 0, n);
+      v.render(this.cp, this.ctl, scratch, 0, n);
+      const pan = Math.max(-1, Math.min(1, v.pan + v.modPan));
+      const angle = (pan + 1) * 0.25 * Math.PI;
+      const lg = Math.cos(angle);
+      const rg = Math.sin(angle);
+      for (let s = 0; s < n; s++) {
+        const y = scratch[s];
+        left[offset + s] += y * lg;
+        right[offset + s] += y * rg;
+      }
+    }
   }
 
   status(): PartStatus {

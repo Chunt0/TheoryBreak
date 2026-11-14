@@ -2,6 +2,7 @@
 // a time-stamped event queue so lessons can schedule music precisely.
 
 import { Part, type PartStatus } from '../dx7/dsp';
+import { PartFx } from '../dx7/fx';
 import { initPatch, type PartConfig, type Patch } from '../dx7/patch';
 
 interface WorkletScope {
@@ -26,7 +27,9 @@ export type WorkletIn =
   | { t: 'panic' }
   | { t: 'status'; enabled: boolean };
 
-export type WorkletOut = { t: 'status'; parts: PartStatus[] } | { t: 'ready'; sampleRate: number };
+export type WorkletOut =
+  | { t: 'status'; parts: PartStatus[]; peakL: number; peakR: number }
+  | { t: 'ready'; sampleRate: number };
 
 interface Scheduled {
   frame: number;
@@ -40,17 +43,23 @@ const MAX_VOICES = [16, 16, 6];
 
 class Dx7Processor extends scope.AudioWorkletProcessor {
   private parts: Part[];
+  private partFx: PartFx[];
   private queue: Scheduled[] = [];
   private seq = 0;
-  private mix = new Float32Array(128);
-  private scratch = new Float32Array(128);
+  private mixL = new Float32Array(128);
+  private mixR = new Float32Array(128);
+  private scratchL = new Float32Array(128);
+  private scratchR = new Float32Array(128);
   private statusEnabled = false;
   private statusCountdown = 0;
+  private peakL = 0;
+  private peakR = 0;
 
   constructor() {
     super();
     const sr = scope.sampleRate;
     this.parts = Array.from({ length: PART_COUNT }, (_, i) => new Part(sr, initPatch(), MAX_VOICES[i]));
+    this.partFx = Array.from({ length: PART_COUNT }, () => new PartFx(sr));
     this.port.onmessage = (e: MessageEvent<WorkletIn | WorkletIn[]>) => {
       const data = e.data;
       if (Array.isArray(data)) data.forEach((m) => this.receive(m));
@@ -89,7 +98,10 @@ class Dx7Processor extends scope.AudioWorkletProcessor {
 
   private apply(msg: WorkletIn): void {
     switch (msg.t) {
-      case 'patch': this.part(msg.part)?.setPatch(msg.patch); break;
+      case 'patch':
+        this.part(msg.part)?.setPatch(msg.patch);
+        this.partFx[msg.part]?.setPatch(msg.patch.fx);
+        break;
       case 'config': this.part(msg.part)?.setConfig(msg.config); break;
       case 'on': this.part(msg.part)?.noteOn(msg.note, msg.vel); break;
       case 'off': this.part(msg.part)?.noteOff(msg.note); break;
@@ -121,31 +133,59 @@ class Dx7Processor extends scope.AudioWorkletProcessor {
     const left = out[0];
     if (!left) return true;
     const n = left.length;
-    if (this.mix.length < n) {
-      this.mix = new Float32Array(n);
-      this.scratch = new Float32Array(n);
+    if (this.mixL.length < n) {
+      this.mixL = new Float32Array(n);
+      this.mixR = new Float32Array(n);
+      this.scratchL = new Float32Array(n);
+      this.scratchR = new Float32Array(n);
     }
-    const mix = this.mix;
-    const scratch = this.scratch;
-    mix.fill(0, 0, n);
+    const mixL = this.mixL;
+    const mixR = this.mixR;
+    const scratchL = this.scratchL;
+    const scratchR = this.scratchR;
+    mixL.fill(0, 0, n);
+    mixR.fill(0, 0, n);
     const blockStart = scope.currentFrame;
     for (let off = 0; off < n; off += TICK) {
       const len = Math.min(TICK, n - off);
       const tickEnd = blockStart + off + len;
       while (this.queue.length && this.queue[0].frame < tickEnd) this.apply(this.queue.shift()!.msg);
-      for (const p of this.parts) {
+      for (let pi = 0; pi < this.parts.length; pi++) {
+        const p = this.parts[pi];
         const vol = p.config.volume;
-        scratch.fill(0, off, off + len);
-        p.render(scratch, off, len);
+        scratchL.fill(0, off, off + len);
+        scratchR.fill(0, off, off + len);
+        p.renderStereo(scratchL, scratchR, off, len);
         if (vol <= 0) continue;
-        for (let i = off; i < off + len; i++) mix[i] += scratch[i] * vol;
+        this.partFx[pi].processBlock(scratchL, scratchR, off, len);
+        for (let i = off; i < off + len; i++) {
+          mixL[i] += scratchL[i] * vol;
+          mixR[i] += scratchR[i] * vol;
+        }
       }
     }
-    for (let c = 0; c < out.length; c++) out[c].set(mix.subarray(0, n));
+    out[0].set(mixL.subarray(0, n));
+    const outR = out[1] ?? out[0];
+    outR.set(mixR.subarray(0, n));
 
-    if (this.statusEnabled && --this.statusCountdown <= 0) {
-      this.statusCountdown = Math.round((scope.sampleRate * 0.04) / n);
-      this.port.postMessage({ t: 'status', parts: this.parts.map((p) => p.status()) } satisfies WorkletOut);
+    if (this.statusEnabled) {
+      for (let i = 0; i < n; i++) {
+        const al = Math.abs(mixL[i]);
+        const ar = Math.abs(mixR[i]);
+        if (al > this.peakL) this.peakL = al;
+        if (ar > this.peakR) this.peakR = ar;
+      }
+      if (--this.statusCountdown <= 0) {
+        this.statusCountdown = Math.round((scope.sampleRate * 0.04) / n);
+        this.port.postMessage({
+          t: 'status',
+          parts: this.parts.map((p) => p.status()),
+          peakL: this.peakL,
+          peakR: this.peakR,
+        } satisfies WorkletOut);
+        this.peakL = 0;
+        this.peakR = 0;
+      }
     }
     return true;
   }
