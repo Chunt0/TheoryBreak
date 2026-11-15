@@ -321,6 +321,12 @@ export function CompassMode() {
   }, [task, root, k, names, sq, hq]);
 
   // ------------------------------------------------------------ the badge
+  /** each dial's root: they differ when the parent scale's notes are held */
+  const dialRoot = (j: number): number => {
+    if (task === 'explore') return hold === 'notes' ? mod(parentOf(pos) + COMPASS[j].offset, 12) : pos.root;
+    if (task === 'step') return sq.done && j === sq.to.k ? sq.to.root : sq.from.root;
+    return root;
+  };
   const fits = task === 'explore' && heldPcs.length
     ? (hold === 'notes' ? COMPASS.map((_, j) => j).filter((j) => heldPcs.every((p) => posPcs({ root: dialRoot(j), k: j }).includes(p))) : modesHolding(pos.root, heldPcs))
     : null;
@@ -353,11 +359,6 @@ export function CompassMode() {
     if (!hq.done) return '';
     if (j === hq.k) return hq.picked === hq.k ? 'ok' : 'target';
     return j === hq.picked ? 'bad' : '';
-  };
-  const dialRoot = (j: number): number => {
-    if (task === 'explore') return hold === 'notes' ? mod(parentOf(pos) + COMPASS[j].offset, 12) : pos.root;
-    if (task === 'step') return sq.done && j === sq.to.k ? sq.to.root : sq.from.root;
-    return root;
   };
   /** the step the last move crossed, lit on the ring */
   const crossed = task === 'explore' && last && hold !== 'notes' ? edgeOf(last.from.k, last.to.k) : task === 'step' && sq.done && Math.abs(sq.n) === 1 ? edgeOf(sq.from.k, sq.to.k) : null;
